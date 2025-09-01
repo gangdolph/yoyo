@@ -37,9 +37,12 @@ if (!class_exists('\Square\SquareClient')) {
 $config = require __DIR__ . '/../config.square.php';
 $env = (strtolower(trim($config['SQUARE_ENV'] ?? 'sandbox')) === 'production') ? 'production' : 'sandbox';
 
-$client = new \Square\SquareClient([
-  'accessToken' => (string)($config['SQUARE_ACCESS_TOKEN'] ?? ''),
-  'environment' => $env, // 'sandbox' | 'production'
-]);
+$client = new \Square\SquareClient(
+  $config['SQUARE_ACCESS_TOKEN'] ?? '',
+  $env, // 'sandbox' or 'production'
+  [
+    // Optional SDK options, e.g. 'timeout' => 30
+  ]
+);
 
 return $client;
