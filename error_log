@@ -1,0 +1,1534 @@
+[22-Aug-2025 06:53:43 UTC] Failed login for skuzqsas_Developer from 71.29.41.111
+[22-Aug-2025 06:53:55 UTC] Failed login for skuzqsas_Developer from 71.29.41.111
+[22-Aug-2025 07:27:58 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer autoload not found. Run `composer install`. in /home/skuzqsas/public_html/vendor/autoload.php:3
+Stack trace:
+#0 /home/skuzqsas/public_html/mail.php(8): require_once()
+#1 /home/skuzqsas/public_html/register.php(5): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/autoload.php on line 3
+[22-Aug-2025 07:28:00 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer autoload not found. Run `composer install`. in /home/skuzqsas/public_html/vendor/autoload.php:3
+Stack trace:
+#0 /home/skuzqsas/public_html/mail.php(8): require_once()
+#1 /home/skuzqsas/public_html/register.php(5): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/autoload.php on line 3
+[22-Aug-2025 07:28:02 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer autoload not found. Run `composer install`. in /home/skuzqsas/public_html/vendor/autoload.php:3
+Stack trace:
+#0 /home/skuzqsas/public_html/mail.php(8): require_once()
+#1 /home/skuzqsas/public_html/register.php(5): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/autoload.php on line 3
+[22-Aug-2025 07:28:02 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer autoload not found. Run `composer install`. in /home/skuzqsas/public_html/vendor/autoload.php:3
+Stack trace:
+#0 /home/skuzqsas/public_html/mail.php(8): require_once()
+#1 /home/skuzqsas/public_html/register.php(5): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/autoload.php on line 3
+[22-Aug-2025 07:31:36 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer autoload not found. Run `composer install`. in /home/skuzqsas/public_html/vendor/autoload.php:3
+Stack trace:
+#0 /home/skuzqsas/public_html/mail.php(8): require_once()
+#1 /home/skuzqsas/public_html/forgot.php(5): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/autoload.php on line 3
+[22-Aug-2025 07:36:00 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer autoload not found. Run `composer install`. in /home/skuzqsas/public_html/vendor/autoload.php:3
+Stack trace:
+#0 /home/skuzqsas/public_html/mail.php(8): require_once()
+#1 /home/skuzqsas/public_html/register.php(5): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/autoload.php on line 3
+[22-Aug-2025 07:37:20 UTC] PHP Fatal error:  Uncaught RuntimeException: Composer autoload not found. Run `composer install`. in /home/skuzqsas/public_html/vendor/autoload.php:3
+Stack trace:
+#0 /home/skuzqsas/public_html/mail.php(8): require_once()
+#1 /home/skuzqsas/public_html/register.php(5): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/autoload.php on line 3
+[22-Aug-2025 07:54:36 UTC] Mailer Error: SMTP Error: Could not authenticate.
+[22-Aug-2025 07:54:36 UTC] Email dispatch failed: SMTP Error: Could not authenticate.
+[22-Aug-2025 08:03:16 UTC] Failed login for skuzqsas_Developer from 71.29.41.111
+[22-Aug-2025 08:03:29 UTC] Mailer Error: SMTP Error: Could not connect to SMTP host. Failed to connect to server SMTP server error: Failed to connect to server
+[22-Aug-2025 08:03:29 UTC] Email dispatch failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[22-Aug-2025 08:10:29 UTC] Mailer Error: SMTP Error: Could not connect to SMTP host. Failed to connect to server SMTP server error: Failed to connect to server
+[22-Aug-2025 08:10:29 UTC] Email dispatch failed: SMTP Error: Could not connect to SMTP host. Failed to connect to server
+[22-Aug-2025 08:20:23 UTC] Failed login for yo from 71.29.41.111
+[22-Aug-2025 08:21:02 UTC] Failed login for skuzqsas_Developer from 71.29.41.111
+[22-Aug-2025 08:21:02 UTC] IP 71.29.41.111 temporarily blocked after 5 failed logins
+[22-Aug-2025 08:29:18 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'type' in 'INSERT INTO' in /home/skuzqsas/public_html/submit-request.php:59
+Stack trace:
+#0 /home/skuzqsas/public_html/submit-request.php(59): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/submit-request.php on line 59
+[22-Aug-2025 20:18:56 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'type' in 'INSERT INTO' in /home/skuzqsas/public_html/submit-request.php:59
+Stack trace:
+#0 /home/skuzqsas/public_html/submit-request.php(59): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/submit-request.php on line 59
+[22-Aug-2025 20:19:09 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'type' in 'INSERT INTO' in /home/skuzqsas/public_html/submit-request.php:59
+Stack trace:
+#0 /home/skuzqsas/public_html/submit-request.php(59): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/submit-request.php on line 59
+[23-Aug-2025 01:24:34 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.user_2fa' doesn't exist in /home/skuzqsas/public_html/login.php:81
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(81): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 81
+[23-Aug-2025 01:24:42 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.user_2fa' doesn't exist in /home/skuzqsas/public_html/login.php:81
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(81): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 81
+[23-Aug-2025 01:24:44 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.user_2fa' doesn't exist in /home/skuzqsas/public_html/login.php:81
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(81): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 81
+[23-Aug-2025 01:25:47 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'status' in 'INSERT INTO' in /home/skuzqsas/public_html/register.php:37
+Stack trace:
+#0 /home/skuzqsas/public_html/register.php(37): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/register.php on line 37
+[23-Aug-2025 03:38:58 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 03:39:00 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 03:39:06 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 03:39:07 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 03:39:26 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 03:39:30 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 03:39:31 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 06:19:23 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 06:19:23 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 06:19:23 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 06:19:23 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 06:19:23 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 06:19:23 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 07:27:29 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 12:00:08 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 12:00:10 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 12:00:19 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 12:01:45 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 12:02:45 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 12:03:46 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 14:17:28 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 14:17:30 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 14:17:33 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 14:17:36 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 14:17:38 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 14:17:39 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.login_attempts' doesn't exist in /home/skuzqsas/public_html/login.php:12
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(12): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 12
+[23-Aug-2025 15:59:13 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.user_2fa' doesn't exist in /home/skuzqsas/public_html/login.php:114
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(114): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 114
+[23-Aug-2025 15:59:31 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.user_2fa' doesn't exist in /home/skuzqsas/public_html/login.php:114
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(114): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/login.php on line 114
+[23-Aug-2025 16:04:41 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Commands out of sync; you can't run this command now in /home/skuzqsas/public_html/includes/header.php:14
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(14): mysqli->prepare()
+#1 /home/skuzqsas/public_html/dashboard.php(27): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 14
+[23-Aug-2025 16:04:45 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Commands out of sync; you can't run this command now in /home/skuzqsas/public_html/includes/header.php:14
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(14): mysqli->prepare()
+#1 /home/skuzqsas/public_html/dashboard.php(27): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 14
+[23-Aug-2025 16:26:00 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'type' in 'INSERT INTO' in /home/skuzqsas/public_html/submit-request.php:59
+Stack trace:
+#0 /home/skuzqsas/public_html/submit-request.php(59): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/submit-request.php on line 59
+[23-Aug-2025 17:15:18 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'type' in 'INSERT INTO' in /home/skuzqsas/public_html/submit-request.php:59
+Stack trace:
+#0 /home/skuzqsas/public_html/submit-request.php(59): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/submit-request.php on line 59
+[23-Aug-2025 17:15:42 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'type' in 'WHERE' in /home/skuzqsas/public_html/trade.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/trade.php(26): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/trade.php on line 26
+[23-Aug-2025 17:16:20 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'type' in 'WHERE' in /home/skuzqsas/public_html/my-requests.php:7
+Stack trace:
+#0 /home/skuzqsas/public_html/my-requests.php(7): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/my-requests.php on line 7
+[23-Aug-2025 17:16:42 UTC] Failed login for test from 71.29.42.51
+[23-Aug-2025 17:17:21 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'type' in 'WHERE' in /home/skuzqsas/public_html/trade.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/trade.php(26): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/trade.php on line 26
+[23-Aug-2025 19:05:52 UTC] PHP Fatal error:  Uncaught Error: mysqli_stmt object is already closed in /home/skuzqsas/public_html/register.php:83
+Stack trace:
+#0 /home/skuzqsas/public_html/register.php(83): mysqli_stmt->close()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/register.php on line 83
+[24-Aug-2025 21:14:52 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 03:51:08 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'r.listing_id' in 'ON' in /home/skuzqsas/public_html/search.php:88
+Stack trace:
+#0 /home/skuzqsas/public_html/search.php(88): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/search.php on line 88
+[25-Aug-2025 03:53:06 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'r.listing_id' in 'ON' in /home/skuzqsas/public_html/search.php:88
+Stack trace:
+#0 /home/skuzqsas/public_html/search.php(88): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/search.php on line 88
+[25-Aug-2025 03:53:22 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 04:20:29 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 05:18:09 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'r.listing_id' in 'ON' in /home/skuzqsas/public_html/search.php:88
+Stack trace:
+#0 /home/skuzqsas/public_html/search.php(88): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/search.php on line 88
+[25-Aug-2025 05:29:13 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'r.listing_id' in 'ON' in /home/skuzqsas/public_html/search.php:88
+Stack trace:
+#0 /home/skuzqsas/public_html/search.php(88): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/search.php on line 88
+[25-Aug-2025 05:33:09 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'r.listing_id' in 'ON' in /home/skuzqsas/public_html/search.php:88
+Stack trace:
+#0 /home/skuzqsas/public_html/search.php(88): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/search.php on line 88
+[25-Aug-2025 05:35:08 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'r.listing_id' in 'ON' in /home/skuzqsas/public_html/search.php:88
+Stack trace:
+#0 /home/skuzqsas/public_html/search.php(88): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/search.php on line 88
+[25-Aug-2025 05:38:22 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 05:38:26 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 05:38:28 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 06:06:08 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 06:06:13 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 06:06:16 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 06:12:16 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 06:12:19 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 06:17:18 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 07:16:05 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 07:16:11 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[25-Aug-2025 07:17:32 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[26-Aug-2025 20:46:21 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[26-Aug-2025 20:46:25 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[26-Aug-2025 20:46:30 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 04:45:20 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'vip_status' in 'SELECT' in /home/skuzqsas/public_html/dashboard.php:9
+Stack trace:
+#0 /home/skuzqsas/public_html/dashboard.php(9): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/dashboard.php on line 9
+[28-Aug-2025 04:45:22 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'vip_status' in 'SELECT' in /home/skuzqsas/public_html/includes/user.php:5
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/user.php(5): mysqli->prepare()
+#1 /home/skuzqsas/public_html/includes/header.php(76): username_with_avatar()
+#2 /home/skuzqsas/public_html/login.php(168): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/user.php on line 5
+[28-Aug-2025 04:45:45 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'vip_status' in 'SELECT' in /home/skuzqsas/public_html/includes/user.php:5
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/user.php(5): mysqli->prepare()
+#1 /home/skuzqsas/public_html/includes/header.php(76): username_with_avatar()
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/user.php on line 5
+[28-Aug-2025 04:45:46 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'vip_status' in 'SELECT' in /home/skuzqsas/public_html/includes/user.php:5
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/user.php(5): mysqli->prepare()
+#1 /home/skuzqsas/public_html/includes/header.php(76): username_with_avatar()
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/user.php on line 5
+[28-Aug-2025 04:45:50 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'vip_status' in 'SELECT' in /home/skuzqsas/public_html/includes/user.php:5
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/user.php(5): mysqli->prepare()
+#1 /home/skuzqsas/public_html/includes/header.php(76): username_with_avatar()
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/user.php on line 5
+[28-Aug-2025 04:45:53 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'vip_status' in 'SELECT' in /home/skuzqsas/public_html/includes/user.php:5
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/user.php(5): mysqli->prepare()
+#1 /home/skuzqsas/public_html/includes/header.php(76): username_with_avatar()
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/user.php on line 5
+[28-Aug-2025 04:46:07 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'vip_status' in 'SELECT' in /home/skuzqsas/public_html/dashboard.php:9
+Stack trace:
+#0 /home/skuzqsas/public_html/dashboard.php(9): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/dashboard.php on line 9
+[28-Aug-2025 05:07:31 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'account_type' in 'SELECT' in /home/skuzqsas/public_html/profile.php:192
+Stack trace:
+#0 /home/skuzqsas/public_html/profile.php(192): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/profile.php on line 192
+[28-Aug-2025 05:07:34 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'account_type' in 'SELECT' in /home/skuzqsas/public_html/profile.php:192
+Stack trace:
+#0 /home/skuzqsas/public_html/profile.php(192): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/profile.php on line 192
+[28-Aug-2025 05:07:35 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'account_type' in 'SELECT' in /home/skuzqsas/public_html/profile.php:192
+Stack trace:
+#0 /home/skuzqsas/public_html/profile.php(192): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/profile.php on line 192
+[28-Aug-2025 05:08:22 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.trade_listings' doesn't exist in /home/skuzqsas/public_html/trade-listings.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/trade-listings.php(23): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/trade-listings.php on line 23
+[28-Aug-2025 05:08:28 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:08:31 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:47 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:51 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:53 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:55 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:56 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:57 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:57 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:58 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:26:58 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[28-Aug-2025 05:54:58 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[28-Aug-2025 05:55:06 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[28-Aug-2025 06:54:05 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[28-Aug-2025 07:59:50 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[28-Aug-2025 08:00:13 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/dashboard.php:24
+Stack trace:
+#0 /home/skuzqsas/public_html/dashboard.php(24): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/dashboard.php on line 24
+[28-Aug-2025 08:00:15 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/dashboard.php:24
+Stack trace:
+#0 /home/skuzqsas/public_html/dashboard.php(24): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/dashboard.php on line 24
+[28-Aug-2025 08:00:16 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/dashboard.php:24
+Stack trace:
+#0 /home/skuzqsas/public_html/dashboard.php(24): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/dashboard.php on line 24
+[28-Aug-2025 08:08:41 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/dashboard.php:24
+Stack trace:
+#0 /home/skuzqsas/public_html/dashboard.php(24): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/dashboard.php on line 24
+[28-Aug-2025 08:08:42 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/login.php(168): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:46 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/buy.php(58): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:47 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/login.php(168): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:48 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/buy.php(58): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:49 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/login.php(168): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:50 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/toolbox.php(27): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:50 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:51 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/dashboard.php:24
+Stack trace:
+#0 /home/skuzqsas/public_html/dashboard.php(24): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/dashboard.php on line 24
+[28-Aug-2025 08:08:51 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/login.php(168): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:51 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/search.php(201): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:52 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/profile.php(243): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:08:59 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:09:01 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Table 'skuzqsas_MainDB.messages' doesn't exist in /home/skuzqsas/public_html/includes/header.php:26
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(26): mysqli->prepare()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/header.php on line 26
+[28-Aug-2025 08:17:50 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'tl.have_item' in 'SELECT' in /home/skuzqsas/public_html/trade-listings.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/trade-listings.php(23): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/trade-listings.php on line 23
+[28-Aug-2025 08:30:12 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[28-Aug-2025 10:54:45 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[28-Aug-2025 11:04:57 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'tl.have_item' in 'SELECT' in /home/skuzqsas/public_html/trade-listings.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/trade-listings.php(23): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/trade-listings.php on line 23
+[28-Aug-2025 12:14:04 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'tl.have_item' in 'SELECT' in /home/skuzqsas/public_html/trade-listings.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/trade-listings.php(23): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/trade-listings.php on line 23
+[28-Aug-2025 12:32:35 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[29-Aug-2025 02:41:40 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[29-Aug-2025 04:28:16 UTC] Failed login for Khalafle from 98.22.184.135
+[29-Aug-2025 04:28:22 UTC] Failed login for Khalafle from 98.22.184.135
+[29-Aug-2025 04:28:27 UTC] Failed login for Khalafle from 98.22.184.135
+[29-Aug-2025 04:57:27 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[29-Aug-2025 04:59:55 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[29-Aug-2025 04:59:57 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[29-Aug-2025 04:59:59 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[29-Aug-2025 05:00:53 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[29-Aug-2025 07:56:08 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[29-Aug-2025 18:30:35 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Too many connections in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[29-Aug-2025 22:01:48 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[30-Aug-2025 05:43:37 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:43:39 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:43:39 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:43:40 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:43:40 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:43:40 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:43:41 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:43:42 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:43:43 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:50:38 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 05:50:40 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:09:49 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:52 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:52 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:53 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:53 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:53 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:53 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:54 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:54 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:55 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:55 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:55 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:55 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:56 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 06:13:56 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:26
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 26
+[30-Aug-2025 08:38:57 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[30-Aug-2025 17:29:18 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[30-Aug-2025 19:44:03 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[31-Aug-2025 03:23:47 UTC] PHP Fatal error:  Uncaught Error sending request to Stripe: (Status 400) (Request req_GN7xSUJWNFSKqK) Invalid URL: An explicit scheme (such as https) must be provided.
+Stripe\Exception\InvalidRequestException: Invalid URL: An explicit scheme (such as https) must be provided. in /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/ApiErrorException.php:38
+Stack trace:
+#0 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/InvalidRequestException.php(35): Stripe\Exception\ApiErrorException::factory()
+#1 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(232): Stripe\Exception\InvalidRequestException::factory()
+#2 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(193): Stripe\ApiRequestor::_specificV1APIError()
+#3 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(650): Stripe\ApiRequestor->handleErrorResponse()
+#4 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(137): Stripe\ApiRequestor->_interpretResponse()
+#5 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiOperations/Request.php(111): Stripe\ApiRequestor->request()
+#6 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Checkout/Session.php(145): Stripe\ApiResource::_staticRequest()
+#7 /home/skuzqsas/public_html/checkout.php(85): Stripe\Checkout\Session::create()
+#8 {main}
+  thrown in /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/ApiErrorException.php on line 38
+[31-Aug-2025 04:22:06 UTC] PHP Fatal error:  Uncaught Error sending request to Stripe: (Status 400) (Request req_6ECaN1Hy6C62vg) Invalid URL: An explicit scheme (such as https) must be provided.
+Stripe\Exception\InvalidRequestException: Invalid URL: An explicit scheme (such as https) must be provided. in /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/ApiErrorException.php:38
+Stack trace:
+#0 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/InvalidRequestException.php(35): Stripe\Exception\ApiErrorException::factory()
+#1 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(232): Stripe\Exception\InvalidRequestException::factory()
+#2 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(193): Stripe\ApiRequestor::_specificV1APIError()
+#3 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(650): Stripe\ApiRequestor->handleErrorResponse()
+#4 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(137): Stripe\ApiRequestor->_interpretResponse()
+#5 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiOperations/Request.php(111): Stripe\ApiRequestor->request()
+#6 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Checkout/Session.php(145): Stripe\ApiResource::_staticRequest()
+#7 /home/skuzqsas/public_html/checkout.php(85): Stripe\Checkout\Session::create()
+#8 {main}
+  thrown in /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/ApiErrorException.php on line 38
+[31-Aug-2025 06:05:57 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[31-Aug-2025 06:06:01 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[31-Aug-2025 06:06:03 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[31-Aug-2025 06:06:10 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[31-Aug-2025 06:06:11 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[31-Aug-2025 21:12:53 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'promoted' in 'WHERE' in /home/skuzqsas/public_html/promoted.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/promoted.php(10): mysqli->prepare()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/promoted.php on line 10
+[31-Aug-2025 22:56:49 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:00 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:02 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:02 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:02 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:03 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:04 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:04 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:04 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:05 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:18:05 UTC] PHP Fatal error:  Uncaught Error: Class "Stripe\Stripe" not found in /home/skuzqsas/public_html/checkout.php:28
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/checkout.php on line 28
+[01-Sep-2025 01:44:31 UTC] PHP Fatal error:  Uncaught Error sending request to Stripe: (Status 400) (Request req_6jpdXZ9rTfli8v) Your account cannot currently make live charges.
+Stripe\Exception\InvalidRequestException: Your account cannot currently make live charges. in /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/ApiErrorException.php:38
+Stack trace:
+#0 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/InvalidRequestException.php(35): Stripe\Exception\ApiErrorException::factory()
+#1 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(232): Stripe\Exception\InvalidRequestException::factory()
+#2 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(193): Stripe\ApiRequestor::_specificV1APIError()
+#3 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(650): Stripe\ApiRequestor->handleErrorResponse()
+#4 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(137): Stripe\ApiRequestor->_interpretResponse()
+#5 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiOperations/Request.php(111): Stripe\ApiRequestor->request()
+#6 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Checkout/Session.php(145): Stripe\ApiResource::_staticRequest()
+#7 /home/skuzqsas/public_html/checkout.php(94): Stripe\Checkout\Session::create()
+#8 {main}
+  thrown in /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/ApiErrorException.php on line 38
+[01-Sep-2025 01:52:09 UTC] PHP Fatal error:  Uncaught Error sending request to Stripe: (Status 400) (Request req_0fZOhWX1xzfzoa) Your account cannot currently make live charges.
+Stripe\Exception\InvalidRequestException: Your account cannot currently make live charges. in /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/ApiErrorException.php:38
+Stack trace:
+#0 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/InvalidRequestException.php(35): Stripe\Exception\ApiErrorException::factory()
+#1 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(232): Stripe\Exception\InvalidRequestException::factory()
+#2 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(193): Stripe\ApiRequestor::_specificV1APIError()
+#3 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(650): Stripe\ApiRequestor->handleErrorResponse()
+#4 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiRequestor.php(137): Stripe\ApiRequestor->_interpretResponse()
+#5 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/ApiOperations/Request.php(111): Stripe\ApiRequestor->request()
+#6 /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Checkout/Session.php(145): Stripe\ApiResource::_staticRequest()
+#7 /home/skuzqsas/public_html/checkout.php(94): Stripe\Checkout\Session::create()
+#8 {main}
+  thrown in /home/skuzqsas/public_html/vendor/stripe/stripe-php/lib/Exception/ApiErrorException.php on line 38
+[01-Sep-2025 06:55:18 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 06:55:21 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 06:55:23 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 06:55:26 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 06:55:29 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 06:55:32 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 06:55:39 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 06:55:41 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:27:27 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:27:28 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:27:29 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:27:30 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:27:33 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:29:22 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:29:24 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:29:25 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:29:26 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:29:27 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:29:29 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:31
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 31
+[01-Sep-2025 07:42:15 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:17 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:17 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:17 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:18 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:18 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:20 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:20 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:22 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:31 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:42:34 UTC] PHP Fatal error:  Uncaught Error: Class "Square\Environment" not found in /home/skuzqsas/public_html/includes/square.php:33
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 33
+[01-Sep-2025 07:57:06 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:30
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 30
+[01-Sep-2025 07:57:08 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:30
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 30
+[01-Sep-2025 07:57:13 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:30
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 30
+[01-Sep-2025 07:57:15 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:30
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 30
+[01-Sep-2025 07:59:16 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:30
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 30
+[01-Sep-2025 07:59:33 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:30
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 30
+[01-Sep-2025 07:59:35 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:30
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 30
+[01-Sep-2025 08:34:04 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:34:09 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:34:20 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:35:36 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:40:55 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:44:31 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/auth.php(4): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/dashboard.php(2): require('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:31 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/auth.php(4): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/message-thread.php(2): require('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:32 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/auth.php(4): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/messages.php(2): require('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:33 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/auth.php(4): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/messages.php(2): require('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:35 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:35 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/auth.php(4): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/services.php(2): require('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:36 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:38 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:46 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:47 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:44:56 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:45:00 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:45:00 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:45:01 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:45:07 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:45:16 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:45:28 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:45:31 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/header.php(5): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
+[01-Sep-2025 08:47:56 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/buy.php:58
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/buy.php on line 58
+[01-Sep-2025 08:47:58 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/buy.php:58
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/buy.php on line 58
+[01-Sep-2025 08:48:00 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/buy.php:58
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/buy.php on line 58
+[01-Sep-2025 08:48:04 UTC] Failed login for Khalafle from 98.22.186.40
+[01-Sep-2025 08:48:14 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/buy.php:58
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/buy.php on line 58
+[01-Sep-2025 08:48:16 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/buy.php:58
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/buy.php on line 58
+[01-Sep-2025 08:48:21 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/buy.php:58
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/buy.php on line 58
+[01-Sep-2025 08:48:23 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/trade.php:50
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/trade.php on line 50
+[01-Sep-2025 08:48:32 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/messages.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/messages.php on line 18
+[01-Sep-2025 08:48:34 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/messages.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/messages.php on line 18
+[01-Sep-2025 08:48:35 UTC] PHP Fatal error:  Uncaught Error: Call to undefined method mysqli_stmt::get_result() in /home/skuzqsas/public_html/messages.php:18
+Stack trace:
+#0 {main}
+  thrown in /home/skuzqsas/public_html/messages.php on line 18
+[01-Sep-2025 08:52:16 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/auth.php(4): require_once()
+#1 /home/skuzqsas/public_html/messages.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:18 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/auth.php(4): require_once()
+#1 /home/skuzqsas/public_html/services.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:19 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:19 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/auth.php(4): require_once()
+#1 /home/skuzqsas/public_html/dashboard.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:21 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/auth.php(4): require_once()
+#1 /home/skuzqsas/public_html/dashboard.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:22 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/auth.php(4): require_once()
+#1 /home/skuzqsas/public_html/dashboard.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:22 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/auth.php(4): require_once()
+#1 /home/skuzqsas/public_html/dashboard.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:22 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/auth.php(4): require_once()
+#1 /home/skuzqsas/public_html/dashboard.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:24 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/login.php(3): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:24 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:25 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:27 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:29 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:30 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:31 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:31 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:34 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:54 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:52:56 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:53:31 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:53:57 UTC] PHP Fatal error:  Uncaught Error: Class "mysqli" not found in /home/skuzqsas/public_html/includes/db.php:23
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/header.php(5): require_once()
+#1 /home/skuzqsas/public_html/index.php(10): include('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 23
+[01-Sep-2025 08:54:43 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:54:45 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:54:45 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:54:46 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:54:46 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:54:46 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:54:47 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:54:47 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 08:54:47 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 09:15:33 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 09:15:36 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 09:15:37 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 09:15:37 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 09:15:37 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 09:16:24 UTC] PHP Fatal error:  Uncaught Error: Class "Square\SquareClient" not found in /home/skuzqsas/public_html/includes/square.php:41
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(6): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 41
+[01-Sep-2025 09:30:27 UTC] [square.php] SquareClient not found. PSR-4 keys: PHPMailer\PHPMailer\
+[01-Sep-2025 09:30:27 UTC] PHP Fatal error:  Uncaught RuntimeException: Square SDK not autoloadable in /home/skuzqsas/public_html/includes/square.php:16
+Stack trace:
+#0 /home/skuzqsas/public_html/checkout.php(2): require()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/includes/square.php on line 16
+[01-Sep-2025 09:55:19 UTC] PHP Fatal error:  Uncaught TypeError: Square\SquareClient::__construct(): Argument #1 ($token) must be of type ?string, array given, called in /home/skuzqsas/public_html/includes/square.php on line 42 and defined in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php:242
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/square.php(42): Square\SquareClient->__construct()
+#1 /home/skuzqsas/public_html/checkout.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php on line 242
+[01-Sep-2025 09:55:23 UTC] PHP Fatal error:  Uncaught TypeError: Square\SquareClient::__construct(): Argument #1 ($token) must be of type ?string, array given, called in /home/skuzqsas/public_html/includes/square.php on line 42 and defined in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php:242
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/square.php(42): Square\SquareClient->__construct()
+#1 /home/skuzqsas/public_html/checkout.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php on line 242
+[01-Sep-2025 09:55:23 UTC] PHP Fatal error:  Uncaught TypeError: Square\SquareClient::__construct(): Argument #1 ($token) must be of type ?string, array given, called in /home/skuzqsas/public_html/includes/square.php on line 42 and defined in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php:242
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/square.php(42): Square\SquareClient->__construct()
+#1 /home/skuzqsas/public_html/checkout.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php on line 242
+[01-Sep-2025 09:55:24 UTC] PHP Fatal error:  Uncaught TypeError: Square\SquareClient::__construct(): Argument #1 ($token) must be of type ?string, array given, called in /home/skuzqsas/public_html/includes/square.php on line 42 and defined in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php:242
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/square.php(42): Square\SquareClient->__construct()
+#1 /home/skuzqsas/public_html/checkout.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php on line 242
+[01-Sep-2025 09:55:28 UTC] PHP Fatal error:  Uncaught TypeError: Square\SquareClient::__construct(): Argument #1 ($token) must be of type ?string, array given, called in /home/skuzqsas/public_html/includes/square.php on line 42 and defined in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php:242
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/square.php(42): Square\SquareClient->__construct()
+#1 /home/skuzqsas/public_html/checkout.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php on line 242
+[01-Sep-2025 10:20:44 UTC] PHP Fatal error:  Uncaught TypeError: Square\SquareClient::__construct(): Argument #1 ($token) must be of type ?string, array given, called in /home/skuzqsas/public_html/includes/square.php on line 42 and defined in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php:242
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/square.php(42): Square\SquareClient->__construct()
+#1 /home/skuzqsas/public_html/checkout.php(2): require('/home/skuzqsas/...')
+#2 {main}
+  thrown in /home/skuzqsas/public_html/vendor/square/square/src/SquareClient.php on line 242
