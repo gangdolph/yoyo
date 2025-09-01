@@ -1,0 +1,20 @@
+[
+  {
+    "category": "conversions",
+    "name": "Unit Converter",
+    "description": "Convert between various units.",
+    "url": "https://www.unitconverters.net/"
+  },
+  {
+    "category": "news",
+    "name": "Techmeme",
+    "description": "Tech news aggregator.",
+    "url": "https://www.techmeme.com/"
+  },
+  {
+    "category": "software",
+    "name": "Ninite",
+    "description": "Install multiple apps quickly.",
+    "url": "https://ninite.com/"
+  }
+]

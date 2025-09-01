@@ -1,0 +1,57 @@
+{
+  "light": {
+    "label": "Light",
+    "vars": {
+      "--bg": "#2d1e59",
+      "--fg": "#f8f9fa",
+      "--accent": "#ff71ce",
+      "--gradient": "linear-gradient(135deg, #ff71ce 0%, #01cdfe 100%)"
+    }
+  },
+  "dark": {
+    "label": "Dark",
+    "vars": {
+      "--bg": "#1b1135",
+      "--fg": "#e0d9f6",
+      "--accent": "#01cdfe",
+      "--gradient": "linear-gradient(135deg, #2d1e59 0%, #09002e 100%)"
+    }
+  },
+  "vaporwave": {
+    "label": "Vaporwave",
+    "vars": {
+      "--bg": "rgba(0, 0, 0, 0.3)",
+      "--fg": "#ffffff",
+      "--accent": "var(--vap1)",
+      "--gradient": "linear-gradient(-45deg, var(--vap1), var(--vap2), var(--vap3), var(--vap1))",
+      "--vap1": "#ff71ce",
+      "--vap2": "#01cdfe",
+      "--vap3": "#05ffa1"
+    },
+    "pattern": {
+      "frequency": 5,
+      "amplitude": 20,
+      "poly": [0],
+      "hue": 0,
+      "sat": 100
+    }
+  },
+  "pastel": {
+    "label": "Pastel",
+    "vars": {
+      "--bg": "#ffe4e1",
+      "--fg": "#333333",
+      "--accent": "#ffb6c1",
+      "--gradient": "linear-gradient(135deg, #ffe4e1 0%, #e0ffff 100%)"
+    }
+  },
+  "forest": {
+    "label": "Forest",
+    "vars": {
+      "--bg": "#2e3d2f",
+      "--fg": "#e6e8e6",
+      "--accent": "#4caf50",
+      "--gradient": "linear-gradient(135deg, #2e3d2f 0%, #1b2c20 100%)"
+    }
+  }
+}

@@ -1,0 +1,12 @@
+[23-Aug-2025 17:17:46 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown column 'r.type' in 'WHERE' in /home/skuzqsas/public_html/admin/index.php:10
+Stack trace:
+#0 /home/skuzqsas/public_html/admin/index.php(10): mysqli->query()
+#1 {main}
+  thrown in /home/skuzqsas/public_html/admin/index.php on line 10
+[01-Sep-2025 08:44:30 UTC] PHP Fatal error:  Uncaught mysqli_sql_exception: Unknown server host 'localhost:3306' (-2) in /home/skuzqsas/public_html/includes/db.php:27
+Stack trace:
+#0 /home/skuzqsas/public_html/includes/db.php(27): mysqli->__construct()
+#1 /home/skuzqsas/public_html/includes/auth.php(4): require_once('/home/skuzqsas/...')
+#2 /home/skuzqsas/public_html/admin/index.php(2): require('/home/skuzqsas/...')
+#3 {main}
+  thrown in /home/skuzqsas/public_html/includes/db.php on line 27
