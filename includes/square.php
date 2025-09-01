@@ -34,12 +34,16 @@ if (!class_exists('\Square\SquareClient')) {
   throw new RuntimeException("Square SDK not autoloadable after PSR-4 registration");
 }
 
-$config = require __DIR__ . '/../config.square.php';
-$env = (strtolower(trim($config['SQUARE_ENV'] ?? 'sandbox')) === 'production') ? 'production' : 'sandbox';
+require __DIR__ . '/../config.square.php';
+$token = defined('SQUARE_ACCESS_TOKEN') ? (string) SQUARE_ACCESS_TOKEN : '';
+$env = defined('SQUARE_ENV') ? strtolower((string) SQUARE_ENV) : 'sandbox';
+$baseUrl = $env === 'production'
+    ? 'https://connect.squareup.com'
+    : 'https://connect.squareupsandbox.com';
 
-$client = new \Square\SquareClient([
-  'accessToken' => (string)($config['SQUARE_ACCESS_TOKEN'] ?? ''),
-  'environment' => $env, // 'sandbox' | 'production'
-]);
+$client = new \Square\SquareClient(
+  $token,
+  options: ['baseUrl' => $baseUrl],
+);
 
 return $client;
