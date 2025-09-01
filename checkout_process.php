@@ -3,7 +3,7 @@ require 'includes/requirements.php';
 require 'includes/auth.php';
 require 'includes/db.php';
 require 'includes/url.php';
-require 'includes/square.php';
+$client = require 'includes/square.php';
 
 $token = $_POST['token'] ?? '';
 $listing_id = isset($_POST['listing_id']) ? intval($_POST['listing_id']) : 0;
@@ -30,7 +30,7 @@ use Square\Exceptions\ApiException;
 use Square\Models\CreatePaymentRequest;
 use Square\Models\Money;
 
-$paymentsApi = $square->getPaymentsApi();
+$paymentsApi = $client->getPaymentsApi();
 
 $money = new Money();
 $money->setAmount($amount);
