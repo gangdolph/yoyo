@@ -1,5 +1,8 @@
 <?php
+
 declare(strict_types=1);
+
+require __DIR__ . '/../_debug_bootstrap.php';
 
 require __DIR__ . '/../vendor/autoload.php';
 $config = require __DIR__ . '/../config.php';
