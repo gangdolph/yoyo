@@ -31,8 +31,6 @@ use Square\Exceptions\ApiException;
 use Square\Models\CreatePaymentRequest;
 use Square\Models\Money;
 
-$paymentsApi = $client->getPaymentsApi();
-
 $money = new Money();
 $money->setAmount($amount);
 $money->setCurrency('USD');
@@ -42,7 +40,7 @@ $paymentRequest->setAmountMoney($money);
 $paymentRequest->setLocationId($squareConfig['location_id']);
 
 try {
-    $apiResponse = $paymentsApi->createPayment($paymentRequest);
+    $apiResponse = $client->payments->createPayment($paymentRequest);
     $result = $apiResponse->getResult();
     $status = $result->getPayment()->getStatus();
     $paymentId = $result->getPayment()->getId();
