@@ -39,7 +39,7 @@ $stmt->close();
         <td><?= htmlspecialchars($l['title']) ?></td>
         <td><?= htmlspecialchars($l['price']) ?></td>
         <td><?= htmlspecialchars($l['category']) ?></td>
-        <td><?php if ($l['image']): ?><img src="uploads/<?= htmlspecialchars($l['image']) ?>" alt="" width="60"><?php endif; ?></td>
+        <td><?php if ($l['image']): ?><img class="thumb-square" style="--thumb-size:60px;" src="uploads/<?= htmlspecialchars($l['image']) ?>" alt=""><?php endif; ?></td>
         <td><?= htmlspecialchars($l['status']) ?></td>
         <td><a href="?delete=<?= $l['id'] ?>" onclick="return confirm('Delete listing?');">Delete</a></td>
       </tr>

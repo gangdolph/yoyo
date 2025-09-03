@@ -15,18 +15,18 @@ session_start();
     <div class="hero">
       <div class="hero-ascii">
         <pre>
- ____  _              _____
+____  _              _____
 / ___|| | ___   _ ___| ____|
 \___ \| |/ / | | |_  /  _|
  ___) |   <| |_| |/ /| |___
 |____/|_|\\__,_/___|_____|
-        </pre>
+</pre>
       </div>
       <div class="hero-content">
         <h2>Repair. Modding. Modern Support.</h2>
         <p>Whether you're fixing, upgrading, or building — SkuzE has you covered.</p>
         <div class="cta-buttons">
-          <div class="cta-row">
+          <div class="cta-row full">
             <a href="services.php" class="btn-cta">Services</a>
           </div>
           <div class="cta-row">

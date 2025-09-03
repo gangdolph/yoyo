@@ -44,28 +44,28 @@ $unread_notifications = count_unread_notifications($conn, $id);
   <div class="nav-sections">
     <div class="nav-section">
       <h3>Service Requests</h3>
-      <div class="nav-links">
-        <a class="btn" role="button" href="services.php">Start a Service Request</a>
-        <a class="btn" role="button" href="my-requests.php">View My Service Requests</a>
-        <a class="btn" role="button" href="my-listings.php">Manage My Listings</a>
-      </div>
+      <ul class="nav-links">
+        <li><a class="btn" role="button" href="services.php">Start a Service Request</a></li>
+        <li><a class="btn" role="button" href="my-requests.php">View My Service Requests</a></li>
+        <li><a class="btn" role="button" href="my-listings.php">Manage My Listings</a></li>
+      </ul>
     </div>
     <div class="nav-section">
       <h3>Communications</h3>
-      <div class="nav-links">
-        <a class="btn" role="button" href="notifications.php">Notifications<?php if (!empty($unread_notifications)): ?> <span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a>
-        <a class="btn" role="button" href="messages.php">Messages<?php if (!empty($unread_messages)): ?> <span class="badge"><?= $unread_messages ?></span><?php endif; ?></a>
-      </div>
+      <ul class="nav-links">
+        <li><a class="btn" role="button" href="notifications.php">Notifications<?php if (!empty($unread_notifications)): ?> <span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
+        <li><a class="btn" role="button" href="messages.php">Messages<?php if (!empty($unread_messages)): ?> <span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
+      </ul>
     </div>
     <div class="nav-section">
       <h3>Account</h3>
-      <div class="nav-links">
+      <ul class="nav-links">
         <?php if (!empty($_SESSION['is_admin'])): ?>
-          <a class="btn" role="button" href="/admin/index.php">Admin Panel</a>
+          <li><a class="btn" role="button" href="/admin/index.php">Admin Panel</a></li>
         <?php endif; ?>
-        <a class="btn" role="button" href="profile.php">Edit Profile</a>
-        <a class="btn" role="button" href="logout.php">Logout</a>
-      </div>
+        <li><a class="btn" role="button" href="profile.php">Edit Profile</a></li>
+        <li><a class="btn" role="button" href="logout.php">Logout</a></li>
+      </ul>
     </div>
   </div>
   <?php include 'includes/footer.php'; ?>

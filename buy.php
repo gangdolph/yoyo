@@ -116,7 +116,7 @@ $stmt->close();
             <?php $link = "listing.php?listing_id={$l['id']}"; ?>
             <a href="<?= $link ?>" class="listing-link">
               <?php if ($l['image']): ?>
-                <img src="uploads/<?= htmlspecialchars($l['image']) ?>" alt="">
+                <img class="thumb-square" src="uploads/<?= htmlspecialchars($l['image']) ?>" alt="">
               <?php endif; ?>
               <h3><?= htmlspecialchars($l['title']) ?></h3>
             </a>
