@@ -1,4 +1,7 @@
-<?php session_start(); ?>
+<?php
+require __DIR__ . '/_debug_bootstrap.php';
+session_start();
+?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
   <title>SkuzE | Electronics Repair & Modding</title>
