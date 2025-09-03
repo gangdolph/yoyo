@@ -1,19 +1,24 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
+if (session_status() === PHP_SESSION_NONE):
   session_start();
-}
+endif;
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/notifications.php';
 
 $username = '';
 $status = '';
-if (!empty($_SESSION['user_id'])) {
-  if (!empty($_SESSION['username']) && !empty($_SESSION['status'])) {
+$unread_messages = 0;
+$unread_notifications = 0;
+$unread_total = 0;
+$cart_count = isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
+
+if (!empty($_SESSION['user_id'])):
+  if (!empty($_SESSION['username']) && !empty($_SESSION['status'])):
     $username = $_SESSION['username'];
     $status = $_SESSION['status'];
-  } else {
-    if ($stmt = $conn->prepare('SELECT username, status FROM users WHERE id = ?')) {
+  else:
+    if ($stmt = $conn->prepare('SELECT username, status FROM users WHERE id = ?')):
       $stmt->bind_param('i', $_SESSION['user_id']);
       $stmt->execute();
       $stmt->bind_result($username, $status);
@@ -21,28 +26,14 @@ if (!empty($_SESSION['user_id'])) {
       $stmt->close();
       $_SESSION['username'] = $username;
       $_SESSION['status'] = $status;
-    }
-  }
+    endif;
+  endif;
 
-    $unread_messages = 0;
-    if ($stmt = $conn->prepare('SELECT COUNT(*) FROM messages WHERE recipient_id = ? AND read_at IS NULL')) {
-      $stmt->bind_param('i', $_SESSION['user_id']);
-      $stmt->execute();
-      $stmt->bind_result($unread_messages);
-      $stmt->fetch();
-      $stmt->close();
-    }
-
-    $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
-  }
-  $cart_count = isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
-
-
-    $unread_messages = count_unread_messages($conn, $_SESSION['user_id']);
-    $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
-    $unread_total = $unread_messages + $unread_notifications;
-  }
+  $unread_messages = count_unread_messages($conn, $_SESSION['user_id']);
+  $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
+  $unread_total = $unread_messages + $unread_notifications;
   $cart_count = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
+endif;
 ?>
 
 <header class="site-header">
