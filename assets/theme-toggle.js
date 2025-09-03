@@ -5,8 +5,10 @@ const openBtn = document.getElementById('theme-toggle');
 const closeBtn = document.getElementById('theme-close');
 const preview = document.getElementById('theme-preview');
 const optionsContainer = modal ? modal.querySelector('.theme-options') : null;
+let borderContainer = null;
 const errorMsg = modal ? modal.querySelector('.theme-error') : null;
 let themes = {};
+let borders = {};
 
 function setActiveButton(name) {
   if (!optionsContainer) return;
@@ -51,12 +53,58 @@ function buildOptions() {
   });
 }
 
+function setActiveBorderButton(name) {
+  if (!borderContainer) return;
+  borderContainer.querySelectorAll('button').forEach(btn => {
+    const active = btn.dataset.border === name;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+function applyBorder(name) {
+  const b = borders[name];
+  if (!b) return;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="8" height="8"><text x="0" y="8" font-family="monospace" font-size="8">${b.char}</text></svg>`;
+  const encoded = encodeURIComponent(svg);
+  const value = `url("data:image/svg+xml,${encoded}") 8 repeat`;
+  root.style.setProperty('--border-style', value);
+  if (preview) preview.style.setProperty('--border-style', value);
+  localStorage.setItem('border', name);
+  setActiveBorderButton(name);
+}
+
+function buildBorderOptions() {
+  if (!modal) return;
+  if (!borderContainer) {
+    borderContainer = document.createElement('div');
+    borderContainer.className = 'border-options';
+    const content = modal.querySelector('.modal-content');
+    if (content && optionsContainer) {
+      content.insertBefore(borderContainer, optionsContainer.nextSibling);
+    }
+  }
+  borderContainer.innerHTML = '';
+  Object.keys(borders).forEach(name => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn';
+    btn.dataset.border = name;
+    btn.textContent = borders[name].char;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', () => applyBorder(name));
+    borderContainer.appendChild(btn);
+  });
+}
+
 async function initThemes() {
   try {
     const res = await fetch('/assets/themes.json');
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data && typeof data === 'object' && !Array.isArray(data)) {
+      borders = data.borders || {};
+      delete data.borders;
       themes = data;
     } else {
       throw new Error('Invalid theme JSON');
@@ -67,6 +115,7 @@ async function initThemes() {
     return;
   }
   buildOptions();
+  buildBorderOptions();
   const stored = localStorage.getItem('theme');
   if (stored && themes[stored]) {
     applyTheme(stored);
@@ -75,6 +124,13 @@ async function initThemes() {
   } else {
     const first = Object.keys(themes)[0];
     if (first) applyTheme(first);
+  }
+  const storedBorder = localStorage.getItem('border');
+  if (storedBorder && borders[storedBorder]) {
+    applyBorder(storedBorder);
+  } else {
+    const firstBorder = Object.keys(borders)[0];
+    if (firstBorder) applyBorder(firstBorder);
   }
 }
 

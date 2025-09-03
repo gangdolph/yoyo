@@ -3,6 +3,23 @@ document.addEventListener('DOMContentLoaded', () => {
   const listBtn = document.querySelector('.view-list');
   const container = document.getElementById('product-container');
 
+  const showToast = message => {
+    const toast = document.createElement('div');
+    toast.textContent = message;
+    Object.assign(toast.style, {
+      position: 'fixed',
+      bottom: '1rem',
+      right: '1rem',
+      background: '#333',
+      color: '#fff',
+      padding: '0.5rem 1rem',
+      borderRadius: '4px',
+      zIndex: 1000
+    });
+    document.body.appendChild(toast);
+    setTimeout(() => toast.remove(), 3000);
+  };
+
   if (gridBtn && listBtn && container) {
     gridBtn.addEventListener('click', () => {
       container.classList.remove('list-view');
@@ -29,8 +46,20 @@ document.addEventListener('DOMContentLoaded', () => {
         credentials: 'same-origin'
       })
         .then(res => res.json())
-        .then(() => {
-          window.location.href = 'cart.php';
+        .then(data => {
+          if (data.success) {
+            showToast('Added to cart');
+            const cartLink = document.querySelector('.cart-link a');
+            if (cartLink) {
+              let badge = cartLink.querySelector('.badge');
+              if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'badge';
+                cartLink.appendChild(badge);
+              }
+              badge.textContent = data.count;
+            }
+          }
         });
     });
   });

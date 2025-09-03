@@ -32,7 +32,8 @@ if (!empty($_SESSION['user_id'])) {
       $stmt->close();
     }
 
-    $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
+    $notif_types = ['service_request', 'shipping_update', 'request_message', 'admin_message'];
+    $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id'], $notif_types);
   }
   $cart_count = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
 ?>
@@ -57,23 +58,29 @@ if (!empty($_SESSION['user_id'])) {
       <li><a href="/register.php" data-i18n="register">Register</a></li>
 <?php else: ?>
       <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
-      <li><a href="/notifications.php" data-i18n="notifications">Notifications<?php if (!empty($unread_notifications)): ?><span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
+      <li><a href="/inventory.php">Inventory</a></li>
+      <li class="notifications-link">
+        <a href="/notifications.php" aria-label="Notifications">
+          <img src="/assets/bell.svg" alt="">
+          <?php if (!empty($unread_notifications)): ?><span class="badge"><?= $unread_notifications ?></span><?php endif; ?>
+        </a>
+      </li>
       <li><a href="/messages.php" data-i18n="messages">Messages<?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
       <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
       <li class="user-info"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></li>
 <?php endif; ?>
       <li class="cart-link">
-        <a href="/checkout.php">
+        <a href="/cart.php">
           <img src="/assets/cart.svg" alt="Cart">
           <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
         </a>
       </li>
-      <li>
+      <li class="lang-theme-buttons">
         <button id="language-toggle" type="button" aria-haspopup="menu" aria-controls="language-menu">
           <img src="/assets/flags/en.svg" alt="English">
         </button>
+        <button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button>
       </li>
-      <li><button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button></li>
     </ul>
   </nav>
 </header>

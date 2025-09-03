@@ -28,9 +28,24 @@ function get_notifications($conn, $user_id, $only_unread = false) {
     return [];
 }
 
-function count_unread_notifications($conn, $user_id) {
-    if ($stmt = $conn->prepare('SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0')) {
-        $stmt->bind_param('i', $user_id);
+function count_unread_notifications($conn, $user_id, $types = []) {
+    $sql = 'SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0';
+    $paramTypes = 'i';
+    $params = [$user_id];
+
+    if (!empty($types)) {
+        $placeholders = implode(',', array_fill(0, count($types), '?'));
+        $sql .= " AND type IN ($placeholders)";
+        $paramTypes .= str_repeat('s', count($types));
+        $params = array_merge($params, $types);
+    }
+
+    if ($stmt = $conn->prepare($sql)) {
+        $bind = [$paramTypes];
+        foreach ($params as $key => $value) {
+            $bind[] = &$params[$key];
+        }
+        call_user_func_array([$stmt, 'bind_param'], $bind);
         $stmt->execute();
         $stmt->bind_result($count);
         $stmt->fetch();

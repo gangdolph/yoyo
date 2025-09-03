@@ -15,7 +15,9 @@ CREATE TABLE trade_offers (
     listing_id INT NOT NULL,
     offerer_id INT NOT NULL,
     message TEXT,
-    offer_item VARCHAR(255) NOT NULL,
+    offer_item TEXT,
+    offer_items TEXT,
+    request_items TEXT,
     status ENUM('pending','accepted','declined') DEFAULT 'pending',
     fulfillment_type ENUM('meetup','ship_to_skuzE'),
     shipping_address TEXT,
@@ -24,4 +26,11 @@ CREATE TABLE trade_offers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (listing_id) REFERENCES trade_listings(id),
     FOREIGN KEY (offerer_id) REFERENCES users(id)
+);
+
+CREATE TABLE user_inventory (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    item_name VARCHAR(255) NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id)
 );

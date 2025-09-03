@@ -1,0 +1,4 @@
+ALTER TABLE service_requests
+  ADD COLUMN shipping_status VARCHAR(50) DEFAULT NULL,
+  ADD COLUMN tracking_number VARCHAR(100) DEFAULT NULL,
+  ADD COLUMN user_message TEXT DEFAULT NULL;

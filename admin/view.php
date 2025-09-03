@@ -3,6 +3,7 @@ require '../includes/auth.php';
 require '../includes/db.php';
 require '../includes/csrf.php';
 require '../includes/user.php';
+require '../includes/notifications.php';
 
 if (!$_SESSION['is_admin']) {
   header("Location: ../dashboard.php");
@@ -40,16 +41,31 @@ $online_status = $is_online ? "<span style='color:green;'>Online</span>" : "<spa
     } else {
       $status = $_POST['status'];
       $note = $_POST['admin_note'];
+      $ship = $_POST['shipping_status'];
+      $track = $_POST['tracking_number'];
+      $user_msg = $_POST['user_message'];
 
-      $update = $conn->prepare("UPDATE service_requests SET status = ?, admin_note = ? WHERE id = ?");
+      $update = $conn->prepare("UPDATE service_requests SET status = ?, admin_note = ?, shipping_status = ?, tracking_number = ?, user_message = ? WHERE id = ?");
       if ($update === false) {
         error_log('Prepare failed: ' . $conn->error);
       } else {
-        $update->bind_param("ssi", $status, $note, $id);
+        $update->bind_param("sssssi", $status, $note, $ship, $track, $user_msg, $id);
         if (!$update->execute()) {
           error_log('Execute failed: ' . $update->error);
         }
         $update->close();
+      }
+
+      if (isset($_POST['notify_shipping'])) {
+        $msg = "Request #$id shipping status: $ship";
+        if (!empty($track)) {
+          $msg .= ", Tracking: $track";
+        }
+        create_notification($conn, $data['user_id'], 'shipping_update', $msg);
+      }
+
+      if (isset($_POST['notify_message']) && !empty($user_msg)) {
+        create_notification($conn, $data['user_id'], 'request_message', $user_msg);
       }
 
       $redirect = ($data['type'] === 'trade') ? 'trade-requests.php' : 'index.php';
@@ -88,10 +104,29 @@ $online_status = $is_online ? "<span style='color:green;'>Online</span>" : "<spa
       ?>
     </select>
 
+    <label>Shipping Status:</label>
+    <select name="shipping_status">
+      <?php
+      $ship_opts = ['Pending', 'Shipped', 'Delivered'];
+      foreach ($ship_opts as $opt) {
+        $sel = ($data['shipping_status'] === $opt) ? 'selected' : '';
+        echo "<option value=\"$opt\" $sel>$opt</option>";
+      }
+      ?>
+    </select>
+
+    <label>Tracking Number:</label>
+    <input type="text" name="tracking_number" value="<?= htmlspecialchars($data['tracking_number']) ?>">
+
+    <label>User Message:</label>
+    <textarea name="user_message"><?= htmlspecialchars($data['user_message']) ?></textarea>
+
     <label>Internal Admin Notes:</label>
     <textarea name="admin_note"><?= htmlspecialchars($data['admin_note']) ?></textarea>
 
-    <button type="submit">Save Changes</button>
+    <button type="submit" name="save" value="1">Save Changes</button>
+    <button type="submit" name="notify_shipping" value="1">Send Shipping Notification</button>
+    <button type="submit" name="notify_message" value="1">Send Message Notification</button>
   </form>
   <p><a class="btn" href="index.php">← Back to All Requests</a></p>
   <?php include '../includes/footer.php'; ?>

@@ -16,20 +16,22 @@ session_start();
       <div class="hero-ascii">
         <pre>
  ____  _              _____
-/ ___|| | ___   _ ___| ____|
-\___ \| |/ / | | |_  /  _|
+ / ___|| | ___   _ ___| ____|
+ \___ \| |/ / | | |_  /  _|
  ___) |   <| |_| |/ /| |___
-|____/|_|\\__,_/___|_____|
+ |____/|_|\\__,_/___|_____|
         </pre>
       </div>
       <div class="hero-content">
         <h2>Repair. Modding. Modern Support.</h2>
         <p>Whether you're fixing, upgrading, or building — SkuzE has you covered.</p>
         <div class="cta-buttons">
-          <a href="buy.php" class="btn-cta">Buy</a>
-          <a href="sell.php" class="btn-cta">Sell</a>
-          <a href="trade.php" class="btn-cta">Trade</a>
           <a href="services.php" class="btn-cta">Services</a>
+          <div class="cta-primary">
+            <a href="buy.php" class="btn-cta">Buy</a>
+            <a href="sell.php" class="btn-cta">Sell</a>
+            <a href="trade.php" class="btn-cta">Trade</a>
+          </div>
         </div>
       </div>
     </div>

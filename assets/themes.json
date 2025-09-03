@@ -1,4 +1,9 @@
 {
+  "borders": {
+    "star": { "label": "Stars", "char": "*" },
+    "pipe": { "label": "Pipes", "char": "|" },
+    "hash": { "label": "Hashes", "char": "#" }
+  },
   "light": {
     "label": "Light",
     "vars": {

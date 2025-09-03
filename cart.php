@@ -17,7 +17,10 @@ if (isset($_GET['action']) && $_GET['action'] === 'add' && $_SERVER['REQUEST_MET
         }
     }
     header('Content-Type: application/json');
-    echo json_encode(['success' => true]);
+    echo json_encode([
+        'success' => true,
+        'count' => count($_SESSION['cart'])
+    ]);
     exit;
 }
 

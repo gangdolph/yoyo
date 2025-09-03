@@ -59,7 +59,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $offers = [];
-if ($stmt = $conn->prepare('SELECT o.id, o.offer_item, o.message, o.status, u.username FROM trade_offers o JOIN users u ON o.offerer_id = u.id WHERE o.listing_id = ? ORDER BY o.created_at DESC')) {
+if ($stmt = $conn->prepare('SELECT o.id, o.offer_item, o.offer_items, o.request_items, o.message, o.status, u.username FROM trade_offers o JOIN users u ON o.offerer_id = u.id WHERE o.listing_id = ? ORDER BY o.created_at DESC')) {
     $stmt->bind_param('i', $listing_id);
     $stmt->execute();
     $offers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -79,11 +79,16 @@ if ($stmt = $conn->prepare('SELECT o.id, o.offer_item, o.message, o.status, u.us
   <p>You want: <strong><?= htmlspecialchars($listing['want_item']) ?></strong></p>
   <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
   <table>
-    <tr><th>Offerer</th><th>Offer Item</th><th>Message</th><th>Status</th><th>Actions</th></tr>
+    <tr><th>Offerer</th><th>Offers</th><th>Requests</th><th>Message</th><th>Status</th><th>Actions</th></tr>
     <?php foreach ($offers as $o): ?>
+      <?php
+        $give = $o['offer_items'] ? json_decode($o['offer_items'], true) : ($o['offer_item'] ? [$o['offer_item']] : []);
+        $take = $o['request_items'] ? json_decode($o['request_items'], true) : [];
+      ?>
       <tr>
         <td><?= htmlspecialchars($o['username']) ?></td>
-        <td><?= htmlspecialchars($o['offer_item']) ?></td>
+        <td><?= htmlspecialchars(implode(', ', $give)) ?></td>
+        <td><?= htmlspecialchars(implode(', ', $take)) ?></td>
         <td><?= htmlspecialchars($o['message']) ?></td>
         <td><?= htmlspecialchars($o['status']) ?></td>
         <td>
