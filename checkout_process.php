@@ -1,10 +1,10 @@
 <?php
+$client = require __DIR__ . '/includes/square.php';
 $squareConfig = require __DIR__ . '/includes/square-config.php';
 require 'includes/requirements.php';
 require 'includes/auth.php';
 require 'includes/db.php';
 require 'includes/url.php';
-$client = require 'includes/square.php';
 
 $token = $_POST['token'] ?? '';
 $listing_id = isset($_POST['listing_id']) ? intval($_POST['listing_id']) : 0;
