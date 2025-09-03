@@ -3,31 +3,26 @@ declare(strict_types=1);
 
 /**
  * /public_html/checkout_process.php
- * Direct HTTPS call to Square Payments API (no SDK classes).
- * - Validates user & listing
- * - Computes amount on server from listings table (never trust client for price)
- * - Creates payment via Square REST (cURL)
- * - Logs payment in DB (optional but recommended)
- *
+ * Direct HTTPS call to Square Payments API (NO SDK classes).
  * Expects POST:
  *   - token OR source_id  (from Web Payments SDK tokenize())
- *   - listing_id          (int)  -> server fetches price
+ *   - listing_id          (int) server computes price
  */
 
 error_reporting(0); // set E_ALL in dev
 
-require __DIR__ . '/includes/auth.php';  // should set $user_id (or from session)
-require __DIR__ . '/includes/db.php';    // returns $mysqli connection
-
+require __DIR__ . '/includes/auth.php';  // should establish $user_id (or from session)
+$mysqli = require __DIR__ . '/includes/db.php'; // returns mysqli
 $config = require __DIR__ . '/config.php';
 
+// --- Config ---
 $env         = strtolower(trim($config['square_environment'] ?? 'sandbox'));
 $accessToken = trim((string)($config['square_access_token'] ?? ''));
 $locationId  = trim((string)($config['square_location_id'] ?? ''));
 $currency    = strtoupper((string)($config['CURRENCY'] ?? 'USD'));
 
-// ---- Inputs ----
-$sourceId   = '';
+// --- Inputs ---
+$sourceId = '';
 if (isset($_POST['token']) && is_string($_POST['token'])) {
   $sourceId = trim($_POST['token']);
 } elseif (isset($_POST['source_id']) && is_string($_POST['source_id'])) {
@@ -35,7 +30,7 @@ if (isset($_POST['token']) && is_string($_POST['token'])) {
 }
 $listing_id = isset($_POST['listing_id']) ? (int)$_POST['listing_id'] : 0;
 
-// ---- Basic checks ----
+// --- Validate base inputs ---
 if ($accessToken === '' || $locationId === '') {
   http_response_code(500);
   exit('Square configuration missing (access token or location id).');
@@ -45,7 +40,7 @@ if ($sourceId === '' || $listing_id <= 0) {
   exit('Invalid payment data.');
 }
 
-// ---- Fetch price from DB (server-side authority) ----
+// --- Fetch price from DB (authoritative) ---
 $price = null; // decimal dollars
 $stmt = $mysqli->prepare('SELECT price FROM listings WHERE id = ? LIMIT 1');
 $stmt->bind_param('i', $listing_id);
@@ -65,12 +60,12 @@ if ($amount <= 0) {
   exit;
 }
 
-// ---- Square API base ----
+// --- Square API base ---
 $base = ($env === 'production')
   ? 'https://connect.squareup.com'
   : 'https://connect.squareupsandbox.com';
 
-// ---- Build request payload ----
+// --- Build payload ---
 $payload = [
   'idempotency_key' => bin2hex(random_bytes(16)),
   'source_id'       => $sourceId,
@@ -79,11 +74,12 @@ $payload = [
     'amount'   => $amount,   // integer cents
     'currency' => $currency,
   ],
+ 
   // 'note' => 'Order #' . $listing_id,
   // 'autocomplete' => true,
 ];
 
-// ---- Call Square via cURL ----
+// --- cURL call to /v2/payments ---
 $ch = curl_init($base . '/v2/payments');
 curl_setopt_array($ch, [
   CURLOPT_POST           => true,
@@ -108,8 +104,8 @@ if ($err) {
   exit('Payment gateway error.');
 }
 
-$resp   = json_decode($raw, true);
-$status = 'FAILED';
+$resp     = json_decode($raw, true);
+$status   = 'FAILED';
 $paymentId = null;
 
 if ($http >= 200 && $http < 300 && isset($resp['payment']['id'])) {
@@ -117,13 +113,11 @@ if ($http >= 200 && $http < 300 && isset($resp['payment']['id'])) {
   $status    = strtoupper((string)($resp['payment']['status'] ?? 'COMPLETED'));
 }
 
-// ---- Optional: record payment in DB ----
+// Log payment ---
 try {
-  // prefer whatever your auth layer uses; fallback to session
   if (!isset($user_id)) {
     $user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
   }
-
   if ($stmt = $mysqli->prepare('INSERT INTO payments (user_id, listing_id, amount, payment_id, status) VALUES (?,?,?,?,?)')) {
     $stmt->bind_param('iiiss', $user_id, $listing_id, $amount, $paymentId, $status);
     $stmt->execute();
@@ -133,7 +127,7 @@ try {
   error_log('Payment log insert failed: ' . $e->getMessage());
 }
 
-// ---- Redirect based on status ----
+// --- Final redirect ---
 if ($status === 'COMPLETED' || $status === 'APPROVED' || $status === 'AUTHORIZED') {
   header('Location: /success.php');
   exit;
