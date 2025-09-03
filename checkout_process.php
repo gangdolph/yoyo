@@ -1,4 +1,5 @@
 <?php
+$squareConfig = require __DIR__ . '/includes/square-config.php';
 require 'includes/requirements.php';
 require 'includes/auth.php';
 require 'includes/db.php';

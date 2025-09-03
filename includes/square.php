@@ -30,15 +30,24 @@ if (is_dir($squareSrc)) {
   $loader->addPsr4('Square\\', $squareSrc, true);
 }
 
-if (!class_exists('\Square\SquareClient')) {
+if (!class_exists('\\Square\\SquareClient')) {
   throw new RuntimeException("Square SDK not autoloadable after PSR-4 registration");
 }
 
-$config = require __DIR__ . '/../config.square.php';
-$env = (strtolower(trim($config['SQUARE_ENV'] ?? 'sandbox')) === 'production') ? 'production' : 'sandbox';
+// Load Square configuration constants
+require __DIR__ . '/../config.square.php';
+
+$token = SQUARE_ACCESS_TOKEN;
+if ($token === '') {
+  throw new RuntimeException('SQUARE_ACCESS_TOKEN is not defined or empty');
+}
+
+$env = defined('SQUARE_ENV') && strtolower(SQUARE_ENV) === 'production'
+  ? 'production'
+  : 'sandbox';
 
 $client = new \Square\SquareClient(
-  $config['SQUARE_ACCESS_TOKEN'] ?? '',
+  $token,
   $env, // 'sandbox' or 'production'
   [
     // Optional SDK options, e.g. 'timeout' => 30

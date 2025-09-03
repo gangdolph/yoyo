@@ -1,4 +1,5 @@
 <?php
+$squareConfig = require __DIR__ . '/includes/square-config.php';
 $client = require __DIR__ . '/includes/square.php';
 // $paymentsApi = $client->getPaymentsApi();
 
