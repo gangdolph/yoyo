@@ -42,24 +42,24 @@ if (!empty($_SESSION['user_id'])) {
       <img class="logo-img" src="/assets/logo.png" alt="SkuzE Logo">
     </a>
     <ul>
-      <li><a href="/index.php">Home</a></li>
-      <li><a href="/about.php">About</a></li>
-      <li><a href="/help.php">Help/FAQ</a></li>
+      <li><a href="/index.php" data-i18n="home">Home</a></li>
+      <li><a href="/about.php" data-i18n="about">About</a></li>
+      <li><a href="/help.php" data-i18n="help">Help/FAQ</a></li>
     </ul>
   </nav>
   <form class="site-search header-center" action="/search.php" method="get">
-    <input type="text" name="q" placeholder="Search..." value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
+    <input type="text" name="q" placeholder="Search..." data-i18n-placeholder="search" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
   </form>
   <nav class="site-nav header-right">
     <ul>
 <?php if (empty($_SESSION['user_id'])): ?>
-      <li><a href="/login.php">Login</a></li>
-      <li><a href="/register.php">Register</a></li>
+      <li><a href="/login.php" data-i18n="login">Login</a></li>
+      <li><a href="/register.php" data-i18n="register">Register</a></li>
 <?php else: ?>
-      <li><a href="/dashboard.php">Dashboard</a></li>
-      <li><a href="/notifications.php">Notifications<?php if (!empty($unread_notifications)): ?><span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
-      <li><a href="/messages.php">Messages<?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
-      <li><a href="/logout.php">Logout</a></li>
+      <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
+      <li><a href="/notifications.php" data-i18n="notifications">Notifications<?php if (!empty($unread_notifications)): ?><span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
+      <li><a href="/messages.php" data-i18n="messages">Messages<?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
+      <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
       <li class="user-info"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></li>
 <?php endif; ?>
       <li class="cart-link">
@@ -91,3 +91,4 @@ if (!empty($_SESSION['user_id'])) {
 </div>
 <script type="module" src="/assets/admin-pattern.js" defer></script>
 <script type="module" src="/assets/theme-toggle.js" defer></script>
+<script type="module" src="/assets/language-toggle.js" defer></script>
