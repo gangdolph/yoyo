@@ -22,6 +22,6 @@ return [
   // SQUARE_APPLICATION_ID, SQUARE_LOCATION_ID, SQUARE_ACCESS_TOKEN, SQUARE_ENVIRONMENT
   'square_application_id' => 'sandbox-sq0idb-LBdSpI5-PgJvxpaCuuSMDw',
   'square_location_id' => 'LC1389SGKMP9N',
-  'square_access_token' => 'EAAAl9dEd85Sn8FqsM4E66W52jKmauFEVzwroM8ORpAAetkvCnNPFjdaEMKIbaye',
+  'square_access_token' => 'EAAAly0J7zt7XMl2qEIGK_WmWB_i4v-KYU9tDWKPxPO0VcpwNNqIu89DDjMddFO_',
   'square_environment' => 'sandbox', // or 'production'
 ];
