@@ -31,7 +31,7 @@ if (!$listing) {
   <div class="content listing-detail">
     <div class="listing-image">
       <?php if (!empty($listing['image'])): ?>
-        <img src="uploads/<?= htmlspecialchars($listing['image']); ?>" alt="<?= htmlspecialchars($listing['title']); ?>">
+        <img class="thumb-square" src="uploads/<?= htmlspecialchars($listing['image']); ?>" alt="<?= htmlspecialchars($listing['title']); ?>">
       <?php endif; ?>
     </div>
     <section class="listing-info">

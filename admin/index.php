@@ -22,15 +22,30 @@ $requests = $stmt->fetch_all(MYSQLI_ASSOC);
 <body>
   <?php include '../includes/header.php'; ?>
   <h2>Admin Panel</h2>
-  <div class="nav-links">
-    <a class="btn" href="listings.php">Review Listings</a>
-    <a class="btn" href="trade-requests.php">Review Trade Requests</a>
-    <a class="btn" href="discount-codes.php">Manage Discount Codes</a>
-    <a class="btn" href="users.php">Manage Users</a>
-    <a class="btn" href="theme.php">Vaporwave Theme Settings</a>
-    <a class="btn" href="toolbox.php">Manage Toolbox</a>
-    <a class="btn" href="../dashboard.php">Back to Dashboard</a>
+  <div class="nav-sections">
+    <div class="nav-section">
+      <h3>Listings</h3>
+      <ul class="nav-links">
+        <li><a class="btn" href="listings.php">Review Listings</a></li>
+      </ul>
+    </div>
+    <div class="nav-section">
+      <h3>Trades</h3>
+      <ul class="nav-links">
+        <li><a class="btn" href="trade-requests.php">Review Trade Requests</a></li>
+      </ul>
+    </div>
+    <div class="nav-section">
+      <h3>System</h3>
+      <ul class="nav-links">
+        <li><a class="btn" href="discount-codes.php">Manage Discount Codes</a></li>
+        <li><a class="btn" href="users.php">Manage Users</a></li>
+        <li><a class="btn" href="theme.php">Vaporwave Theme Settings</a></li>
+        <li><a class="btn" href="toolbox.php">Manage Toolbox</a></li>
+      </ul>
+    </div>
   </div>
+  <p class="back-link"><a class="btn" href="../dashboard.php">Back to Dashboard</a></p>
 
   <table>
     <thead>

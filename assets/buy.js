@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', e => {
       e.preventDefault();
       const id = btn.dataset.id;
-      fetch('cart.php?action=add', {
+      fetch('/cart.php?action=add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded'

@@ -32,7 +32,7 @@ if (!empty($_SESSION['user_id'])):
   $unread_messages = count_unread_messages($conn, $_SESSION['user_id']);
   $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
   $unread_total = $unread_messages + $unread_notifications;
-  $cart_count = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
+  $cart_count = isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
 endif;
 ?>
 
@@ -53,6 +53,9 @@ endif;
     </form>
   </div>
   <nav class="site-nav header-right">
+<?php if (!empty($_SESSION['user_id'])): ?>
+    <div class="user-info"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></div>
+<?php endif; ?>
     <ul>
 <?php if (empty($_SESSION['user_id'])): ?>
       <li><a href="/login.php" data-i18n="login">Login</a></li>
@@ -60,24 +63,20 @@ endif;
 <?php else: ?>
       <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
 
-      <li><a href="/notifications.php" data-i18n="notifications">Notifications<?php if (!empty($unread_notifications)): ?><span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
-      <li><a href="/messages.php" aria-label="Messages"><img src="/assets/message.svg" alt="" aria-hidden="true"><?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
-
       <li>
         <a href="/notifications.php" aria-label="Notifications<?= $unread_total ? ' (' . $unread_total . ' unread)' : '' ?>">
-          <img src="/assets/bell.svg" alt="">
+          <img src="/assets/bell.svg" alt="Notifications">
           <?php if (!empty($unread_total)): ?><span class="badge"><?= $unread_total ?></span><?php endif; ?>
         </a>
       </li>
       <li>
         <a href="/messages.php" aria-label="Messages<?= $unread_messages ? ' (' . $unread_messages . ' unread)' : '' ?>">
-          <img src="/assets/envelope.svg" alt="">
+          <img src="/assets/envelope.svg" alt="Messages">
           <?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?>
         </a>
       </li>
 
       <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
-      <li class="user-info"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></li>
 <?php endif; ?>
       <li class="cart-link">
         <a href="/cart.php">
