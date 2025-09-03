@@ -47,7 +47,7 @@ if ($result = $conn->query($sql)) {
           <?php if ($l['owner_id'] == $user_id): ?>
             <a href="trade-listing.php?edit=<?= $l['id'] ?>">Edit</a>
             <a href="trade-listings.php?delete=<?= $l['id'] ?>" onclick="return confirm('Delete listing?');">Delete</a>
-            <a href="trade-offers.php?listing=<?= $l['id'] ?>">Offers (<?= $l['pending'] ?>)</a>
+            <a href="trade.php?listing=<?= $l['id'] ?>">Offers (<?= $l['pending'] ?>)</a>
           <?php elseif ($l['status'] === 'open' && $user_id): ?>
             <a href="trade-offer.php?id=<?= $l['id'] ?>">Make Offer</a>
           <?php endif; ?>

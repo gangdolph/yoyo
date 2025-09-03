@@ -34,7 +34,7 @@ if (!empty($_SESSION['user_id'])) {
 
     $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
   }
-  $cart_count = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
+  $cart_count = isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
 ?>
 <header class="site-header">
   <nav class="site-nav header-left">
@@ -58,7 +58,7 @@ if (!empty($_SESSION['user_id'])) {
 <?php else: ?>
       <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
       <li><a href="/notifications.php" data-i18n="notifications">Notifications<?php if (!empty($unread_notifications)): ?><span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
-      <li><a href="/messages.php" data-i18n="messages">Messages<?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
+      <li><a href="/messages.php" aria-label="Messages"><img src="/assets/message.svg" alt="" aria-hidden="true"><?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
       <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
       <li class="user-info"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></li>
 <?php endif; ?>
@@ -68,12 +68,12 @@ if (!empty($_SESSION['user_id'])) {
           <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
         </a>
       </li>
-      <li>
+      <li class="settings-toggles">
         <button id="language-toggle" type="button" aria-haspopup="menu" aria-controls="language-menu">
           <img src="/assets/flags/en.svg" alt="English">
         </button>
+        <button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button>
       </li>
-      <li><button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button></li>
     </ul>
   </nav>
 </header>
