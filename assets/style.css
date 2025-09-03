@@ -14,8 +14,12 @@
   --footer-pattern: none;
   --pattern-hue: 0deg;
   --pattern-sat: 100%;
+  --font-header: 'Share Tech Mono', monospace;
+  --font-body: 'Share Tech Mono', monospace;
+  --font-paragraph: 'Share Tech Mono', monospace;
   --btn-depth: 6px;
   --cta-depth: 20px;
+  --cta-gradient: linear-gradient(45deg, var(--accent), var(--vap2), var(--vap3));
 }
 
 [data-theme='dark'] {
@@ -64,12 +68,20 @@ body {
   background-repeat: no-repeat;
   background-size: cover;
   color: var(--fg);
-  font-family: 'Share Tech Mono', monospace;
+  font-family: var(--font-body, 'Share Tech Mono', monospace);
   text-transform: uppercase;
   font-size: 0.85rem;
   margin: 0;
   padding: 1rem;
   padding-bottom: 4rem;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-header, var(--font-body, 'Share Tech Mono', monospace));
+}
+
+p {
+  font-family: var(--font-paragraph, var(--font-body, 'Share Tech Mono', monospace));
 }
 
 body.site-frame {
@@ -193,7 +205,7 @@ body.site-frame {
 }
 
 .btn-cta {
-  background: linear-gradient(45deg, var(--accent), var(--vap2), var(--vap3));
+  background: var(--cta-gradient);
   background-size: 300% 300%;
   color: #fff;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.4);
@@ -396,6 +408,9 @@ footer:hover {
   align-items: center;
   gap: 0.5rem;
   margin-left: 1rem;
+  padding: 0.25rem 0.5rem;
+  border: 2px solid transparent;
+  border-radius: 4px;
 }
 
 .avatar-sm {
@@ -411,6 +426,39 @@ footer:hover {
   padding: 2px 4px;
   border-radius: 3px;
   margin-left: 4px;
+}
+
+@keyframes statusPulse {
+  0%, 100% {
+    transform: perspective(400px) translateZ(0);
+  }
+  50% {
+    transform: perspective(400px) translateZ(6px);
+  }
+}
+
+.user-display.status-online {
+  border-color: #0f0;
+  box-shadow: 0 0 6px #0f0, inset 0 2px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+  animation: statusPulse 2s infinite;
+}
+
+.user-display.status-busy {
+  border-color: #f00;
+  box-shadow: 0 0 6px #f00, inset 0 2px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+  animation: statusPulse 1.5s infinite;
+}
+
+.user-display.status-away {
+  border-color: #ffa500;
+  box-shadow: 0 0 6px #ffa500, inset 0 2px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+  animation: statusPulse 2.5s infinite;
+}
+
+.user-display.status-offline {
+  border-color: #777;
+  box-shadow: 0 0 6px #777, inset 0 2px 0 rgba(255, 255, 255, 0.3), inset 0 -2px 0 rgba(0, 0, 0, 0.3);
+  animation: statusPulse 4s infinite;
 }
 
 .notice {
@@ -500,9 +548,6 @@ footer:hover {
   padding: 0.5rem;
   border-radius: 4px;
 }
-
-.site-search input {
-  background: var(--bg);
 
 .search-container {
   background: rgba(0, 0, 0, 0.5);

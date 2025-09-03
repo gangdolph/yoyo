@@ -2,15 +2,17 @@
 function username_with_avatar(mysqli $conn, int $user_id, ?string $username = null): string {
     $vip = 0;
     $vip_expires = null;
-    if ($stmt = $conn->prepare('SELECT username, vip_status, vip_expires_at FROM users WHERE id = ?')) {
+    $status = 'offline';
+    if ($stmt = $conn->prepare('SELECT username, vip_status, vip_expires_at, status FROM users WHERE id = ?')) {
         $stmt->bind_param('i', $user_id);
         $stmt->execute();
-        $stmt->bind_result($usernameFetched, $vip, $vip_expires);
+        $stmt->bind_result($usernameFetched, $vip, $vip_expires, $statusFetched);
         $stmt->fetch();
         $stmt->close();
         if ($username === null) {
             $username = $usernameFetched;
         }
+        $status = $statusFetched;
     }
 
     $avatar = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxMDAgMTAwIj48Y2lyY2xlIGN4PSI1MCIgY3k9IjUwIiByPSI1MCIgZmlsbD0iI2NjYyIvPjwvc3ZnPg==';
@@ -35,7 +37,13 @@ function username_with_avatar(mysqli $conn, int $user_id, ?string $username = nu
         $badge = ' <span class="vip-badge">VIP</span>';
     }
 
-    return '<span class="user-display"><img src="' . htmlspecialchars($avatar, ENT_QUOTES, 'UTF-8') . '" alt="" class="avatar-sm">' .
+    $allowedStatuses = ['online', 'offline', 'busy', 'away'];
+    if (!in_array($status, $allowedStatuses, true)) {
+        $status = 'offline';
+    }
+
+    return '<span class="user-display status-' . htmlspecialchars($status, ENT_QUOTES, 'UTF-8') . '"><img src="' .
+           htmlspecialchars($avatar, ENT_QUOTES, 'UTF-8') . '" alt="" class="avatar-sm">' .
            htmlspecialchars($username ?? '', ENT_QUOTES, 'UTF-8') . $badge . '</span>';
 }
 ?>

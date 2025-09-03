@@ -9,7 +9,7 @@ if (!$_SESSION['is_admin']) {
   exit;
 }
 
-$statuses = ['online', 'offline', 'busy'];
+$statuses = ['online', 'offline', 'busy', 'away']; // flair presets
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0) {
   header('Location: users.php');
@@ -85,6 +85,7 @@ if ($stmt) {
         <?php endforeach; ?>
       </select>
     </label><br>
+    <p class="notice">Status controls the animated border shown with the user's name.</p>
     <label>
       <input type="checkbox" name="is_admin" value="1" <?= $is_admin ? 'checked' : '' ?>> Admin
     </label><br>
