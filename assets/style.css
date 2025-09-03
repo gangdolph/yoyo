@@ -69,6 +69,7 @@ body {
   font-size: 0.85rem;
   margin: 0;
   padding: 1rem;
+  padding-bottom: 4rem;
 }
 
 .vap-lines {
@@ -222,9 +223,25 @@ body {
   cursor: pointer;
 }
 
+#language-toggle {
+  background: none;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+#language-toggle img {
+  width: 1.5rem;
+  height: auto;
+  display: block;
+}
+
 footer {
-  position: relative;
-  margin-top: 3rem;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
   text-align: center;
   font-size: 0.9rem;
   background: linear-gradient(180deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.7)), var(--gradient);
@@ -349,6 +366,7 @@ footer:hover {
 
 .site-header {
   position: relative;
+  z-index: 10;
   display: flex;
   flex-direction: row;
   justify-content: space-between;
@@ -488,10 +506,12 @@ button {
   border-radius: 4px;
 }
 
+
 form button {
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
   border: none;
+  outline: 1px solid var(--bg);
   border-radius: 4px;
   width: 100%;
   box-shadow: 0 calc(var(--btn-depth) / 2) 0 rgba(0, 0, 0, 0.4);
@@ -500,11 +520,13 @@ form button {
 }
 
 form button:hover {
+  color: var(--bg);
   transform: perspective(400px) translateZ(var(--btn-depth));
   box-shadow: 0 var(--btn-depth) var(--btn-depth) rgba(0, 0, 0, 0.4);
 }
 
 form button:active {
+  color: var(--bg);
   transform: perspective(400px) translateZ(calc(var(--btn-depth) / 3));
   box-shadow: inset 0 calc(var(--btn-depth) / 3) 0 rgba(0, 0, 0, 0.4);
 }
@@ -518,7 +540,8 @@ form button:active {
 
 .btn {
   background: var(--accent);
-  color: #fff;
+  color: var(--bg);
+  margin-right: 0.5rem;
   border-top: 2px solid rgba(255, 255, 255, 0.4);
   border-left: 2px solid rgba(255, 255, 255, 0.4);
   border-bottom: 2px solid rgba(0, 0, 0, 0.4);
@@ -537,6 +560,7 @@ form button:active {
 
 .btn:hover,
 .btn:focus {
+  color: var(--bg);
   transform: perspective(400px) translateZ(var(--btn-depth));
   box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.2),
     inset 0 -2px 0 rgba(0, 0, 0, 0.4),
@@ -544,6 +568,7 @@ form button:active {
 }
 
 .btn:active {
+  color: var(--bg);
   transform: perspective(400px) translateZ(calc(var(--btn-depth) / 3));
   box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.2),
     inset 0 2px 0 rgba(0, 0, 0, 0.4),
@@ -558,7 +583,7 @@ form button:active {
   display: none;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 2000;
 }
 
 #theme-modal.open {
@@ -843,6 +868,7 @@ tbody tr:nth-child(even) {
   margin: 0 1rem 0.5rem;
   font-weight: 600;
   text-transform: uppercase;
+  color: #333;
 }
 
 .side-nav ul {
@@ -856,7 +882,7 @@ tbody tr:nth-child(even) {
 }
 
 .side-nav a {
-  color: var(--fg);
+  color: #ddd;
   text-decoration: none;
 }
 
@@ -878,6 +904,12 @@ tbody tr:nth-child(even) {
 
 .side-nav-toggle:hover {
   transform: perspective(400px) translateZ(6px);
+}
+
+body.nav-open .site-header,
+body.nav-open footer {
+  transform: perspective(500px) translateX(200px) translateZ(0);
+  transition: transform 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55);
 }
 
 .badge {

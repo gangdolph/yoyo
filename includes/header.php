@@ -68,6 +68,11 @@ if (!empty($_SESSION['user_id'])) {
           <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
         </a>
       </li>
+      <li>
+        <button id="language-toggle" type="button" aria-haspopup="menu" aria-controls="language-menu">
+          <img src="/assets/flags/en.svg" alt="English">
+        </button>
+      </li>
       <li><button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button></li>
     </ul>
   </nav>
