@@ -99,7 +99,9 @@ $grand_total = $total + $tax + $shipping;
     <p><strong>Total: $<?= number_format($grand_total, 2) ?></strong></p>
     <button type="submit">Update Cart</button>
 </form>
-<p><a href="checkout.php">Proceed to Checkout</a></p>
+<form action="checkout.php" method="get">
+    <button type="submit">Proceed to Checkout</button>
+</form>
 <?php endif; ?>
 </body>
 </html>

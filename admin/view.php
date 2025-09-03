@@ -3,6 +3,7 @@ require '../includes/auth.php';
 require '../includes/db.php';
 require '../includes/csrf.php';
 require '../includes/user.php';
+require '../includes/notifications.php';
 
 if (!$_SESSION['is_admin']) {
   header("Location: ../dashboard.php");
@@ -48,6 +49,9 @@ $online_status = $is_online ? "<span style='color:green;'>Online</span>" : "<spa
         $update->bind_param("ssi", $status, $note, $id);
         if (!$update->execute()) {
           error_log('Execute failed: ' . $update->error);
+        } else {
+          $msg = notification_message('service_status', ['status' => $status]);
+          create_notification($conn, $data['user_id'], 'service_status', $msg);
         }
         $update->close();
       }
