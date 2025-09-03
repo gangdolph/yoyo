@@ -11,18 +11,47 @@ require __DIR__ . '/_debug_bootstrap.php';
  *   - listing_id          (int) server computes price
  */
 
-require __DIR__ . '/includes/auth.php';           // should establish $user_id (or from session)
-$maybeDb = require __DIR__ . '/includes/db.php';  // may return mysqli OR set $conn/$mysqli globals
+require __DIR__ . '/includes/auth.php';
+$maybeDb = require __DIR__ . '/includes/db.php';  // may return mysqli OR set $conn/$mysqli
 $config  = require __DIR__ . '/config.php';
 
 try {
-  // --- Config ---
+  /* --------------------------- Resolve mysqli handle --------------------------- */
+  $db = null;
+  if ($maybeDb instanceof mysqli) {
+    $db = $maybeDb;
+  } elseif (isset($mysqli) && $mysqli instanceof mysqli) {
+    $db = $mysqli;
+  } elseif (isset($conn) && $conn instanceof mysqli) {
+    $db = $conn;
+  } else {
+    // Fallback: construct from config.php
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+    $host = trim($config['db_host'] ?? '127.0.0.1');
+    $port = (int)($config['db_port'] ?? 3306);
+    if (strpos($host, ':') !== false) {
+      [$h, $p] = explode(':', $host, 2);
+      if ($h !== '') $host = $h;
+      if (ctype_digit($p ?? '')) $port = (int)$p;
+    }
+    $db = new mysqli(
+      $host,
+      $config['db_user'] ?? '',
+      $config['db_pass'] ?? '',
+      $config['db_name'] ?? '',
+      $port
+    );
+    $db->set_charset('utf8mb4');
+    $db->query("SET sql_mode = ''");
+  }
+
+  /* ------------------------------ Config/inputs -------------------------------- */
   $env         = strtolower(trim($config['square_environment'] ?? 'sandbox'));
   $accessToken = trim((string)($config['square_access_token'] ?? ''));
   $locationId  = trim((string)($config['square_location_id'] ?? ''));
   $currency    = strtoupper((string)($config['CURRENCY'] ?? 'USD'));
 
-  // --- Inputs ---
+  // Inputs
   $sourceId = '';
   if (isset($_POST['token']) && is_string($_POST['token'])) {
     $sourceId = trim($_POST['token']);
@@ -31,27 +60,26 @@ try {
   }
   $listing_id = isset($_POST['listing_id']) ? (int)$_POST['listing_id'] : 0;
 
-  // Helper: redirect to cancel with short reason (and log details)
+  // Helper: redirect to cancel with short reason + log
   $fail = function (string $reason, string $logDetail = '') {
     if ($logDetail !== '') error_log('[checkout_process] ' . $reason . ' :: ' . $logDetail);
     header('Location: /cancel.php?reason=' . urlencode($reason));
     exit;
   };
 
-  // --- Validate base inputs ---
   if ($accessToken === '' || $locationId === '') {
-    $fail('config_error', 'Missing access token or location id');
+    $fail('config_error', 'missing access token or location id');
   }
   if ($sourceId === '') {
-    $fail('missing_token', 'No token/source_id in POST');
+    $fail('missing_token', 'no token/source_id in POST');
   }
   if ($listing_id <= 0) {
-    $fail('missing_listing', 'No listing_id in POST');
+    $fail('missing_listing', 'missing or invalid listing_id');
   }
 
-  // --- Fetch price from DB (authoritative) ---
+  /* --------------------------- Server-side pricing ----------------------------- */
   $price = null; // decimal dollars
-  $stmt = $mysqli->prepare('SELECT price FROM listings WHERE id = ? LIMIT 1');
+  $stmt = $db->prepare('SELECT price FROM listings WHERE id = ? LIMIT 1');
   $stmt->bind_param('i', $listing_id);
   $stmt->execute();
   $stmt->bind_result($price);
@@ -61,31 +89,28 @@ try {
   }
   $stmt->close();
 
-  // Convert dollars->cents safely
-  $amount = (int)round(((float)$price) * 100);
+  $amount = (int)round(((float)$price) * 100); // cents
   if ($amount <= 0) {
     $fail('invalid_amount', 'price=' . var_export($price, true));
   }
 
-  // --- Square API base ---
+  /* --------------------------- Square REST via cURL ---------------------------- */
   $base = ($env === 'production')
     ? 'https://connect.squareup.com'
     : 'https://connect.squareupsandbox.com';
 
-  // --- Build payload ---
   $payload = [
     'idempotency_key' => bin2hex(random_bytes(16)),
     'source_id'       => $sourceId,
     'location_id'     => $locationId,
     'amount_money'    => [
-      'amount'   => $amount,   // integer cents
+      'amount'   => $amount,
       'currency' => $currency,
     ],
     // 'note' => 'Order #' . $listing_id,
     // 'autocomplete' => true,
   ];
 
-  // --- cURL call to /v2/payments ---
   $ch = curl_init($base . '/v2/payments');
   curl_setopt_array($ch, [
     CURLOPT_POST           => true,
@@ -105,9 +130,8 @@ try {
   curl_close($ch);
 
   if ($err) {
-    // Transport error (network/TLS/etc.)
     error_log('Square cURL error: ' . $err . ' body=' . $raw);
-    $fail('gateway_error', 'cURL errno=' . $err);
+    $fail('gateway_error', 'curl_errno=' . $err);
   }
 
   $resp      = json_decode($raw, true);
@@ -118,7 +142,7 @@ try {
     $paymentId = (string)$resp['payment']['id'];
     $status    = strtoupper((string)($resp['payment']['status'] ?? 'COMPLETED'));
 
-    // Optional: success breadcrumb
+    // Log breadcrumb
     error_log('[checkout_process] success env=' . $env . ' paymentId=' . $paymentId . ' status=' . $status);
 
     // Log payment (best-effort)
@@ -126,7 +150,7 @@ try {
       if (!isset($user_id)) {
         $user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
       }
-      if ($stmt = $mysqli->prepare('INSERT INTO payments (user_id, listing_id, amount, payment_id, status) VALUES (?,?,?,?,?)')) {
+      if ($stmt = $db->prepare('INSERT INTO payments (user_id, listing_id, amount, payment_id, status) VALUES (?,?,?,?,?)')) {
         $stmt->bind_param('iiiss', $user_id, $listing_id, $amount, $paymentId, $status);
         $stmt->execute();
         $stmt->close();
@@ -139,17 +163,15 @@ try {
     exit;
   }
 
-  // --- Failure from Square: extract first error code/detail (safe) ---
-  $errCode = 'unknown';
+  // Failure from Square: map first error code to a short reason
+  $errCode = 'payment_failed';
   $errDetail = '';
   if (is_array($resp) && isset($resp['errors'][0])) {
     $errCode   = (string)($resp['errors'][0]['code']   ?? $errCode);
     $errDetail = (string)($resp['errors'][0]['detail'] ?? '');
   }
-
-  // Log full failure for server diagnostics, but send a short reason to UI
   error_log('Square payment failed: HTTP ' . $http . ' ' . $raw);
-  $short = strtolower(preg_replace('/[^A-Z0-9_]+/i', '_', $errCode)); // e.g., unauthorized → unauthorized
+  $short = strtolower(preg_replace('/[^A-Z0-9_]+/i', '_', $errCode));
   if ($short === '' || $short === '_') $short = 'payment_failed';
   $fail($short, 'detail=' . $errDetail);
 
