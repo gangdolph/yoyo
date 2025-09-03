@@ -26,10 +26,14 @@ session_start();
         <h2>Repair. Modding. Modern Support.</h2>
         <p>Whether you're fixing, upgrading, or building — SkuzE has you covered.</p>
         <div class="cta-buttons">
-          <a href="buy.php" class="btn-cta">Buy</a>
-          <a href="sell.php" class="btn-cta">Sell</a>
-          <a href="trade.php" class="btn-cta">Trade</a>
-          <a href="services.php" class="btn-cta">Services</a>
+          <div class="cta-row">
+            <a href="services.php" class="btn-cta">Services</a>
+          </div>
+          <div class="cta-row">
+            <a href="buy.php" class="btn-cta">Buy</a>
+            <a href="sell.php" class="btn-cta">Sell</a>
+            <a href="trade.php" class="btn-cta">Trade</a>
+          </div>
         </div>
       </div>
     </div>

@@ -151,6 +151,7 @@ $stmt->close();
       <?php endif; ?>
     </nav>
   <?php endif; ?>
+  <div id="cart-toast" class="toast" role="status" aria-live="polite"></div>
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>

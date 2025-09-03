@@ -23,12 +23,28 @@ if (!empty($_SESSION['user_id'])) {
       $_SESSION['status'] = $status;
     }
   }
+
+    $unread_messages = 0;
+    if ($stmt = $conn->prepare('SELECT COUNT(*) FROM messages WHERE recipient_id = ? AND read_at IS NULL')) {
+      $stmt->bind_param('i', $_SESSION['user_id']);
+      $stmt->execute();
+      $stmt->bind_result($unread_messages);
+      $stmt->fetch();
+      $stmt->close();
+    }
+
+    $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
+  }
+  $cart_count = isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
+
+
     $unread_messages = count_unread_messages($conn, $_SESSION['user_id']);
     $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
     $unread_total = $unread_messages + $unread_notifications;
   }
   $cart_count = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
 ?>
+
 <header class="site-header">
   <nav class="site-nav header-left">
     <a href="/index.php" class="logo-link">
@@ -52,6 +68,10 @@ if (!empty($_SESSION['user_id'])) {
       <li><a href="/register.php" data-i18n="register">Register</a></li>
 <?php else: ?>
       <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
+
+      <li><a href="/notifications.php" data-i18n="notifications">Notifications<?php if (!empty($unread_notifications)): ?><span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
+      <li><a href="/messages.php" aria-label="Messages"><img src="/assets/message.svg" alt="" aria-hidden="true"><?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
+
       <li>
         <a href="/notifications.php" aria-label="Notifications<?= $unread_total ? ' (' . $unread_total . ' unread)' : '' ?>">
           <img src="/assets/bell.svg" alt="">
@@ -64,6 +84,7 @@ if (!empty($_SESSION['user_id'])) {
           <?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?>
         </a>
       </li>
+
       <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
       <li class="user-info"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></li>
 <?php endif; ?>
@@ -73,12 +94,12 @@ if (!empty($_SESSION['user_id'])) {
           <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
         </a>
       </li>
-      <li>
+      <li class="settings-toggles">
         <button id="language-toggle" type="button" aria-haspopup="menu" aria-controls="language-menu">
           <img src="/assets/flags/en.svg" alt="English">
         </button>
+        <button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button>
       </li>
-      <li><button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button></li>
     </ul>
   </nav>
 </header>

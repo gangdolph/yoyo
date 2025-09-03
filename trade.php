@@ -4,160 +4,114 @@ require 'includes/db.php';
 require 'includes/csrf.php';
 
 $user_id = $_SESSION['user_id'];
-$is_vip = false;
-if ($stmtVip = $conn->prepare('SELECT vip_status, vip_expires_at FROM users WHERE id=?')) {
-  $stmtVip->bind_param('i', $user_id);
-  $stmtVip->execute();
-  $stmtVip->bind_result($vipStatus, $vipExpires);
-  if ($stmtVip->fetch()) {
-    $is_vip = $vipStatus && (!$vipExpires || strtotime($vipExpires) > time());
-  }
-  $stmtVip->close();
-}
-$edit_id = isset($_GET['edit']) ? (int)$_GET['edit'] : 0;
-$editing = false;
-$request = null;
-$db_error = null;
-if ($edit_id) {
-  $stmt = $conn->prepare("SELECT * FROM service_requests WHERE id = ? AND user_id = ? AND type = 'trade'");
-  if ($stmt) {
-    $stmt->bind_param("ii", $edit_id, $user_id);
-    if (!$stmt->execute()) {
-      error_log('Trade lookup failed: ' . $stmt->error);
-      $db_error = 'Unable to load trade request. Please try again later.';
+$listing_filter = isset($_GET['listing']) ? intval($_GET['listing']) : null;
+$error = '';
+
+// Handle accept/decline actions
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (!validate_token($_POST['csrf_token'] ?? '')) {
+        $error = 'Invalid CSRF token.';
     } else {
-      $request = $stmt->get_result()->fetch_assoc();
-      if ($request && in_array($request['status'], ['New', 'Pending'])) {
-        $editing = true;
-      } else {
-        $request = null;
-      }
+        $offer_id = intval($_POST['offer_id'] ?? 0);
+        $action = $_POST['action'] ?? '';
+        if ($offer_id && in_array($action, ['accept','decline'], true)) {
+            $status = $action === 'accept' ? 'accepted' : 'declined';
+            if ($stmt = $conn->prepare('UPDATE trade_offers o JOIN trade_listings l ON o.listing_id = l.id SET o.status=? WHERE o.id=? AND l.owner_id=? AND o.status="pending"')) {
+                $stmt->bind_param('sii', $status, $offer_id, $user_id);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+        $redirect = 'trade.php';
+        if ($listing_filter) {
+            $redirect .= '?listing=' . $listing_filter;
+        }
+        header('Location: ' . $redirect);
+        exit;
     }
-    $stmt->close();
-  } else {
-    error_log('Prepare failed: ' . $conn->error);
-  }
 }
 
-$requests = [];
-$stmt = $conn->prepare("SELECT id, make, model, device_type, status, created_at FROM service_requests WHERE user_id = ? AND type='trade' ORDER BY created_at DESC");
-if ($stmt) {
-  $stmt->bind_param("i", $user_id);
-  if (!$stmt->execute()) {
-    error_log('Trade list query failed: ' . $stmt->error);
-    $db_error = $db_error ?? 'Unable to load your trade requests. Please try again later.';
-  } else {
-    $requests = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-  }
-  $stmt->close();
+// Fetch offers
+$offers = [];
+if ($listing_filter) {
+    $sql = 'SELECT o.id, i.name AS offer_item, o.status, o.use_escrow, o.message, u.username FROM trade_offers o JOIN trade_listings l ON o.listing_id = l.id JOIN users u ON o.offerer_id = u.id JOIN inventory_items i ON o.offered_item_id = i.id WHERE o.listing_id = ? AND l.owner_id = ? ORDER BY o.created_at DESC';
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('ii', $listing_filter, $user_id);
+        $stmt->execute();
+        $offers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+    }
 } else {
-  error_log('Prepare failed: ' . $conn->error);
+    $sql = 'SELECT o.id, i.name AS offer_item, o.status, o.use_escrow, o.message, tl.have_item, tl.want_item, u.username, (tl.owner_id = ?) AS incoming FROM trade_offers o JOIN trade_listings tl ON o.listing_id = tl.id JOIN users u ON o.offerer_id = u.id JOIN inventory_items i ON o.offered_item_id = i.id WHERE o.offerer_id = ? OR tl.owner_id = ? ORDER BY o.created_at DESC';
+    if ($stmt = $conn->prepare($sql)) {
+        $stmt->bind_param('iii', $user_id, $user_id, $user_id);
+        $stmt->execute();
+        $offers = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+        $stmt->close();
+    }
 }
+
 ?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
-  <title><?= $editing ? 'Update Trade Request' : 'Trade with SkuzE' ?></title>
+  <title>Trade Offers</title>
   <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
-
-  <?php if ($is_vip): ?>
-    <p class="notice">VIP members skip admin approval for trade requests.</p>
-  <?php endif; ?>
-
-  <?php if ($db_error): ?>
-    <p class="error"><?= htmlspecialchars($db_error) ?></p>
-  <?php endif; ?>
-
-  <h2><?= $editing ? 'Update Trade Request' : 'Trade a Device' ?></h2>
-  <form method="post" action="<?= $editing ? 'update-request.php' : 'submit-request.php' ?>" enctype="multipart/form-data">
-    <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-    <input type="hidden" name="type" value="trade">
-    <input type="hidden" name="category" value="trade">
-    <?php if ($editing): ?>
-      <input type="hidden" name="id" value="<?= $request['id'] ?>">
-    <?php endif; ?>
-
-    <label>Current Device Make</label>
-    <input name="make" type="text" value="<?= htmlspecialchars($request['make'] ?? '') ?>" required>
-
-    <label>Current Device Model</label>
-    <input name="model" type="text" value="<?= htmlspecialchars($request['model'] ?? '') ?>" required>
-
-    <label>Desired Device</label>
-    <input name="device_type" type="text" value="<?= htmlspecialchars($request['device_type'] ?? '') ?>" required>
-
-    <label>Condition / Details</label>
-    <textarea name="issue" required><?= htmlspecialchars($request['issue'] ?? '') ?></textarea>
-
-    <div class="drop-area" id="drop-area">
-      <p>Drag &amp; drop a photo or use the button</p>
-      <input type="file" name="photo" id="photo" accept="image/jpeg,image/png">
-      <button type="button" class="fallback" onclick="document.getElementById('photo').click();">Choose Photo</button>
-    </div>
-
-    <button type="submit"><?= $editing ? 'Update Request' : 'Submit Request' ?></button>
-  </form>
-
-  <?php if (!empty($requests)): ?>
-    <h3>My Trade Requests</h3>
+  <h2>Trade Offers</h2>
+  <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
+  <?php if ($offers): ?>
     <table>
-      <thead>
+      <tr>
+        <?php if ($listing_filter): ?>
+          <th>From</th><th>Item</th><th>Escrow</th><th>Message</th><th>Status</th><th>Actions</th>
+        <?php else: ?>
+          <th>Listing Have/Want</th><th>From</th><th>Item</th><th>Escrow</th><th>Status</th><th>Actions</th>
+        <?php endif; ?>
+      </tr>
+      <?php foreach ($offers as $o): ?>
         <tr>
-          <th>#</th>
-          <th>Current Device</th>
-          <th>Desired Device</th>
-          <th>Status</th>
-          <th>Submitted</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-      <?php foreach ($requests as $r): ?>
-        <tr>
-          <td><?= $r['id'] ?></td>
-          <td><?= htmlspecialchars($r['make']) . ' ' . htmlspecialchars($r['model']) ?></td>
-          <td><?= htmlspecialchars($r['device_type']) ?></td>
-          <td><?= htmlspecialchars($r['status'] ?? 'New') ?></td>
-          <td><?= $r['created_at'] ?></td>
-          <td>
-            <?php if (in_array($r['status'], ['New', 'Pending'])): ?>
-              <a href="trade.php?edit=<?= $r['id'] ?>">Edit</a>
-              <form action="trade-cancel.php" method="post" style="display:inline">
-                <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-                <input type="hidden" name="id" value="<?= $r['id'] ?>">
-                <button type="submit">Cancel</button>
-              </form>
-            <?php endif; ?>
-          </td>
+          <?php if ($listing_filter): ?>
+            <td><?= htmlspecialchars($o['username']) ?></td>
+            <td><?= htmlspecialchars($o['offer_item']) ?></td>
+            <td><?= $o['use_escrow'] ? 'Yes' : 'No' ?></td>
+            <td><?= htmlspecialchars($o['message']) ?></td>
+            <td><?= htmlspecialchars($o['status']) ?></td>
+            <td>
+              <?php if ($o['status'] === 'pending'): ?>
+                <form method="post" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+                  <input type="hidden" name="offer_id" value="<?= $o['id'] ?>">
+                  <button name="action" value="accept" type="submit">Accept</button>
+                  <button name="action" value="decline" type="submit">Decline</button>
+                </form>
+              <?php endif; ?>
+            </td>
+          <?php else: ?>
+            <td><?= htmlspecialchars($o['have_item']) ?>/<?= htmlspecialchars($o['want_item']) ?></td>
+            <td><?= htmlspecialchars($o['username']) ?></td>
+            <td><?= htmlspecialchars($o['offer_item']) ?></td>
+            <td><?= $o['use_escrow'] ? 'Yes' : 'No' ?></td>
+            <td><?= htmlspecialchars($o['status']) ?></td>
+            <td>
+              <?php if ($o['incoming'] && $o['status'] === 'pending'): ?>
+                <form method="post" style="display:inline">
+                  <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+                  <input type="hidden" name="offer_id" value="<?= $o['id'] ?>">
+                  <button name="action" value="accept" type="submit">Accept</button>
+                  <button name="action" value="decline" type="submit">Decline</button>
+                </form>
+              <?php endif; ?>
+            </td>
+          <?php endif; ?>
         </tr>
       <?php endforeach; ?>
-      </tbody>
     </table>
+  <?php else: ?>
+    <p>No trade offers yet.</p>
   <?php endif; ?>
-
-  <script>
-    const dropArea = document.getElementById('drop-area');
-    const fileInput = document.getElementById('photo');
-    ['dragenter', 'dragover'].forEach(evt => {
-      dropArea.addEventListener(evt, e => {
-        e.preventDefault();
-        dropArea.classList.add('dragover');
-      });
-    });
-    ['dragleave', 'drop'].forEach(evt => {
-      dropArea.addEventListener(evt, e => {
-        e.preventDefault();
-        dropArea.classList.remove('dragover');
-      });
-    });
-    dropArea.addEventListener('drop', e => {
-      fileInput.files = e.dataTransfer.files;
-    });
-  </script>
-
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>

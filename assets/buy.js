@@ -29,8 +29,23 @@ document.addEventListener('DOMContentLoaded', () => {
         credentials: 'same-origin'
       })
         .then(res => res.json())
-        .then(() => {
-          window.location.href = 'cart.php';
+        .then(data => {
+          const link = document.querySelector('.cart-link a');
+          let badge = document.querySelector('.cart-link .badge');
+          if (badge) {
+            badge.textContent = data.count;
+          } else {
+            badge = document.createElement('span');
+            badge.className = 'badge';
+            badge.textContent = data.count;
+            link.appendChild(badge);
+          }
+          const toast = document.getElementById('cart-toast');
+          if (toast) {
+            toast.textContent = 'Added to cart';
+            toast.classList.add('show');
+            setTimeout(() => toast.classList.remove('show'), 2000);
+          }
         });
     });
   });
