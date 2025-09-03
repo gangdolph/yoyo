@@ -20,8 +20,18 @@ document.addEventListener('DOMContentLoaded', () => {
     btn.addEventListener('click', e => {
       e.preventDefault();
       const id = btn.dataset.id;
-      alert(`Added to cart: ${id}`);
-      // TODO: integrate cart functionality
+      fetch('cart.php?action=add', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: `id=${encodeURIComponent(id)}`,
+        credentials: 'same-origin'
+      })
+        .then(res => res.json())
+        .then(() => {
+          window.location.href = 'cart.php';
+        });
     });
   });
 });

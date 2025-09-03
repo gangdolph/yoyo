@@ -45,14 +45,18 @@ $squareJs = $environment === 'production'
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <h2>Checkout</h2>
-  <h3><?= htmlspecialchars($listing['title']); ?></h3>
-  <p><?= nl2br(htmlspecialchars($listing['description'])); ?></p>
-  <p class="price">$<?= htmlspecialchars($listing['price']); ?></p>
+  <div class="checkout-summary">
+    <h3>Order Summary</h3>
+    <p class="item"><?= htmlspecialchars($listing['title']); ?></p>
+    <p class="description"><?= nl2br(htmlspecialchars($listing['description'])); ?></p>
+    <p class="price">$<?= htmlspecialchars($listing['price']); ?></p>
+    <p class="subtotal">Subtotal: $<?= htmlspecialchars($listing['price']); ?></p>
+  </div>
   <form id="payment-form" method="post" action="checkout_process.php">
     <div id="card-container" data-app-id="<?= htmlspecialchars($applicationId); ?>" data-location-id="<?= htmlspecialchars($locationId); ?>"></div>
     <input type="hidden" name="token" id="token">
     <input type="hidden" name="listing_id" value="<?= $listing['id']; ?>">
-    <button type="submit">Pay Now</button>
+    <button type="submit" class="checkout-submit">Pay Now</button>
   </form>
   <?php include 'includes/footer.php'; ?>
 </body>
