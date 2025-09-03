@@ -2,6 +2,7 @@
 require 'includes/auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
+require 'includes/notifications.php';
 
 $user_id = $_SESSION['user_id'];
 $offer_id = isset($_GET['offer']) ? intval($_GET['offer']) : 0;
@@ -19,6 +20,7 @@ if ($offer_id) {
 if (!$offer || ($offer['owner_id'] != $user_id && $offer['offerer_id'] != $user_id)) {
     die('Offer not found.');
 }
+$other_user_id = ($offer['owner_id'] == $user_id) ? $offer['offerer_id'] : $offer['owner_id'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
@@ -53,6 +55,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param('ssssi', $fulfillment_type, $shipping_address, $meeting_location, $tracking_number, $offer_id);
                 $stmt->execute();
                 $stmt->close();
+                $msg = notification_message('shipping_update', ['offer_id' => $offer_id]);
+                create_notification($conn, $other_user_id, 'shipping_update', $msg);
             }
             header('Location: trade-fulfillment.php?offer=' . $offer_id);
             exit;

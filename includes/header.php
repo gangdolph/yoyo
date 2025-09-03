@@ -23,16 +23,9 @@ if (!empty($_SESSION['user_id'])) {
       $_SESSION['status'] = $status;
     }
   }
-    $unread_messages = 0;
-    if ($stmt = $conn->prepare('SELECT COUNT(*) FROM messages WHERE recipient_id = ? AND read_at IS NULL')) {
-      $stmt->bind_param('i', $_SESSION['user_id']);
-      $stmt->execute();
-      $stmt->bind_result($unread_messages);
-      $stmt->fetch();
-      $stmt->close();
-    }
-
+    $unread_messages = count_unread_messages($conn, $_SESSION['user_id']);
     $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
+    $unread_total = $unread_messages + $unread_notifications;
   }
   $cart_count = isset($_SESSION['cart']) ? count($_SESSION['cart']) : 0;
 ?>
@@ -47,9 +40,11 @@ if (!empty($_SESSION['user_id'])) {
       <li><a href="/help.php" data-i18n="help">Help/FAQ</a></li>
     </ul>
   </nav>
-  <form class="site-search header-center" action="/search.php" method="get">
-    <input type="text" name="q" placeholder="Search..." data-i18n-placeholder="search" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
-  </form>
+  <div class="search-container header-center">
+    <form class="site-search" action="/search.php" method="get">
+      <input type="text" name="q" placeholder="Search..." data-i18n-placeholder="search" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
+    </form>
+  </div>
   <nav class="site-nav header-right">
     <ul>
 <?php if (empty($_SESSION['user_id'])): ?>
@@ -57,13 +52,23 @@ if (!empty($_SESSION['user_id'])) {
       <li><a href="/register.php" data-i18n="register">Register</a></li>
 <?php else: ?>
       <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
-      <li><a href="/notifications.php" data-i18n="notifications">Notifications<?php if (!empty($unread_notifications)): ?><span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
-      <li><a href="/messages.php" data-i18n="messages">Messages<?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
+      <li>
+        <a href="/notifications.php" aria-label="Notifications<?= $unread_total ? ' (' . $unread_total . ' unread)' : '' ?>">
+          <img src="/assets/bell.svg" alt="">
+          <?php if (!empty($unread_total)): ?><span class="badge"><?= $unread_total ?></span><?php endif; ?>
+        </a>
+      </li>
+      <li>
+        <a href="/messages.php" aria-label="Messages<?= $unread_messages ? ' (' . $unread_messages . ' unread)' : '' ?>">
+          <img src="/assets/envelope.svg" alt="">
+          <?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?>
+        </a>
+      </li>
       <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
       <li class="user-info"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></li>
 <?php endif; ?>
       <li class="cart-link">
-        <a href="/checkout.php">
+        <a href="/cart.php">
           <img src="/assets/cart.svg" alt="Cart">
           <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
         </a>

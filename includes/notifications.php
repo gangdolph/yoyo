@@ -1,6 +1,34 @@
 <?php
 require_once __DIR__ . '/db.php';
 
+/**
+ * Return a formatted notification message for common events.
+ *
+ * @param string $type The notification type key
+ * @param array  $context Additional data such as status or offer_id
+ * @return string
+ */
+function notification_message($type, $context = []) {
+    $templates = [
+        'admin_message'   => 'You have a new message from an administrator.',
+        'shipping_update' => 'Shipping details updated for trade offer #' . ($context['offer_id'] ?? ''),
+    ];
+
+    if ($type === 'service_status') {
+        $map = [
+            'New'              => 'Your service request was received.',
+            'In Progress'      => 'Your service request is now in progress.',
+            'Awaiting Customer'=> 'We are awaiting your response for the service request.',
+            'Completed'        => 'Your service request has been completed.',
+            'Shipped'          => 'Your serviced item has been shipped.',
+        ];
+        $status = $context['status'] ?? '';
+        return $map[$status] ?? "Your service request status changed to $status.";
+    }
+
+    return $templates[$type] ?? '';
+}
+
 function create_notification($conn, $user_id, $type, $message) {
     if ($stmt = $conn->prepare('INSERT INTO notifications (user_id, type, message) VALUES (?, ?, ?)')) {
         $stmt->bind_param('iss', $user_id, $type, $message);
@@ -39,6 +67,19 @@ function count_unread_notifications($conn, $user_id) {
     }
     return 0;
 }
+
+function count_unread_messages($conn, $user_id) {
+    if ($stmt = $conn->prepare('SELECT COUNT(*) FROM messages WHERE recipient_id = ? AND read_at IS NULL')) {
+        $stmt->bind_param('i', $user_id);
+        $stmt->execute();
+        $stmt->bind_result($count);
+        $stmt->fetch();
+        $stmt->close();
+        return $count;
+    }
+    return 0;
+}
+
 
 function mark_notifications_read($conn, $user_id) {
     if ($stmt = $conn->prepare('UPDATE notifications SET is_read = 1 WHERE user_id = ?')) {
