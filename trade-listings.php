@@ -34,7 +34,10 @@ if ($result = $conn->query($sql)) {
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <h2>Trade Listings</h2>
-  <p><a href="trade-listing.php">Create new trade listing</a></p>
+  <p>
+    <a href="trade.php">Trade Offers</a> |
+    <a href="trade-listing.php">Create Listing</a>
+  </p>
   <table>
     <tr><th>Have</th><th>Want</th><th>Status</th><th>Owner</th><th>Actions</th></tr>
     <?php foreach ($listings as $l): ?>

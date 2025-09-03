@@ -25,16 +25,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid CSRF token.';
     } else {
-        $category = htmlspecialchars(trim($_POST['category'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $make = isset($_POST['make']) ? htmlspecialchars(trim($_POST['make']), ENT_QUOTES, 'UTF-8') : null;
-        $model = isset($_POST['model']) ? htmlspecialchars(trim($_POST['model']), ENT_QUOTES, 'UTF-8') : null;
-        $serial = isset($_POST['serial']) ? htmlspecialchars(trim($_POST['serial']), ENT_QUOTES, 'UTF-8') : null;
-        $issue = htmlspecialchars(trim($_POST['issue'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $build = htmlspecialchars(trim($_POST['build'] ?? 'no'), ENT_QUOTES, 'UTF-8');
-        $device_type = isset($_POST['device_type']) ? htmlspecialchars(trim($_POST['device_type']), ENT_QUOTES, 'UTF-8') : null;
+        $category   = htmlspecialchars(trim($_POST['category'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $brand_id   = isset($_POST['brand_id']) ? (int)$_POST['brand_id'] : null;
+        $model_id   = isset($_POST['model_id']) ? (int)$_POST['model_id'] : null;
+        $make       = isset($_POST['make']) ? htmlspecialchars(trim($_POST['make']), ENT_QUOTES, 'UTF-8') : null;
+        $model      = isset($_POST['model']) ? htmlspecialchars(trim($_POST['model']), ENT_QUOTES, 'UTF-8') : null;
+        $serial     = isset($_POST['serial']) ? htmlspecialchars(trim($_POST['serial']), ENT_QUOTES, 'UTF-8') : null;
+        $issue      = htmlspecialchars(trim($_POST['issue'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $build      = htmlspecialchars(trim($_POST['build'] ?? 'no'), ENT_QUOTES, 'UTF-8');
+        $device_type= isset($_POST['device_type']) ? htmlspecialchars(trim($_POST['device_type']), ENT_QUOTES, 'UTF-8') : null;
 
-        if ($category === '' || $issue === '') {
-          $error = 'Category and issue are required.';
+        if ($category === '' || $issue === '' || !$brand_id || !$model_id) {
+          $error = 'Category, brand and model are required.';
+        }
+
+        if (!$error) {
+          if ($stmtB = $conn->prepare('SELECT id FROM service_brands WHERE id=?')) {
+            $stmtB->bind_param('i', $brand_id);
+            $stmtB->execute();
+            $stmtB->store_result();
+            if ($stmtB->num_rows === 0) {
+              $error = 'Invalid brand.';
+            }
+            $stmtB->close();
+          }
+        }
+
+        if (!$error) {
+          if ($stmtM = $conn->prepare('SELECT id FROM service_models WHERE id=? AND brand_id=?')) {
+            $stmtM->bind_param('ii', $model_id, $brand_id);
+            $stmtM->execute();
+            $stmtM->store_result();
+            if ($stmtM->num_rows === 0) {
+              $error = 'Invalid model.';
+            }
+            $stmtM->close();
+          }
         }
 
         // ✅ Handle optional file upload
@@ -69,11 +95,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (!$error) {
           $status = $is_vip ? 'In Progress' : 'New';
           $stmt = $conn->prepare("INSERT INTO service_requests
-            (user_id, type, category, make, model, serial, issue, build, device_type, photo, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            (user_id, type, category, brand_id, model_id, make, model, serial, issue, build, device_type, photo, status)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
           if ($stmt) {
-            $stmt->bind_param("issssssssss", $user_id, $type, $category, $make, $model, $serial, $issue, $build, $device_type, $filename, $status);
+            $stmt->bind_param("issiiisssssss", $user_id, $type, $category, $brand_id, $model_id, $make, $model, $serial, $issue, $build, $device_type, $filename, $status);
             if ($stmt->execute()) {
               $success = true;
 
