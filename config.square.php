@@ -1,28 +1,16 @@
 <?php
-/**
- * Square-specific configuration.
- *
- * This file provides the SQUARE_ACCESS_TOKEN constant required for
- * communicating with Square's APIs and may optionally define SQUARE_ENV
- * (e.g., 'production' or 'sandbox').
- *
- * Real credentials should not be committed to version control. Instead, set
- * the relevant environment variables or edit this file locally without
- * committing.
- */
+return [
+  // 'sandbox' while testing; switch to 'production' with live creds later
+  'SQUARE_ENV'            => 'sandbox',
 
-if (!defined('SQUARE_ACCESS_TOKEN')) {
-    // Prefer an environment variable but fall back to a placeholder.
-    define('SQUARE_ACCESS_TOKEN', getenv('SQUARE_ACCESS_TOKEN') ?: 'YOUR_SQUARE_ACCESS_TOKEN');
-}
+  // **This must be the Access Token** from Square Dashboard → Developer → Your App → Credentials
+  // It looks like: EAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  'SQUARE_ACCESS_TOKEN'   => 'EAAAl9dEd85Sn8FqsM4E66W52jKmauFEVzwroM8ORpAAetkvCnNPFjdaEMKIbaye',
 
-// Optionally define SQUARE_ENV if provided via environment variable.
-if (!defined('SQUARE_ENV')) {
-    $env = getenv('SQUARE_ENV');
-    if ($env !== false && $env !== '') {
-        define('SQUARE_ENV', $env);
-    }
-}
+  // These are also in the Dashboard (ensure they match the same environment)
+  'SQUARE_LOCATION_ID'    => 'LC1389SGKMP9N',
+  'SQUARE_APPLICATION_ID' => 'sandbox-sq0idb-LBdSpI5-PgJvxpaCuuSMDw',
 
-?>
+  'CURRENCY'              => 'USD',
+];
 
