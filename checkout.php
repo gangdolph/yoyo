@@ -28,6 +28,12 @@ if (!$listing) {
     exit;
 }
 
+if (!isset($_SESSION['shipping'][$listing_id])) {
+    header('Location: shipping.php?listing_id=' . $listing_id);
+    exit;
+}
+$shipping = $_SESSION['shipping'][$listing_id];
+
 $applicationId = $squareConfig['application_id'];
 $locationId = $squareConfig['location_id'];
 $environment = $squareConfig['environment'];
@@ -51,6 +57,14 @@ $squareJs = $environment === 'production'
     <p class="description"><?= nl2br(htmlspecialchars($listing['description'])); ?></p>
     <p class="price">$<?= htmlspecialchars($listing['price']); ?></p>
     <p class="subtotal">Subtotal: $<?= htmlspecialchars($listing['price']); ?></p>
+  </div>
+  <div class="shipping-summary">
+    <h3>Shipping</h3>
+    <p><?= nl2br(htmlspecialchars($shipping['address'])); ?></p>
+    <p>Method: <?= htmlspecialchars($shipping['method']); ?></p>
+    <?php if (!empty($shipping['notes'])): ?>
+      <p>Notes: <?= nl2br(htmlspecialchars($shipping['notes'])); ?></p>
+    <?php endif; ?>
   </div>
   <form id="payment-form" method="post" action="checkout_process.php">
     <div id="card-container" data-app-id="<?= htmlspecialchars($applicationId); ?>" data-location-id="<?= htmlspecialchars($locationId); ?>"></div>

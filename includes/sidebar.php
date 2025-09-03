@@ -10,7 +10,7 @@
       <li><a href="trade-listings.php">Trade Listings</a></li>
       <li><a href="trade-listing.php">Create Listing</a></li>
       <li><a href="promoted.php">Promoted Shops</a></li>
-      <li><a href="vip.php">VIP Membership</a></li>
+      <li><a href="vip.php">VIP Plans</a></li>
     </ul>
   </div>
   <div class="side-nav-group" aria-labelledby="side-nav-resources">
@@ -18,6 +18,8 @@
     <ul aria-labelledby="side-nav-resources">
       <li><a href="toolbox.php">Toolbox</a></li>
       <li><a href="forum/">Forum</a></li>
+      <li><a href="terms.php">Terms</a></li>
+      <li><a href="privacy.php">Privacy</a></li>
     </ul>
   </div>
 </nav>

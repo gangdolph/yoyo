@@ -87,18 +87,20 @@ if ($token) {
 <body>
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
-  <h2>Reset Password</h2>
-  <?php if (!empty($error)) echo "<p style='color:red;'>" . htmlspecialchars($error) . "</p>"; ?>
-  <?php if (!empty($msg)) echo "<p style='color:green;'>" . htmlspecialchars($msg) . "</p>"; ?>
+  <div class="page-container">
+    <h2>Reset Password</h2>
+    <?php if (!empty($error)) echo "<p style='color:red;'>" . htmlspecialchars($error) . "</p>"; ?>
+    <?php if (!empty($msg)) echo "<p style='color:green;'>" . htmlspecialchars($msg) . "</p>"; ?>
 
-  <?php if ($valid): ?>
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-    <input type="password" name="new_password" required placeholder="New password">
-    <input type="password" name="confirm_password" required placeholder="Confirm new password">
-    <button type="submit">Reset Password</button>
-  </form>
-  <?php endif; ?>
+    <?php if ($valid): ?>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+      <input type="password" name="new_password" required placeholder="New password">
+      <input type="password" name="confirm_password" required placeholder="Confirm new password">
+      <button type="submit">Reset Password</button>
+    </form>
+    <?php endif; ?>
+  </div>
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>

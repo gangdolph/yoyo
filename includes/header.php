@@ -98,6 +98,8 @@ endif;
     <h2 id="theme-modal-title">Select Theme</h2>
     <div class="theme-error" role="alert"></div>
     <div class="theme-options"></div>
+    <h3 class="border-heading">Borders</h3>
+    <div class="border-options"></div>
     <div id="theme-preview" class="theme-preview">
       <p>Sample text</p>
       <button type="button" class="btn">Sample Button</button>

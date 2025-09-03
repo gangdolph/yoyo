@@ -30,9 +30,11 @@ require __DIR__ . '/includes/auth.php';
   $msg = $map[$reason] ?? 'Your payment was canceled. No charges were made.';
   ?>
 
-  <h2>Payment Canceled</h2>
-  <p><?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?></p>
-  <p><a href="dashboard.php">Return to dashboard</a></p>
+  <div class="page-container">
+    <h2>Payment Canceled</h2>
+    <p><?= htmlspecialchars($msg, ENT_QUOTES, 'UTF-8') ?></p>
+    <p><a href="dashboard.php">Return to dashboard</a></p>
+  </div>
 
   <?php include 'includes/footer.php'; ?>
 </body>

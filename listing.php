@@ -42,7 +42,7 @@ if (!$listing) {
       <p class="price">$<?= htmlspecialchars($listing['price']); ?></p>
     </section>
     <section class="listing-cta">
-      <a class="btn" href="checkout.php?listing_id=<?= $listing['id']; ?>">Proceed to Checkout</a>
+      <a class="btn" href="shipping.php?listing_id=<?= $listing['id']; ?>">Proceed to Checkout</a>
       <div class="related-items">
         <h3>Related Items</h3>
         <p>

@@ -98,8 +98,10 @@ function buildOptions() {
     btn.type = 'button';
     btn.className = 'btn';
     btn.dataset.border = ch;
-    btn.textContent = ch;
     btn.setAttribute('aria-pressed', 'false');
+    btn.setAttribute('aria-label', `${borders[ch]} border`);
+    btn.style.borderStyle = borders[ch];
+    btn.textContent = '';
     btn.addEventListener('click', () => applyBorder(ch));
     borderContainer.appendChild(btn);
   });
@@ -107,7 +109,7 @@ function buildOptions() {
 
 async function initThemes() {
   try {
-    const res = await fetch('/assets/themes.json');
+    const res = await fetch(`/assets/themes.json?ts=${Date.now()}`);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data && typeof data === 'object' && !Array.isArray(data)) {

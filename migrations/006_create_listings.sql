@@ -7,7 +7,7 @@ CREATE TABLE listings (
   price DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   category VARCHAR(50),
   image VARCHAR(255) NOT NULL,
-  status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+  status ENUM('pending','approved','rejected','closed','delisted') NOT NULL DEFAULT 'pending',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE
 );

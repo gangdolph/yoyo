@@ -7,8 +7,10 @@
 <body>
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
-  <h2>About SkuzE</h2>
-  <p>SkuzE provides repair, modding, and custom build services for your electronics.</p>
+  <div class="page-container">
+    <h2>About SkuzE</h2>
+    <p>SkuzE provides repair, modding, and custom build services for your electronics.</p>
+  </div>
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>

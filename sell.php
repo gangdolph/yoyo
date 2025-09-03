@@ -3,6 +3,7 @@ require 'includes/auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
 
+$user_id = $_SESSION['user_id'];
 $is_vip = false;
 if ($stmt = $conn->prepare('SELECT vip_status, vip_expires_at FROM users WHERE id=?')) {
     $stmt->bind_param('i', $user_id);
@@ -14,7 +15,11 @@ if ($stmt = $conn->prepare('SELECT vip_status, vip_expires_at FROM users WHERE i
     $stmt->close();
 }
 
-$user_id = $_SESSION['user_id'];
+if (!$is_vip) {
+    header('Location: vip.php?upgrade=1');
+    exit;
+}
+
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

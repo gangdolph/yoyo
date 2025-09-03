@@ -199,65 +199,66 @@ $totalPages = max($totalUserPages, $totalListingPages, $totalTradePages);
 <body>
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
-  <h2>Search Results</h2>
-  <form method="get" class="search-filters">
-    <input type="text" name="q" value="<?= htmlspecialchars($q) ?>" placeholder="Search...">
-    <select name="category">
-      <option value="">All Categories</option>
-      <option value="phone" <?= $category==='phone'?'selected':'' ?>>Phone</option>
-      <option value="console" <?= $category==='console'?'selected':'' ?>>Game Console</option>
-      <option value="pc" <?= $category==='pc'?'selected':'' ?>>PC</option>
-      <option value="other" <?= $category==='other'?'selected':'' ?>>Other</option>
-    </select>
-    <select name="role">
-      <option value="">All Roles</option>
-      <option value="admin" <?= $role==='admin'?'selected':'' ?>>Admin</option>
-      <option value="user" <?= $role==='user'?'selected':'' ?>>User</option>
-    </select>
-    <button type="submit">Search</button>
-  </form>
-<?php if ($q === ''): ?>
-  <p>Please enter a search query.</p>
-<?php elseif ($searchError): ?>
-  <p><?= htmlspecialchars($errorMessage) ?></p>
-<?php else: ?>
-  <section>
-    <h3>Users</h3>
-    <?php if ($userResults): ?>
-      <ul>
-      <?php foreach ($userResults as $u): ?>
-        <li><a href="view-profile.php?id=<?= $u['id']; ?>"><?= htmlspecialchars($u['username']) ?></a> (<?= htmlspecialchars($u['status']) ?>)</li>
-      <?php endforeach; ?>
-      </ul>
-    <?php else: ?>
-      <p>No users found.</p>
-    <?php endif; ?>
-  </section>
-  <section>
-    <h3>Listings</h3>
-    <?php if ($listingResults): ?>
-      <ul>
-        <?php foreach ($listingResults as $l): ?>
-          <li><a href="checkout.php?listing_id=<?= $l['id']; ?>"><?= htmlspecialchars($l['title']) ?></a> - <?= htmlspecialchars($l['category']) ?></li>
+  <div class="page-container">
+    <h2>Search Results</h2>
+    <form method="get" class="search-filters">
+      <input type="text" name="q" value="<?= htmlspecialchars($q) ?>" placeholder="Search...">
+      <select name="category">
+        <option value="">All Categories</option>
+        <option value="phone" <?= $category==='phone'?'selected':'' ?>>Phone</option>
+        <option value="console" <?= $category==='console'?'selected':'' ?>>Game Console</option>
+        <option value="pc" <?= $category==='pc'?'selected':'' ?>>PC</option>
+        <option value="other" <?= $category==='other'?'selected':'' ?>>Other</option>
+      </select>
+      <select name="role">
+        <option value="">All Roles</option>
+        <option value="admin" <?= $role==='admin'?'selected':'' ?>>Admin</option>
+        <option value="user" <?= $role==='user'?'selected':'' ?>>User</option>
+      </select>
+      <button type="submit">Search</button>
+    </form>
+  <?php if ($q === ''): ?>
+    <p>Please enter a search query.</p>
+  <?php elseif ($searchError): ?>
+    <p><?= htmlspecialchars($errorMessage) ?></p>
+  <?php else: ?>
+    <section>
+      <h3>Users</h3>
+      <?php if ($userResults): ?>
+        <ul>
+        <?php foreach ($userResults as $u): ?>
+          <li><a href="view-profile.php?id=<?= $u['id']; ?>"><?= htmlspecialchars($u['username']) ?></a> (<?= htmlspecialchars($u['status']) ?>)</li>
         <?php endforeach; ?>
-      </ul>
-    <?php else: ?>
-      <p>No listings found.</p>
-    <?php endif; ?>
-  </section>
-  <section>
-    <h3>Trade Requests</h3>
-    <?php if ($tradeResults): ?>
-      <ul>
-      <?php foreach ($tradeResults as $t): ?>
-        <li><?= htmlspecialchars($t['make']) ?> <?= htmlspecialchars($t['model']) ?> (<?= htmlspecialchars($t['device_type']) ?>) by <?= htmlspecialchars($t['username']) ?></li>
-      <?php endforeach; ?>
-      </ul>
-    <?php else: ?>
-      <p>No trade requests found.</p>
-    <?php endif; ?>
-  </section>
-  <?php if ($totalPages > 1): ?>
+        </ul>
+      <?php else: ?>
+        <p>No users found.</p>
+      <?php endif; ?>
+    </section>
+    <section>
+      <h3>Listings</h3>
+      <?php if ($listingResults): ?>
+        <ul>
+          <?php foreach ($listingResults as $l): ?>
+            <li><a href="shipping.php?listing_id=<?= $l['id']; ?>"><?= htmlspecialchars($l['title']) ?></a> - <?= htmlspecialchars($l['category']) ?></li>
+          <?php endforeach; ?>
+        </ul>
+      <?php else: ?>
+        <p>No listings found.</p>
+      <?php endif; ?>
+    </section>
+    <section>
+      <h3>Trade Requests</h3>
+      <?php if ($tradeResults): ?>
+        <ul>
+        <?php foreach ($tradeResults as $t): ?>
+          <li><?= htmlspecialchars($t['make']) ?> <?= htmlspecialchars($t['model']) ?> (<?= htmlspecialchars($t['device_type']) ?>) by <?= htmlspecialchars($t['username']) ?></li>
+        <?php endforeach; ?>
+        </ul>
+      <?php else: ?>
+        <p>No trade requests found.</p>
+      <?php endif; ?>
+    </section>
+    <?php if ($totalPages > 1): ?>
     <nav class="pagination">
       <?php if ($page > 1): ?>
         <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>">&laquo; Prev</a>
@@ -268,6 +269,7 @@ $totalPages = max($totalUserPages, $totalListingPages, $totalTradePages);
     </nav>
   <?php endif; ?>
 <?php endif; ?>
+  </div>
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>
