@@ -8,7 +8,8 @@ require 'includes/csrf.php';
 // Only a category is expected – if it is missing send the user back to
 // the service selection page.
 $category = $_GET['category'] ?? '';
-if (!$category) {
+$allowed = ['repair', 'clean', 'build', 'other'];
+if (!in_array($category, $allowed)) {
   header('Location: services.php');
   exit;
 }
@@ -32,14 +33,14 @@ function label($text, $name, $type = 'text', $required = true) {
       <input type="hidden" name="type" value="service">
       <input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>">
 
-    <?php if ($category === 'phone' || $category === 'console' || $category === 'pc'): ?>
+    <?php if (in_array($category, ['repair', 'clean', 'build'])): ?>
       <?php label("Make", "make"); ?>
       <?php label("Model", "model"); ?>
       <?php label("IMEI / Serial Number", "serial", 'text', false); ?>
       <?php label("Describe the problem", "issue"); ?>
     <?php endif; ?>
 
-    <?php if ($category === 'pc'): ?>
+    <?php if ($category === 'build'): ?>
       <label>Is this a custom build request?</label>
       <select name="build">
         <option value="no">No</option>

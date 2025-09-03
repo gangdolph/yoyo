@@ -1,6 +1,7 @@
 <?php
 require 'includes/auth.php';
 require 'includes/csrf.php';
+require 'includes/db.php';
 ?>
 <?php require 'includes/layout.php'; ?>
   <title>Request a Service</title>
@@ -10,111 +11,131 @@ require 'includes/csrf.php';
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
 
-  <h2>Select a Service</h2>
-  <div class="service-list">
-    <button class="service-option" data-category="pc_build">PC Build</button>
-    <button class="service-option" data-category="cleaning">Cleaning</button>
-    <button class="service-option" data-category="console_mod">Console Modding</button>
-    <button class="service-option" data-category="phone_repair">Phone Repair</button>
-    <button class="service-option" data-category="other">Other</button>
-  </div>
+  <h2>Request a Service</h2>
 
-  <div id="serviceModal" class="modal">
-    <div class="modal-content">
-      <span id="closeModal" class="close">&times;</span>
-      <h3 id="modalTitle">Service Request</h3>
-      <form method="post" action="submit-request.php">
-        <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-        <input type="hidden" name="type" value="service">
-        <input type="hidden" name="category" id="categoryField">
+  <div id="wizard">
+    <form id="serviceForm" method="post" action="submit-request.php">
+      <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+      <input type="hidden" name="type" value="service">
+      <input type="hidden" name="category" id="categoryField">
 
-        <div class="field make-field">
-          <label>Make</label>
-          <input type="text" name="make" id="makeField">
+      <div class="step" data-step="1">
+        <h3>Select Service Type</h3>
+        <button type="button" class="step1" data-category="repair">Repair</button>
+        <button type="button" class="step1" data-category="clean">Cleaning</button>
+        <button type="button" class="step1" data-category="build">Build</button>
+        <button type="button" class="step1" data-category="other">Other</button>
+      </div>
+
+      <div class="step" data-step="2" style="display:none;">
+        <h3>Choose Brand</h3>
+        <select id="brandSelect" name="brand_id" required>
+          <option value="">Select brand</option>
+          <?php
+          $brands = $conn->query('SELECT id, name FROM service_brands ORDER BY name');
+          if ($brands) {
+            while ($b = $brands->fetch_assoc()) {
+              echo '<option value="' . (int)$b['id'] . '">' . htmlspecialchars($b['name']) . '</option>';
+            }
+          }
+          ?>
+        </select>
+        <button type="button" id="toStep3">Next</button>
+      </div>
+
+      <div class="step" data-step="3" style="display:none;">
+        <h3>Choose Model</h3>
+        <select id="modelSelect" name="model_id" required>
+          <option value="">Select model</option>
+        </select>
+        <button type="button" id="toStep4">Next</button>
+      </div>
+
+      <div class="step" data-step="4" style="display:none;">
+        <h3>Issue Details</h3>
+        <label for="issueField">Issue / Details</label>
+        <textarea id="issueField" name="issue" required></textarea>
+        <div id="serialWrapper">
+          <label for="serialField">Serial (optional)</label>
+          <input id="serialField" type="text" name="serial">
         </div>
-
-        <div class="field model-field">
-          <label>Model</label>
-          <input type="text" name="model" id="modelField">
+        <div id="deviceTypeWrapper" style="display:none;">
+          <label for="deviceTypeField">Device Type</label>
+          <input id="deviceTypeField" type="text" name="device_type" required>
         </div>
-
-        <div class="field issue-field">
-          <label>Issue / Details</label>
-          <textarea name="issue" id="issueField" required></textarea>
-        </div>
-
         <button type="submit">Submit Request</button>
-      </form>
-    </div>
+      </div>
+    </form>
   </div>
 
   <script>
-    const templates = {
-      pc_build: {
-        title: 'PC Build',
-        template: 'I would like a custom PC built.',
-        showMake: false,
-        showModel: false
-      },
-      cleaning: {
-        title: 'Cleaning',
-        template: 'Please clean my device.',
-        showMake: true,
-        showModel: true
-      },
-      console_mod: {
-        title: 'Console Modding',
-        template: 'I want my console modded.',
-        showMake: true,
-        showModel: true
-      },
-      phone_repair: {
-        title: 'Phone Repair',
-        template: 'My phone needs repair.',
-        showMake: true,
-        showModel: true
-      },
-      other: {
-        title: 'Other Service',
-        template: 'Describe your service request.',
-        showMake: true,
-        showModel: true
+  const steps = document.querySelectorAll('#wizard .step');
+  const categoryField = document.getElementById('categoryField');
+  const brandSelect = document.getElementById('brandSelect');
+  const modelSelect = document.getElementById('modelSelect');
+  const serialWrapper = document.getElementById('serialWrapper');
+  const deviceTypeWrapper = document.getElementById('deviceTypeWrapper');
+  const deviceTypeField = document.getElementById('deviceTypeField');
+
+  const templates = {
+    repair:  { brand: true, model: true, serial: true, device: false },
+    clean:   { brand: true, model: true, serial: true, device: false },
+    build:   { brand: true, model: true, serial: true, device: false },
+    other:   { brand: false, model: false, serial: false, device: true }
+  };
+
+  function showStep(n){
+    steps.forEach(step => {
+      step.style.display = step.dataset.step == n ? 'block' : 'none';
+    });
+  }
+
+  document.querySelectorAll('.step1').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.category;
+      const conf = templates[key];
+      categoryField.value = key;
+      brandSelect.required = conf.brand;
+      modelSelect.required = conf.model;
+      serialWrapper.style.display = conf.serial ? 'block' : 'none';
+      deviceTypeWrapper.style.display = conf.device ? 'block' : 'none';
+      deviceTypeField.required = conf.device;
+      if(conf.brand){
+        showStep(2);
+      } else {
+        showStep(4);
       }
-    };
+    });
+  });
 
-    const modal = document.getElementById('serviceModal');
-    const closeModal = document.getElementById('closeModal');
-    const issueField = document.getElementById('issueField');
-    const categoryField = document.getElementById('categoryField');
-    const makeField = document.querySelector('.make-field');
-    const modelField = document.querySelector('.model-field');
-    const modalTitle = document.getElementById('modalTitle');
-
-    document.querySelectorAll('.service-option').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const key = btn.dataset.category;
-        const data = templates[key];
-        categoryField.value = key;
-        issueField.value = data.template;
-        modalTitle.textContent = data.title + ' Request';
-        makeField.style.display = data.showMake ? 'block' : 'none';
-        modelField.style.display = data.showModel ? 'block' : 'none';
-        modal.style.display = 'block';
+  document.getElementById('toStep3').addEventListener('click', () => {
+    if(!brandSelect.value){
+      alert('Please select a brand');
+      return;
+    }
+    fetch('api/models.php?brand_id=' + encodeURIComponent(brandSelect.value))
+      .then(r => r.json())
+      .then(models => {
+        modelSelect.innerHTML = '<option value="">Select model</option>';
+        models.forEach(m => {
+          const opt = document.createElement('option');
+          opt.value = m.id;
+          opt.textContent = m.name;
+          modelSelect.appendChild(opt);
+        });
       });
-    });
+    showStep(3);
+  });
 
-    closeModal.addEventListener('click', () => {
-      modal.style.display = 'none';
-    });
-
-    window.addEventListener('click', e => {
-      if (e.target === modal) {
-        modal.style.display = 'none';
-      }
-    });
+  document.getElementById('toStep4').addEventListener('click', () => {
+    if(!modelSelect.value){
+      alert('Please select a model');
+      return;
+    }
+    showStep(4);
+  });
   </script>
 
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>
-

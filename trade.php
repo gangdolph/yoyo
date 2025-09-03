@@ -61,6 +61,9 @@ if ($listing_filter) {
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <h2>Trade Offers</h2>
+  <?php if ($user_id): ?>
+    <p><a class="button" href="trade-listing.php">Create Trade Listing</a></p>
+  <?php endif; ?>
   <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
   <?php if ($offers): ?>
     <table>
