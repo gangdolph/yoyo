@@ -1,4 +1,8 @@
 <?php
+use Square\Payments\Requests\CreatePaymentRequest;
+use Square\Types\Money;
+use Square\Exceptions\SquareApiException;
+
 $client = require __DIR__ . '/includes/square.php';
 $squareConfig = require __DIR__ . '/includes/square-config.php';
 require 'includes/requirements.php';
@@ -27,10 +31,6 @@ $stmt->close();
 
 $amount = (int)round($price * 100);
 
-use Square\Exceptions\ApiException;
-use Square\Models\CreatePaymentRequest;
-use Square\Models\Money;
-
 $money = new Money();
 $money->setAmount($amount);
 $money->setCurrency('USD');
@@ -44,7 +44,7 @@ try {
     $result = $apiResponse->getResult();
     $status = $result->getPayment()->getStatus();
     $paymentId = $result->getPayment()->getId();
-} catch (ApiException $e) {
+} catch (SquareApiException $e) {
     $status = 'FAILED';
     $paymentId = null;
 }
