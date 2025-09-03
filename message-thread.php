@@ -39,6 +39,13 @@ $update->bind_param('ii', $other_id, $user_id);
 $update->execute();
 $update->close();
 
+function format_message($text) {
+  $text = htmlspecialchars($text, ENT_QUOTES, 'UTF-8');
+  $text = preg_replace('/\*\*(.*?)\*\*/s', '<strong>$1</strong>', $text);
+  $text = preg_replace('/\*(.*?)\*/s', '<em>$1</em>', $text);
+  return nl2br($text);
+}
+
 $stmt = $conn->prepare('SELECT m.sender_id, m.recipient_id, m.body, m.created_at, u.username AS sender_name
   FROM messages m JOIN users u ON m.sender_id = u.id
   WHERE (m.sender_id = ? AND m.recipient_id = ?) OR (m.sender_id = ? AND m.recipient_id = ?)
@@ -55,20 +62,27 @@ $stmt->close();
 <body>
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
-  <h2>Conversation with <?= htmlspecialchars($other_username) ?></h2>
+  <h2><span data-i18n="conversationWith">Conversation with</span> <?= htmlspecialchars($other_username) ?></h2>
   <div class="message-thread">
     <?php foreach ($messages as $msg): ?>
       <div class="message">
-        <strong><?= htmlspecialchars($msg['sender_name']) ?>:</strong>
-        <span><?= nl2br(htmlspecialchars($msg['body'])) ?></span>
-        <em><?= htmlspecialchars($msg['created_at']) ?></em>
+        <div class="message-sender"><?= htmlspecialchars($msg['sender_name']) ?>:</div>
+        <div class="message-body"><?= format_message($msg['body']) ?></div>
+        <div class="message-time"><?= htmlspecialchars($msg['created_at']) ?></div>
       </div>
     <?php endforeach; ?>
   </div>
   <form method="post" class="message-form">
+    <div class="message-tools">
+      <button type="button" data-format="bold"><strong>B</strong></button>
+      <button type="button" data-format="italic"><em>I</em></button>
+      <button type="button" data-insert="😊">😊</button>
+      <button type="button" data-insert="( ͡° ͜ʖ ͡°)">( ͡° ͜ʖ ͡°)</button>
+    </div>
     <textarea name="body" required></textarea>
-    <button type="submit" class="btn">Send</button>
+    <button type="submit" class="btn" data-i18n="send">Send</button>
   </form>
+  <script type="module" src="/assets/message-tools.js"></script>
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>
