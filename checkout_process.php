@@ -1,4 +1,5 @@
 <?php
+require __DIR__ . '/_debug_bootstrap.php';
 declare(strict_types=1);
 
 /**
@@ -9,12 +10,11 @@ declare(strict_types=1);
  *   - listing_id          (int) server computes price
  */
 
-error_reporting(0); // set E_ALL in dev
-
 require __DIR__ . '/includes/auth.php';  // should establish $user_id (or from session)
 $mysqli = require __DIR__ . '/includes/db.php'; // returns mysqli
 $config = require __DIR__ . '/config.php';
 
+try {
 // --- Config ---
 $env         = strtolower(trim($config['square_environment'] ?? 'sandbox'));
 $accessToken = trim((string)($config['square_access_token'] ?? ''));
@@ -136,3 +136,9 @@ if ($status === 'COMPLETED' || $status === 'APPROVED' || $status === 'AUTHORIZED
 error_log('Square payment failed: HTTP ' . $http . ' ' . $raw);
 header('Location: /cancel.php');
 exit;
+} catch (Throwable $e) {
+  error_log('[checkout_process] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
+  if (!headers_sent()) header('HTTP/1.1 500 Internal Server Error');
+  echo 'Payment processing error.';
+  exit;
+}

@@ -1,4 +1,5 @@
 <?php
+require __DIR__ . '/_debug_bootstrap.php';
 require 'includes/auth.php';
 ?>
 <?php require 'includes/layout.php'; ?>

@@ -1,4 +1,5 @@
 <?php
+require __DIR__ . '/_debug_bootstrap.php';
 $client = require __DIR__ . '/includes/square.php';
 $squareConfig = require __DIR__ . '/includes/square-config.php';
 require 'includes/requirements.php';
