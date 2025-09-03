@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 require __DIR__ . '/_debug_bootstrap.php';
@@ -13,17 +12,49 @@ require __DIR__ . '/_debug_bootstrap.php';
  */
 
 require __DIR__ . '/includes/auth.php';           // should establish $user_id (or from session)
-$mysqli = require __DIR__ . '/includes/db.php';   // returns mysqli
-$config = require __DIR__ . '/config.php';
+$maybeDb = require __DIR__ . '/includes/db.php';  // may return mysqli OR set $conn/$mysqli globals
+$config  = require __DIR__ . '/config.php';
 
 try {
-  // --- Config ---
+  /* -------------------------------------------------------
+   * Resolve mysqli handle robustly ($db)
+   * ----------------------------------------------------- */
+  $db = null;
+  if ($maybeDb instanceof mysqli) {
+    $db = $maybeDb;
+  } elseif (isset($mysqli) && $mysqli instanceof mysqli) {
+    $db = $mysqli;
+  } elseif (isset($conn) && $conn instanceof mysqli) {
+    $db = $conn;
+  } else {
+    // Fallback: construct from config.php
+    mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+    $host = trim($config['db_host'] ?? '127.0.0.1');
+    $port = (int)($config['db_port'] ?? 3306);
+    if (strpos($host, ':') !== false) {
+      [$h, $p] = explode(':', $host, 2);
+      if ($h !== '') $host = $h;
+      if (ctype_digit($p ?? '')) $port = (int)$p;
+    }
+    $db = new mysqli(
+      $host,
+      $config['db_user'] ?? '',
+      $config['db_pass'] ?? '',
+      $config['db_name'] ?? '',
+      $port
+    );
+    $db->set_charset('utf8mb4');
+    $db->query("SET sql_mode = ''");
+  }
+
+  /* -------------------------------------------------------
+   * Config and inputs
+   * ----------------------------------------------------- */
   $env         = strtolower(trim($config['square_environment'] ?? 'sandbox'));
   $accessToken = trim((string)($config['square_access_token'] ?? ''));
   $locationId  = trim((string)($config['square_location_id'] ?? ''));
   $currency    = strtoupper((string)($config['CURRENCY'] ?? 'USD'));
 
-  // --- Inputs ---
   $sourceId = '';
   if (isset($_POST['token']) && is_string($_POST['token'])) {
     $sourceId = trim($_POST['token']);
@@ -32,7 +63,6 @@ try {
   }
   $listing_id = isset($_POST['listing_id']) ? (int)$_POST['listing_id'] : 0;
 
-  // --- Validate base inputs ---
   if ($accessToken === '' || $locationId === '') {
     http_response_code(500);
     exit('Square configuration missing (access token or location id).');
@@ -42,45 +72,48 @@ try {
     exit('Invalid payment data.');
   }
 
-  // --- Fetch price from DB (authoritative) ---
+  /* -------------------------------------------------------
+   * Server-side price lookup (authoritative)
+   * ----------------------------------------------------- */
   $price = null; // decimal dollars
-  $stmt = $mysqli->prepare('SELECT price FROM listings WHERE id = ? LIMIT 1');
+  $stmt = $db->prepare('SELECT price FROM listings WHERE id = ? LIMIT 1');
   $stmt->bind_param('i', $listing_id);
   $stmt->execute();
   $stmt->bind_result($price);
   if (!$stmt->fetch()) {
     $stmt->close();
+    error_log('[checkout_process] listing not found id=' . $listing_id);
     header('Location: /cancel.php');
     exit;
   }
   $stmt->close();
 
-  // Convert dollars->cents safely
-  $amount = (int)round(((float)$price) * 100);
+  $amount = (int)round(((float)$price) * 100); // cents
   if ($amount <= 0) {
+    error_log('[checkout_process] invalid amount computed=' . $amount . ' from price=' . $price);
     header('Location: /cancel.php');
     exit;
   }
 
-  // --- Square API base ---
+  /* -------------------------------------------------------
+   * Square REST call via cURL (no SDK)
+   * ----------------------------------------------------- */
   $base = ($env === 'production')
     ? 'https://connect.squareup.com'
     : 'https://connect.squareupsandbox.com';
 
-  // --- Build payload ---
   $payload = [
     'idempotency_key' => bin2hex(random_bytes(16)),
     'source_id'       => $sourceId,
     'location_id'     => $locationId,
     'amount_money'    => [
-      'amount'   => $amount,   // integer cents
+      'amount'   => $amount,
       'currency' => $currency,
     ],
     // 'note' => 'Order #' . $listing_id,
     // 'autocomplete' => true,
   ];
 
-  // --- cURL call to /v2/payments ---
   $ch = curl_init($base . '/v2/payments');
   curl_setopt_array($ch, [
     CURLOPT_POST           => true,
@@ -112,14 +145,21 @@ try {
   if ($http >= 200 && $http < 300 && isset($resp['payment']['id'])) {
     $paymentId = (string)$resp['payment']['id'];
     $status    = strtoupper((string)($resp['payment']['status'] ?? 'COMPLETED'));
+  } else {
+    if (isset($resp['errors'])) {
+      error_log('Square payment errors: ' . json_encode($resp['errors'], JSON_UNESCAPED_SLASHES));
+    }
+    error_log('Square payment failed: HTTP ' . $http . ' ' . $raw);
   }
 
-  // Log payment ---
+  /* -------------------------------------------------------
+   * Log payment (best-effort)
+   * ----------------------------------------------------- */
   try {
     if (!isset($user_id)) {
       $user_id = isset($_SESSION['user_id']) ? (int)$_SESSION['user_id'] : 0;
     }
-    if ($stmt = $mysqli->prepare('INSERT INTO payments (user_id, listing_id, amount, payment_id, status) VALUES (?,?,?,?,?)')) {
+    if ($stmt = $db->prepare('INSERT INTO payments (user_id, listing_id, amount, payment_id, status) VALUES (?,?,?,?,?)')) {
       $stmt->bind_param('iiiss', $user_id, $listing_id, $amount, $paymentId, $status);
       $stmt->execute();
       $stmt->close();
@@ -128,13 +168,14 @@ try {
     error_log('Payment log insert failed: ' . $e->getMessage());
   }
 
-  // --- Final redirect ---
+  /* -------------------------------------------------------
+   * Redirect by outcome
+   * ----------------------------------------------------- */
   if ($status === 'COMPLETED' || $status === 'APPROVED' || $status === 'AUTHORIZED') {
     header('Location: /success.php');
     exit;
   }
 
-  error_log('Square payment failed: HTTP ' . $http . ' ' . $raw);
   header('Location: /cancel.php');
   exit;
 
