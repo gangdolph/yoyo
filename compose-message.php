@@ -2,6 +2,7 @@
 require 'includes/auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
+require 'includes/notifications.php';
 
 $user_id = $_SESSION['user_id'];
 $error = '';
@@ -23,6 +24,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $insert->bind_param('iis', $user_id, $recipient_id, $body);
         $insert->execute();
         $insert->close();
+        if (!empty($_SESSION['is_admin'])) {
+          $msg = notification_message('admin_message');
+          create_notification($conn, $recipient_id, 'admin_message', $msg);
+        }
         header("Location: message-thread.php?user=$recipient_id");
         exit;
       }

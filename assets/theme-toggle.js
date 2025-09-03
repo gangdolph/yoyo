@@ -7,6 +7,7 @@ const preview = document.getElementById('theme-preview');
 const optionsContainer = modal ? modal.querySelector('.theme-options') : null;
 const errorMsg = modal ? modal.querySelector('.theme-error') : null;
 let themes = {};
+let borders = {};
 
 function setActiveButton(name) {
   if (!optionsContainer) return;
@@ -34,8 +35,32 @@ function applyTheme(name) {
   setActiveButton(name);
 }
 
+function setActiveBorder(ch) {
+  const container = modal ? modal.querySelector('.border-options') : null;
+  if (!container) return;
+  container.querySelectorAll('button').forEach(btn => {
+    const active = btn.dataset.border === ch;
+    btn.classList.toggle('active', active);
+    btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+  });
+}
+
+function applyBorder(ch) {
+  if (!ch) {
+    document.body.classList.remove('site-frame');
+    root.style.removeProperty('--site-border');
+    localStorage.removeItem('border');
+    setActiveBorder('');
+    return;
+  }
+  document.body.classList.add('site-frame');
+  root.style.setProperty('--site-border', borders[ch]);
+  localStorage.setItem('border', ch);
+  setActiveBorder(ch);
+}
+
 function buildOptions() {
-  if (!optionsContainer) return;
+  if (!optionsContainer || !modal) return;
   optionsContainer.innerHTML = '';
   Object.keys(themes).forEach(name => {
     const btn = document.createElement('button');
@@ -45,9 +70,38 @@ function buildOptions() {
     btn.textContent = themes[name].label || name;
     btn.setAttribute('aria-pressed', 'false');
     btn.addEventListener('click', () => applyTheme(name));
-    btn.addEventListener('focus', () => { if (preview) preview.setAttribute('data-theme', name); });
-    btn.addEventListener('mouseenter', () => { if (preview) preview.setAttribute('data-theme', name); });
+    btn.addEventListener('focus', () => {
+      if (preview) preview.setAttribute('data-theme', name);
+    });
+    btn.addEventListener('mouseenter', () => {
+      if (preview) preview.setAttribute('data-theme', name);
+    });
     optionsContainer.appendChild(btn);
+  });
+
+  let borderHeading = modal.querySelector('.border-heading');
+  let borderContainer = modal.querySelector('.border-options');
+  if (!borderHeading) {
+    borderHeading = document.createElement('h3');
+    borderHeading.className = 'border-heading';
+    borderHeading.textContent = 'Borders';
+    optionsContainer.insertAdjacentElement('afterend', borderHeading);
+  }
+  if (!borderContainer) {
+    borderContainer = document.createElement('div');
+    borderContainer.className = 'border-options';
+    borderHeading.insertAdjacentElement('afterend', borderContainer);
+  }
+  borderContainer.innerHTML = '';
+  Object.keys(borders).forEach(ch => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn';
+    btn.dataset.border = ch;
+    btn.textContent = ch;
+    btn.setAttribute('aria-pressed', 'false');
+    btn.addEventListener('click', () => applyBorder(ch));
+    borderContainer.appendChild(btn);
   });
 }
 
@@ -57,6 +111,8 @@ async function initThemes() {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (data && typeof data === 'object' && !Array.isArray(data)) {
+      borders = data.borders || {};
+      delete data.borders;
       themes = data;
     } else {
       throw new Error('Invalid theme JSON');
@@ -75,6 +131,10 @@ async function initThemes() {
   } else {
     const first = Object.keys(themes)[0];
     if (first) applyTheme(first);
+  }
+  const storedBorder = localStorage.getItem('border');
+  if (storedBorder && borders[storedBorder]) {
+    applyBorder(storedBorder);
   }
 }
 

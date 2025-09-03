@@ -53,5 +53,12 @@
       "--accent": "#4caf50",
       "--gradient": "linear-gradient(135deg, #2e3d2f 0%, #1b2c20 100%)"
     }
+  },
+  "borders": {
+    "/": "dashed",
+    "*": "dotted",
+    "-": "solid",
+    ":": "double",
+    "|": "ridge"
   }
 }

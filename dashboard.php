@@ -21,14 +21,7 @@ if ($stmt === false) {
   }
 }
 $vip_active = $vip && (!$vip_expires || strtotime($vip_expires) > time());
-$unread_messages = 0;
-if ($stmt = $conn->prepare('SELECT COUNT(*) FROM messages WHERE recipient_id = ? AND read_at IS NULL')) {
-  $stmt->bind_param('i', $id);
-  $stmt->execute();
-  $stmt->bind_result($unread_messages);
-  $stmt->fetch();
-  $stmt->close();
-}
+$unread_messages = count_unread_messages($conn, $id);
 $unread_notifications = count_unread_notifications($conn, $id);
 ?>
 <?php require 'includes/layout.php'; ?>
@@ -48,17 +41,32 @@ $unread_notifications = count_unread_notifications($conn, $id);
   <?php elseif ($vip): ?>
     <p class="notice">Your VIP membership expired on <?= htmlspecialchars($vip_expires) ?>. <a href="vip.php">Renew now</a>.</p>
   <?php endif; ?>
-  <div class="nav-links">
-    <a class="btn" role="button" href="services.php">Start a Service Request</a>
-    <a class="btn" role="button" href="my-requests.php">View My Service Requests</a>
-    <a class="btn" role="button" href="my-listings.php">Manage My Listings</a>
-    <a class="btn" role="button" href="notifications.php">Notifications<?php if (!empty($unread_notifications)): ?> <span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a>
-    <a class="btn" role="button" href="messages.php">Messages<?php if (!empty($unread_messages)): ?> <span class="badge"><?= $unread_messages ?></span><?php endif; ?></a>
-    <?php if (!empty($_SESSION['is_admin'])): ?>
-      <a class="btn" role="button" href="/admin/index.php">Admin Panel</a>
-    <?php endif; ?>
-    <a class="btn" role="button" href="profile.php">Edit Profile</a>
-    <a class="btn" role="button" href="logout.php">Logout</a>
+  <div class="nav-sections">
+    <div class="nav-section">
+      <h3>Service Requests</h3>
+      <div class="nav-links">
+        <a class="btn" role="button" href="services.php">Start a Service Request</a>
+        <a class="btn" role="button" href="my-requests.php">View My Service Requests</a>
+        <a class="btn" role="button" href="my-listings.php">Manage My Listings</a>
+      </div>
+    </div>
+    <div class="nav-section">
+      <h3>Communications</h3>
+      <div class="nav-links">
+        <a class="btn" role="button" href="notifications.php">Notifications<?php if (!empty($unread_notifications)): ?> <span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a>
+        <a class="btn" role="button" href="messages.php">Messages<?php if (!empty($unread_messages)): ?> <span class="badge"><?= $unread_messages ?></span><?php endif; ?></a>
+      </div>
+    </div>
+    <div class="nav-section">
+      <h3>Account</h3>
+      <div class="nav-links">
+        <?php if (!empty($_SESSION['is_admin'])): ?>
+          <a class="btn" role="button" href="/admin/index.php">Admin Panel</a>
+        <?php endif; ?>
+        <a class="btn" role="button" href="profile.php">Edit Profile</a>
+        <a class="btn" role="button" href="logout.php">Logout</a>
+      </div>
+    </div>
   </div>
   <?php include 'includes/footer.php'; ?>
 </body>
