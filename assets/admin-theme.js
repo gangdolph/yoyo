@@ -4,6 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
   if (!form) return;
 
   const gradientInput = document.getElementById('gradient');
+  const ctaGradientInput = form.querySelector('[name="cta_gradient"]');
+  const ctaDepthInput = form.querySelector('[name="cta_depth"]');
   document.querySelectorAll('.gradient-preset').forEach(btn => {
     btn.addEventListener('click', () => {
       gradientInput.value = btn.dataset.gradient;
@@ -40,9 +42,15 @@ document.addEventListener('DOMContentLoaded', () => {
     if (fg) root.style.setProperty('--fg', fg.value);
     if (accent) root.style.setProperty('--accent', accent.value);
     if (gradientInput) root.style.setProperty('--gradient', gradientInput.value);
+    if (ctaGradientInput) root.style.setProperty('--cta-gradient', ctaGradientInput.value);
+    if (ctaDepthInput) root.style.setProperty('--cta-depth', ctaDepthInput.value + 'px');
     ['vap1', 'vap2', 'vap3'].forEach(v => {
       const el = form.querySelector(`[name="${v}"]`);
       if (el) root.style.setProperty(`--${v}`, el.value);
+    });
+    [['font_header','--font-header'], ['font_body','--font-body'], ['font_paragraph','--font-paragraph']].forEach(([name, varName]) => {
+      const el = form.querySelector(`[name="${name}"]`);
+      if (el) root.style.setProperty(varName, el.value);
     });
     if (patternToggle && patternToggle.checked) {
       const s = {
@@ -66,6 +74,10 @@ document.addEventListener('DOMContentLoaded', () => {
   form.addEventListener('submit', e => {
     if (gradientInput && gradientInput.value.trim() && !CSS.supports('background', gradientInput.value)) {
       alert('Invalid gradient CSS');
+      e.preventDefault();
+    }
+    if (ctaGradientInput && ctaGradientInput.value.trim() && !CSS.supports('background', ctaGradientInput.value)) {
+      alert('Invalid CTA gradient CSS');
       e.preventDefault();
     }
   });
