@@ -1,13 +1,12 @@
 <?php
-$squareConfig = require __DIR__ . '/includes/square-config.php';
 $client = require __DIR__ . '/includes/square.php';
-// $paymentsApi = $client->getPaymentsApi();
-
+$squareConfig = require __DIR__ . '/includes/square-config.php';
 require 'includes/requirements.php';
 require 'includes/auth.php';
 require 'includes/db.php';
 require 'includes/url.php';
 
+// $paymentsApi = $client->getPaymentsApi();
 $listing_id = isset($_GET['listing_id']) ? intval($_GET['listing_id']) : 0;
 if (!$listing_id) {
     header('Location: buy.php');
