@@ -29,13 +29,27 @@ if (!$listing) {
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <div class="content listing-detail">
-    <h2><?= htmlspecialchars($listing['title']); ?></h2>
-    <?php if (!empty($listing['image'])): ?>
-      <img src="uploads/<?= htmlspecialchars($listing['image']); ?>" alt="<?= htmlspecialchars($listing['title']); ?>">
-    <?php endif; ?>
-    <p><?= nl2br(htmlspecialchars($listing['description'])); ?></p>
-    <p class="price">$<?= htmlspecialchars($listing['price']); ?></p>
-    <a class="btn" href="checkout.php?listing_id=<?= $listing['id']; ?>">Proceed to Checkout</a>
+    <div class="listing-image">
+      <?php if (!empty($listing['image'])): ?>
+        <img src="uploads/<?= htmlspecialchars($listing['image']); ?>" alt="<?= htmlspecialchars($listing['title']); ?>">
+      <?php endif; ?>
+    </div>
+    <section class="listing-info">
+      <h2><?= htmlspecialchars($listing['title']); ?></h2>
+      <p class="description">
+        <?= nl2br(htmlspecialchars($listing['description'])); ?>
+      </p>
+      <p class="price">$<?= htmlspecialchars($listing['price']); ?></p>
+    </section>
+    <section class="listing-cta">
+      <a class="btn" href="checkout.php?listing_id=<?= $listing['id']; ?>">Proceed to Checkout</a>
+      <div class="related-items">
+        <h3>Related Items</h3>
+        <p>
+          <a href="search.php?category=<?= urlencode($listing['category']); ?>">More in this category</a>
+        </p>
+      </div>
+    </section>
   </div>
   <?php include 'includes/footer.php'; ?>
 </body>

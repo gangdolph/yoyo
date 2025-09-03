@@ -23,15 +23,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $title = trim($_POST['title'] ?? '');
         $description = trim($_POST['description'] ?? '');
+        $condition = trim($_POST['condition'] ?? '');
+        $allowedConditions = ['new', 'used', 'refurbished'];
         $price = trim($_POST['price'] ?? '');
         $category = trim($_POST['category'] ?? '');
         $imageName = null;
 
-        if ($title === '' || $price === '' || !is_numeric($price)) {
-            $error = 'Title and a valid price are required.';
+        if ($title === '' || $description === '' || $condition === '' || !in_array($condition, $allowedConditions, true) || $price === '' || !is_numeric($price)) {
+            $error = 'Title, description, valid condition, and a valid price are required.';
         }
 
-        // Handle optional image upload
+        // Require at least one image upload
+        if (!$error && empty($_FILES['image']['name'])) {
+            $error = 'An image is required.';
+        }
+
         if (!$error && !empty($_FILES['image']['name'])) {
             $upload_path = __DIR__ . '/uploads/';
             if (!is_dir($upload_path)) {
@@ -60,9 +66,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$error) {
             $status = $is_vip ? 'approved' : 'pending';
-            $stmt = $conn->prepare("INSERT INTO listings (owner_id, title, description, price, category, image, status) VALUES (?,?,?,?,?,?,?)");
+            $stmt = $conn->prepare("INSERT INTO listings (owner_id, title, description, `condition`, price, category, image, status) VALUES (?,?,?,?,?,?,?,?)");
             if ($stmt) {
-                $stmt->bind_param('issssss', $user_id, $title, $description, $price, $category, $imageName, $status);
+                $stmt->bind_param('isssssss', $user_id, $title, $description, $condition, $price, $category, $imageName, $status);
                 $stmt->execute();
                 $stmt->close();
                 header('Location: my-listings.php');
@@ -91,7 +97,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php endif; ?>
   <form method="post" enctype="multipart/form-data">
     <label>Title:<br><input type="text" name="title" required></label><br>
-    <label>Description:<br><textarea name="description"></textarea></label><br>
+    <label>Description:<br><textarea name="description" required></textarea></label><br>
+    <label>Condition:<br>
+      <select name="condition" required>
+        <option value="">Select condition</option>
+        <option value="new">New</option>
+        <option value="used">Used</option>
+        <option value="refurbished">Refurbished</option>
+      </select>
+    </label><br>
     <label>Price:<br><input type="number" step="0.01" name="price" required></label><br>
     <label>Category:<br>
       <select name="category">
@@ -102,7 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <option value="other">Other</option>
       </select>
     </label><br>
-    <label>Image:<br><input type="file" name="image" accept="image/png,image/jpeg"></label><br>
+    <label>Image:<br><input type="file" name="image" accept="image/png,image/jpeg" required></label><br>
     <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
     <button type="submit">Save Listing</button>
   </form>
