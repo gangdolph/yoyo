@@ -6,6 +6,7 @@ require 'includes/csrf.php';
 $user_id = $_SESSION['user_id'];
 $listing_filter = isset($_GET['listing']) ? intval($_GET['listing']) : null;
 $error = '';
+$listing_info = null;
 
 // Handle accept/decline actions
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -28,6 +29,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
         header('Location: ' . $redirect);
         exit;
+    }
+}
+
+// Fetch listing details when filtering
+if ($listing_filter) {
+    if ($stmt = $conn->prepare('SELECT have_item, want_item, description, image FROM trade_listings WHERE id = ? AND owner_id = ?')) {
+        $stmt->bind_param('ii', $listing_filter, $user_id);
+        $stmt->execute();
+        $listing_info = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
     }
 }
 
@@ -63,6 +74,14 @@ if ($listing_filter) {
   <h2>Trade Offers</h2>
   <?php if ($user_id): ?>
     <p><a class="button" href="trade-listing.php">Create Trade Listing</a></p>
+  <?php endif; ?>
+  <?php if ($listing_filter && $listing_info): ?>
+    <div class="listing-details">
+      <p>Have: <strong><?= htmlspecialchars($listing_info['have_item']) ?></strong></p>
+      <p>Want: <strong><?= htmlspecialchars($listing_info['want_item']) ?></strong></p>
+      <p><?= nl2br(htmlspecialchars($listing_info['description'])) ?></p>
+      <?php if (!empty($listing_info['image'])): ?><p><img src="uploads/<?= htmlspecialchars($listing_info['image']) ?>" alt="Listing image" style="max-width:200px"></p><?php endif; ?>
+    </div>
   <?php endif; ?>
   <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
   <?php if ($offers): ?>

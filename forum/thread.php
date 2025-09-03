@@ -10,12 +10,12 @@ if ($thread_id <= 0) {
 }
 
 $thread = null;
-if ($stmt = $conn->prepare("SELECT ft.title, u.id, u.username FROM forum_threads ft JOIN users u ON ft.user_id = u.id WHERE ft.id = ?")) {
+if ($stmt = $conn->prepare("SELECT ft.title, ft.status, u.id, u.username FROM forum_threads ft JOIN users u ON ft.user_id = u.id WHERE ft.id = ?")) {
   $stmt->bind_param('i', $thread_id);
   if ($stmt->execute()) {
-    $stmt->bind_result($ttitle, $tuid, $tuser);
+    $stmt->bind_result($ttitle, $tstatus, $tuid, $tuser);
     if ($stmt->fetch()) {
-      $thread = ['title' => $ttitle, 'user_id' => $tuid, 'username' => $tuser];
+      $thread = ['title' => $ttitle, 'status' => $tstatus, 'user_id' => $tuid, 'username' => $tuser];
     }
   }
   $stmt->close();
@@ -27,6 +27,27 @@ if (!$thread) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!validate_token($_POST['csrf_token'] ?? '')) {
     $error = 'Invalid CSRF token.';
+  } elseif (!empty($_SESSION['is_admin']) && isset($_POST['close'])) {
+    $stmt = $conn->prepare("UPDATE forum_threads SET status='closed' WHERE id=?");
+    $stmt->bind_param('i', $thread_id);
+    $stmt->execute();
+    $stmt->close();
+    header("Location: thread.php?id=" . $thread_id);
+    exit;
+  } elseif (!empty($_SESSION['is_admin']) && isset($_POST['delist'])) {
+    $stmt = $conn->prepare("UPDATE forum_threads SET status='delisted' WHERE id=?");
+    $stmt->bind_param('i', $thread_id);
+    $stmt->execute();
+    $stmt->close();
+    header('Location: index.php');
+    exit;
+  } elseif (!empty($_SESSION['is_admin']) && isset($_POST['delete'])) {
+    $stmt = $conn->prepare("DELETE FROM forum_threads WHERE id=?");
+    $stmt->bind_param('i', $thread_id);
+    $stmt->execute();
+    $stmt->close();
+    header('Location: index.php');
+    exit;
   } else {
     $content = trim($_POST['content'] ?? '');
     $parent_id = isset($_POST['parent_id']) && $_POST['parent_id'] !== '' ? (int)$_POST['parent_id'] : null;
@@ -95,15 +116,33 @@ function render_posts($parent_id = 0, $depth = 0) {
 <main>
   <h2><?= htmlspecialchars($thread['title']); ?></h2>
   <p>Started by <?= username_with_avatar($conn, $thread['user_id'], $thread['username']); ?></p>
+  <?php if (!empty($_SESSION['is_admin'])): ?>
+    <form method="post" style="display:inline;" onsubmit="return confirm('Close thread?');">
+      <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+      <button type="submit" name="close">Close</button>
+    </form>
+    <form method="post" style="display:inline;" onsubmit="return confirm('Delist thread?');">
+      <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+      <button type="submit" name="delist">Delist</button>
+    </form>
+    <form method="post" style="display:inline;" onsubmit="return confirm('Delete thread?');">
+      <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+      <button type="submit" name="delete">Delete</button>
+    </form>
+  <?php endif; ?>
   <?php if (!empty($error)) echo "<p class='error'>" . htmlspecialchars($error) . "</p>"; ?>
 <?php render_posts(); ?>
-  <h3>Reply</h3>
-  <form id="reply-form" method="post">
-    <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-    <input type="hidden" name="parent_id" value="<?= $reply_to ?: '' ?>">
-    <textarea name="content" placeholder="Your reply..."></textarea>
-    <button type="submit">Post Reply</button>
-  </form>
+  <?php if ($thread['status'] === 'closed'): ?>
+    <p>This thread is closed.</p>
+  <?php else: ?>
+    <h3>Reply</h3>
+    <form id="reply-form" method="post">
+      <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+      <input type="hidden" name="parent_id" value="<?= $reply_to ?: '' ?>">
+      <textarea name="content" placeholder="Your reply..."></textarea>
+      <button type="submit">Post Reply</button>
+    </form>
+  <?php endif; ?>
 </main>
 <?php include '../includes/footer.php'; ?>
 </body>

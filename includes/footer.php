@@ -23,7 +23,9 @@
       <ul>
         <li><a href="/about.php">About Us</a></li>
         <li><a href="/help.php">Help</a></li>
-        <li><a href="/vip.php">VIP</a></li>
+        <li><a href="/vip.php">VIP Plans</a></li>
+        <li><a href="/terms.php">Terms</a></li>
+        <li><a href="/privacy.php">Privacy</a></li>
       </ul>
     </nav>
   </div>

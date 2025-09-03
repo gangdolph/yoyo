@@ -9,7 +9,7 @@ if (!$_SESSION['is_admin']) {
   exit;
 }
 
-// Handle approve/reject actions
+// Handle approve/reject/close/delist actions
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!validate_token($_POST['csrf_token'] ?? '')) {
@@ -21,6 +21,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stmt = $conn->prepare("UPDATE listings SET status='approved' WHERE id=?");
       } elseif (isset($_POST['reject'])) {
         $stmt = $conn->prepare("UPDATE listings SET status='rejected' WHERE id=?");
+      } elseif (isset($_POST['close'])) {
+        $stmt = $conn->prepare("UPDATE listings SET status='closed' WHERE id=?");
+      } elseif (isset($_POST['delist'])) {
+        $stmt = $conn->prepare("UPDATE listings SET status='delisted' WHERE id=?");
       }
       if (isset($stmt)) {
         $stmt->bind_param('i', $id);
@@ -65,6 +69,17 @@ $listings = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
               <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
               <input type="hidden" name="id" value="<?= $l['id'] ?>">
               <button type="submit" name="reject">Reject</button>
+            </form>
+          <?php elseif ($l['status'] === 'approved'): ?>
+            <form method="post" style="display:inline;" onsubmit="return confirm('Close listing?');">
+              <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+              <input type="hidden" name="id" value="<?= $l['id'] ?>">
+              <button type="submit" name="close">Close</button>
+            </form>
+            <form method="post" style="display:inline;" onsubmit="return confirm('Delist listing?');">
+              <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+              <input type="hidden" name="id" value="<?= $l['id'] ?>">
+              <button type="submit" name="delist">Delist</button>
             </form>
           <?php endif; ?>
         </td>

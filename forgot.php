@@ -66,13 +66,15 @@ require 'mail.php';
 <body>
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
-  <h2>Forgot Password</h2>
-  <?php if (!empty($msg)) echo "<p>" . htmlspecialchars($msg) . "</p>"; ?>
-    <form method="post">
-      <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-    <input type="email" name="email" required placeholder="Your email">
-    <button type="submit">Send Reset Link</button>
-  </form>
+  <div class="page-container">
+    <h2>Forgot Password</h2>
+    <?php if (!empty($msg)) echo "<p>" . htmlspecialchars($msg) . "</p>"; ?>
+      <form method="post">
+        <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+      <input type="email" name="email" required placeholder="Your email">
+      <button type="submit">Send Reset Link</button>
+    </form>
+  </div>
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>

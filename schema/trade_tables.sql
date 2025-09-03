@@ -5,6 +5,8 @@ CREATE TABLE trade_listings (
     owner_id INT NOT NULL,
     have_item VARCHAR(255) NOT NULL,
     want_item VARCHAR(255) NOT NULL,
+    description TEXT,
+    image VARCHAR(255),
     status ENUM('open','accepted','closed') DEFAULT 'open',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (owner_id) REFERENCES users(id)

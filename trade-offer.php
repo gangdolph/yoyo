@@ -10,7 +10,7 @@ $listing = null;
 $inventory = [];
 
 if ($listing_id) {
-    if ($stmt = $conn->prepare('SELECT tl.id, tl.have_item, tl.want_item, tl.status, tl.owner_id, u.username FROM trade_listings tl JOIN users u ON tl.owner_id = u.id WHERE tl.id = ?')) {
+    if ($stmt = $conn->prepare('SELECT tl.id, tl.have_item, tl.want_item, tl.description, tl.image, tl.status, tl.owner_id, u.username FROM trade_listings tl JOIN users u ON tl.owner_id = u.id WHERE tl.id = ?')) {
         $stmt->bind_param('i', $listing_id);
         $stmt->execute();
         $listing = $stmt->get_result()->fetch_assoc();
@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->bind_param('iiisi', $listing_id, $user_id, $offered_item_id, $message, $use_escrow);
                 $stmt->execute();
                 $stmt->close();
-                header('Location: trade-listings.php');
+                header('Location: trade.php?listing=' . $listing_id);
                 exit;
             } else {
                 $error = 'Database error.';
@@ -71,6 +71,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <h2>Offer Trade to <?= htmlspecialchars($listing['username']) ?></h2>
   <p>They have: <strong><?= htmlspecialchars($listing['have_item']) ?></strong></p>
   <p>They want: <strong><?= htmlspecialchars($listing['want_item']) ?></strong></p>
+  <p><?= nl2br(htmlspecialchars($listing['description'])) ?></p>
+  <?php if (!empty($listing['image'])): ?><p><img src="uploads/<?= htmlspecialchars($listing['image']) ?>" alt="Listing image" style="max-width:200px"></p><?php endif; ?>
   <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
   <form method="post">
     <label>Your Item Offer:<br>

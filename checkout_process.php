@@ -153,7 +153,19 @@ try {
       if ($stmt = $db->prepare('INSERT INTO payments (user_id, listing_id, amount, payment_id, status) VALUES (?,?,?,?,?)')) {
         $stmt->bind_param('iiiss', $user_id, $listing_id, $amount, $paymentId, $status);
         $stmt->execute();
+        $paymentDbId = $db->insert_id;
         $stmt->close();
+      }
+      if (isset($_SESSION['shipping'][$listing_id])) {
+        $ship = $_SESSION['shipping'][$listing_id];
+        $tracking = null;
+        $orderStatus = 'pending';
+        if ($stmt = $db->prepare('INSERT INTO order_fulfillments (payment_id, user_id, listing_id, shipping_address, delivery_method, notes, tracking_number, status) VALUES (?,?,?,?,?,?,?,?)')) {
+          $stmt->bind_param('iiisssss', $paymentDbId, $user_id, $listing_id, $ship['address'], $ship['method'], $ship['notes'], $tracking, $orderStatus);
+          $stmt->execute();
+          $stmt->close();
+        }
+        unset($_SESSION['shipping'][$listing_id]);
       }
     } catch (\Throwable $e) {
       error_log('Payment log insert failed: ' . $e->getMessage());
