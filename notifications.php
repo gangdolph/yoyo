@@ -20,6 +20,11 @@ mark_notifications_read($conn, $user_id);
     <ul class="notification-list">
       <?php foreach ($notifications as $n): ?>
         <li>
+          <?php if ($n['type'] === 'friend_request'): ?>
+            <img src="/assets/user-plus.svg" alt="" width="16" height="16">
+          <?php elseif ($n['type'] === 'friend_accept'): ?>
+            <img src="/assets/user-check.svg" alt="" width="16" height="16">
+          <?php endif; ?>
           <?= htmlspecialchars($n['message']) ?>
           <small><?= htmlspecialchars($n['created_at']) ?></small>
         </li>

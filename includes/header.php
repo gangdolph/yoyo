@@ -11,6 +11,7 @@ $status = '';
 $unread_messages = 0;
 $unread_notifications = 0;
 $unread_total = 0;
+$pending_requests = 0;
 $cart_count = isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
 
 if (!empty($_SESSION['user_id'])):
@@ -32,21 +33,28 @@ if (!empty($_SESSION['user_id'])):
   $unread_messages = count_unread_messages($conn, $_SESSION['user_id']);
   $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
   $unread_total = $unread_messages + $unread_notifications;
+  if ($stmt = $conn->prepare('SELECT COUNT(*) FROM friends WHERE friend_id = ? AND status = "pending"')):
+    $stmt->bind_param('i', $_SESSION['user_id']);
+    $stmt->execute();
+    $stmt->bind_result($pending_requests);
+    $stmt->fetch();
+    $stmt->close();
+  endif;
   $cart_count = isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
 endif;
 ?>
 
 <header class="site-header">
-  <nav class="site-nav header-left">
+  <div class="header-left">
     <a href="/index.php" class="logo-link">
       <img class="logo-img" src="/assets/logo.png" alt="SkuzE Logo">
     </a>
-    <ul>
-      <li><a href="/index.php" data-i18n="home">Home</a></li>
-      <li><a href="/about.php" data-i18n="about">About</a></li>
-      <li><a href="/help.php" data-i18n="help">Help/FAQ</a></li>
-    </ul>
-  </nav>
+    <nav class="site-nav">
+      <a href="/index.php" data-i18n="home">Home</a>
+      <a href="/about.php" data-i18n="about">About</a>
+      <a href="/help.php" data-i18n="help">Help/FAQ</a>
+    </nav>
+  </div>
   <div class="search-container header-center">
     <form class="site-search" action="/search.php" method="get">
       <input type="text" name="q" placeholder="Search..." data-i18n-placeholder="search" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
@@ -55,46 +63,36 @@ endif;
   <div class="header-right">
 <?php if (empty($_SESSION['user_id'])): ?>
     <nav class="site-nav header-links">
-      <ul>
-        <li><a href="/login.php" data-i18n="login">Login</a></li>
-        <li><a href="/register.php" data-i18n="register">Register</a></li>
-      </ul>
+      <a href="/login.php" class="btn" data-i18n="login">Login</a>
+      <a href="/register.php" class="btn" data-i18n="register">Register</a>
     </nav>
 <?php else: ?>
     <div class="header-user"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></div>
     <nav class="site-nav header-links">
-      <ul>
-        <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
-        <li>
-          <a href="/notifications.php" aria-label="Notifications<?= $unread_total ? ' (' . $unread_total . ' unread)' : '' ?>">
-            <img src="/assets/bell.svg" alt="Notifications">
-            <?php if (!empty($unread_total)): ?><span class="badge"><?= $unread_total ?></span><?php endif; ?>
-          </a>
-        </li>
-        <li>
-          <a href="/messages.php" aria-label="Messages<?= $unread_messages ? ' (' . $unread_messages . ' unread)' : '' ?>">
-            <img src="/assets/envelope.svg" alt="Messages">
-            <?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?>
-          </a>
-        </li>
-        <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
-      </ul>
+      <a href="/dashboard.php" class="btn" data-i18n="dashboard">Dashboard</a>
+      <a href="/friend-requests.php" aria-label="Friend Requests<?= $pending_requests ? ' (' . $pending_requests . ' pending)' : '' ?>">
+        <img src="/assets/user-plus.svg" alt="Friend Requests">
+        <?php if (!empty($pending_requests)): ?><span class="badge"><?= $pending_requests ?></span><?php endif; ?>
+      </a>
+      <a href="/notifications.php" aria-label="Notifications<?= $unread_total ? ' (' . $unread_total . ' unread)' : '' ?>">
+        <img src="/assets/bell.svg" alt="Notifications">
+        <?php if (!empty($unread_total)): ?><span class="badge"><?= $unread_total ?></span><?php endif; ?>
+      </a>
+      <a href="/messages.php" aria-label="Messages<?= $unread_messages ? ' (' . $unread_messages . ' unread)' : '' ?>">
+        <img src="/assets/envelope.svg" alt="Messages">
+        <?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?>
+      </a>
+      <a href="/logout.php" class="btn" data-i18n="logout">Logout</a>
     </nav>
 <?php endif; ?>
-    <div class="site-nav header-cart">
-      <a href="/cart.php">
-        <img src="/assets/cart.svg" alt="Cart">
-        <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
-      </a>
-    </div>
-    <div class="header-language">
-      <button id="language-toggle" type="button" aria-haspopup="menu" aria-controls="language-menu">
-        <img src="/assets/flags/en.svg" alt="English">
-      </button>
-    </div>
-    <div class="header-theme">
-      <button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button>
-    </div>
+    <a class="header-cart" href="/cart.php">
+      <img src="/assets/cart.svg" alt="Cart">
+      <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
+    </a>
+    <button class="header-language" id="language-toggle" type="button" aria-haspopup="menu" aria-controls="language-menu">
+      <img src="/assets/flags/en.svg" alt="English">
+    </button>
+    <button class="header-theme" id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button>
   </div>
 </header>
 <div id="theme-modal" class="theme-modal" role="dialog" aria-modal="true" aria-labelledby="theme-modal-title" hidden tabindex="-1">
