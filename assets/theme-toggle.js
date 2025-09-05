@@ -54,7 +54,8 @@ function applyBorder(ch) {
     return;
   }
   document.body.classList.add('site-frame');
-  root.style.setProperty('--site-border', borders[ch]);
+  const style = borders[ch] || ch;
+  root.style.setProperty('--site-border', style);
   localStorage.setItem('border', ch);
   setActiveBorder(ch);
 }
@@ -135,8 +136,10 @@ async function initThemes() {
     if (first) applyTheme(first);
   }
   const storedBorder = localStorage.getItem('border');
-  if (storedBorder && borders[storedBorder]) {
+  if (storedBorder) {
     applyBorder(storedBorder);
+  } else {
+    applyBorder('solid');
   }
 }
 
