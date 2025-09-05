@@ -39,7 +39,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 }
 
-$stmt = $conn->prepare('SELECT id, username FROM users WHERE id != ? ORDER BY username');
+$stmt = $conn->prepare(
+  'SELECT u.id, u.username FROM users u '
+  . 'JOIN friends f ON u.id = f.friend_id '
+  . 'WHERE f.user_id = ? AND f.status = "accepted" '
+  . 'ORDER BY u.username'
+);
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);

@@ -21,10 +21,19 @@ if (!$stmt->fetch()) {
 }
 $stmt->close();
 
+// Determine if users are friends
+$friend = $conn->prepare("SELECT 1 FROM friends WHERE user_id=? AND friend_id=? AND status='accepted'");
+$friend->bind_param('ii', $user_id, $other_id);
+$friend->execute();
+$friend->store_result();
+$is_friend = $friend->num_rows > 0;
+$friend->close();
+$table = $is_friend ? 'messages' : 'message_requests';
+
 if (!empty($_POST['body'])) {
   $body = trim($_POST['body']);
   if ($body !== '') {
-    $stmt = $conn->prepare('INSERT INTO messages (sender_id, recipient_id, body) VALUES (?, ?, ?)');
+    $stmt = $conn->prepare("INSERT INTO $table (sender_id, recipient_id, body) VALUES (?, ?, ?)");
     $stmt->bind_param('iis', $user_id, $other_id, $body);
     $stmt->execute();
     $stmt->close();
@@ -34,7 +43,7 @@ if (!empty($_POST['body'])) {
 }
 
 // Mark messages as read
-$update = $conn->prepare('UPDATE messages SET read_at = NOW() WHERE sender_id = ? AND recipient_id = ? AND read_at IS NULL');
+$update = $conn->prepare("UPDATE $table SET read_at = NOW() WHERE sender_id = ? AND recipient_id = ? AND read_at IS NULL");
 $update->bind_param('ii', $other_id, $user_id);
 $update->execute();
 $update->close();
@@ -46,10 +55,10 @@ function format_message($text) {
   return nl2br($text);
 }
 
-$stmt = $conn->prepare('SELECT m.sender_id, m.recipient_id, m.body, m.created_at, u.username AS sender_name
-  FROM messages m JOIN users u ON m.sender_id = u.id
+$stmt = $conn->prepare("SELECT m.sender_id, m.recipient_id, m.body, m.created_at, u.username AS sender_name
+  FROM $table m JOIN users u ON m.sender_id = u.id
   WHERE (m.sender_id = ? AND m.recipient_id = ?) OR (m.sender_id = ? AND m.recipient_id = ?)
-  ORDER BY m.created_at ASC');
+  ORDER BY m.created_at ASC");
 $stmt->bind_param('iiii', $user_id, $other_id, $other_id, $user_id);
 $stmt->execute();
 $messages = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
