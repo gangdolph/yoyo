@@ -110,6 +110,14 @@ if ($listing_filter) {
                   <button name="action" value="decline" type="submit">Decline</button>
                 </form>
               <?php endif; ?>
+              <?php if (!empty($_SESSION['is_admin'])): ?>
+                <form method="post" action="trade-offer-delete.php" style="display:inline" onsubmit="return confirm('Delete offer?');">
+                  <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+                  <input type="hidden" name="id" value="<?= $o['id']; ?>">
+                  <input type="hidden" name="redirect" value="trade.php?listing=<?= $listing_filter ?>">
+                  <button type="submit">Delete</button>
+                </form>
+              <?php endif; ?>
             </td>
           <?php else: ?>
             <td><?= htmlspecialchars($o['have_item']) ?>/<?= htmlspecialchars($o['want_item']) ?></td>
@@ -124,6 +132,14 @@ if ($listing_filter) {
                   <input type="hidden" name="offer_id" value="<?= $o['id'] ?>">
                   <button name="action" value="accept" type="submit">Accept</button>
                   <button name="action" value="decline" type="submit">Decline</button>
+                </form>
+              <?php endif; ?>
+              <?php if (!empty($_SESSION['is_admin'])): ?>
+                <form method="post" action="trade-offer-delete.php" style="display:inline" onsubmit="return confirm('Delete offer?');">
+                  <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+                  <input type="hidden" name="id" value="<?= $o['id']; ?>">
+                  <input type="hidden" name="redirect" value="trade.php">
+                  <button type="submit">Delete</button>
                 </form>
               <?php endif; ?>
             </td>

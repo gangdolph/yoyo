@@ -95,6 +95,7 @@ endif;
     <button class="header-theme" id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button>
   </div>
 </header>
+<?php include __DIR__ . '/ad-slot.php'; ?>
 <div id="theme-modal" class="theme-modal" role="dialog" aria-modal="true" aria-labelledby="theme-modal-title" hidden tabindex="-1">
   <div class="modal-content">
     <h2 id="theme-modal-title">Select Theme</h2>
