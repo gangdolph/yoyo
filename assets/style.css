@@ -95,6 +95,9 @@ body {
   font-size: var(--font-size-base);
   margin: 0;
   padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -107,6 +110,7 @@ p {
 
 a {
   color: var(--accent);
+  text-decoration: none;
 }
 
 a:visited {
@@ -116,6 +120,7 @@ a:visited {
 a:hover,
 a:focus {
   color: var(--fg);
+  text-decoration: none;
 }
 .card {
   background: rgba(0, 0, 0, 0.4);
@@ -327,6 +332,7 @@ footer {
   box-sizing: border-box;
   transform: perspective(500px) translateZ(0);
   transition: transform 0.2s, box-shadow 0.2s;
+  margin-top: auto;
 }
 
 footer::before {
@@ -532,7 +538,12 @@ footer:focus-within {
 }
 
 .header-left {
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: var(--space-sm);
+}
+
+.logo-link {
+  margin-right: var(--space-sm);
 }
 
 .header-center {
@@ -541,7 +552,7 @@ footer:focus-within {
 
 .header-right {
   justify-content: flex-end;
-  gap: var(--space-sm);
+  gap: var(--space-md);
 }
 
 .header-user,
@@ -754,7 +765,7 @@ form button:active {
 
 .btn {
   background: var(--accent);
-  color: var(--bg);
+  color: var(--fg);
   margin-right: var(--space-sm);
   border-top: 2px solid rgba(255, 255, 255, 0.4);
   border-left: 2px solid rgba(255, 255, 255, 0.4);
@@ -984,6 +995,9 @@ tbody tr:nth-child(even) {
 .filters {
   max-width: 200px;
 }
+.listing-results {
+  flex: 1;
+}
 .listing-toolbar {
   display: flex;
   justify-content: space-between;
@@ -1012,6 +1026,12 @@ tbody tr:nth-child(even) {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+
+@media (min-width: 800px) {
+  .product-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }
 .product-grid.list-view {
   display: block;
@@ -1237,7 +1257,7 @@ body.nav-open .hero {
   border: 1px solid var(--fg);
   padding: 0.5rem;
   border-radius: 4px;
-  background: rgba(0, 0, 0, 0.2);
+  background: color-mix(in srgb, var(--bg) 90%, #000 10%);
   max-width: 70%;
   width: fit-content;
   margin-right: auto;
@@ -1388,3 +1408,16 @@ body.nav-open .hero {
     transform: none;
   }
 }
+
+.ad-slot {
+  width: 100%;
+  max-width: 728px;
+  height: 90px;
+  margin: var(--space-md) auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.15);
+  border: 1px dashed var(--fg);
+}
+

@@ -1,5 +1,7 @@
 <?php
+session_start();
 require 'includes/db.php';
+require 'includes/csrf.php';
 
 $listing_id = isset($_GET['listing_id']) ? intval($_GET['listing_id']) : 0;
 if (!$listing_id) {
@@ -49,6 +51,14 @@ if (!$listing) {
           <a href="search.php?category=<?= urlencode($listing['category']); ?>">More in this category</a>
         </p>
       </div>
+      <?php if (!empty($_SESSION['is_admin'])): ?>
+        <form method="post" action="listing-delete.php" onsubmit="return confirm('Delete listing?');">
+          <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+          <input type="hidden" name="id" value="<?= $listing['id']; ?>">
+          <input type="hidden" name="redirect" value="buy.php">
+          <button type="submit" class="btn">Delete Listing</button>
+        </form>
+      <?php endif; ?>
     </section>
   </div>
   <?php include 'includes/footer.php'; ?>

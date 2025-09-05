@@ -1,6 +1,7 @@
 <?php
 session_start();
 require 'includes/db.php';
+require 'includes/csrf.php';
 
 $search = trim($_GET['search'] ?? '');
 $category = trim($_GET['category'] ?? '');
@@ -133,6 +134,14 @@ $stmt->close();
             <p class="price">$<?= htmlspecialchars($l['price']) ?></p>
             <div class="rating">★★★★★</div>
             <button class="add-to-cart" data-id="<?= $l['id'] ?>">Add to Cart</button>
+            <?php if (!empty($_SESSION['is_admin'])): ?>
+              <form method="post" action="listing-delete.php" onsubmit="return confirm('Delete listing?');">
+                <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+                <input type="hidden" name="id" value="<?= $l['id']; ?>">
+                <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']); ?>">
+                <button type="submit" class="btn">Delete</button>
+              </form>
+            <?php endif; ?>
           </div>
         <?php endforeach; ?>
         </div>

@@ -16,12 +16,12 @@ session_start();
     <div class="hero">
       <div class="hero-ascii">
         <pre>
-____  _              _____
+ ____  _              _____
 / ___|| | ___   _ ___| ____|
 \___ \| |/ / | | |_  /  _|
  ___) |   <| |_| |/ /| |___
-|____/|_|\\__,_/___|_____|
-</pre>
+|____/|_|\__,_/___|_____|
+        </pre>
       </div>
       <div class="hero-content">
         <p class="tagline">Fix, buy, sell, or trade your electronics in one place.</p>

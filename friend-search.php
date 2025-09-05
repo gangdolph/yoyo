@@ -84,7 +84,7 @@ unset($user);
   </form>
   <?php foreach ($results as $user): ?>
     <div class="card">
-      <a href="view-profile.php?id=<?= $user['id']; ?>"><?= username_with_avatar($conn, $user['id'], $user['username']); ?></a>
+      <?= username_with_avatar($conn, $user['id'], $user['username']); ?>
       <?php if ($user['out_status'] === 'pending'): ?>
         <button type="button" class="btn" disabled>Request Sent</button>
       <?php elseif ($user['in_status'] === 'pending'): ?>

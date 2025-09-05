@@ -2,19 +2,9 @@
 session_start();
 require 'includes/db.php';
 require 'includes/user.php';
+require 'includes/csrf.php';
 
 $user_id = $_SESSION['user_id'] ?? null;
-
-if (isset($_GET['delete']) && $user_id) {
-    $id = intval($_GET['delete']);
-    if ($stmt = $conn->prepare('DELETE FROM trade_listings WHERE id = ? AND owner_id = ?')) {
-        $stmt->bind_param('ii', $id, $user_id);
-        $stmt->execute();
-        $stmt->close();
-    }
-    header('Location: trade-listings.php');
-    exit;
-}
 
 $sql = 'SELECT tl.id, tl.have_item, tl.want_item, tl.description, tl.image, tl.status, tl.owner_id, u.username,
         (SELECT COUNT(*) FROM trade_offers o WHERE o.listing_id = tl.id AND o.status IN ("pending","accepted")) AS offers
@@ -56,9 +46,14 @@ if ($result = $conn->query($sql)) {
           <?php endif; ?>
         </td>
         <td>
-          <?php if ($l['owner_id'] == $user_id): ?>
+          <?php if ($l['owner_id'] == $user_id || !empty($_SESSION['is_admin'])): ?>
             <a href="trade-listing.php?edit=<?= $l['id'] ?>">Edit</a>
-            <a href="trade-listings.php?delete=<?= $l['id'] ?>" onclick="return confirm('Delete listing?');">Delete</a>
+            <form method="post" action="trade-listing-delete.php" style="display:inline" onsubmit="return confirm('Delete listing?');">
+              <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+              <input type="hidden" name="id" value="<?= $l['id']; ?>">
+              <input type="hidden" name="redirect" value="trade-listings.php">
+              <button type="submit">Delete</button>
+            </form>
           <?php elseif ($l['status'] === 'open' && $user_id): ?>
             <a href="trade-offer.php?id=<?= $l['id'] ?>">Make Offer</a>
           <?php endif; ?>
