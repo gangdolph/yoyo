@@ -52,46 +52,50 @@ endif;
       <input type="text" name="q" placeholder="Search..." data-i18n-placeholder="search" value="<?= htmlspecialchars($_GET['q'] ?? '') ?>">
     </form>
   </div>
-  <nav class="site-nav header-right">
-<?php if (!empty($_SESSION['user_id'])): ?>
-    <div class="user-info"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></div>
-<?php endif; ?>
-    <ul>
+  <div class="header-right">
 <?php if (empty($_SESSION['user_id'])): ?>
-      <li><a href="/login.php" data-i18n="login">Login</a></li>
-      <li><a href="/register.php" data-i18n="register">Register</a></li>
+    <nav class="site-nav header-links">
+      <ul>
+        <li><a href="/login.php" data-i18n="login">Login</a></li>
+        <li><a href="/register.php" data-i18n="register">Register</a></li>
+      </ul>
+    </nav>
 <?php else: ?>
-      <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
-
-      <li>
-        <a href="/notifications.php" aria-label="Notifications<?= $unread_total ? ' (' . $unread_total . ' unread)' : '' ?>">
-          <img src="/assets/bell.svg" alt="Notifications">
-          <?php if (!empty($unread_total)): ?><span class="badge"><?= $unread_total ?></span><?php endif; ?>
-        </a>
-      </li>
-      <li>
-        <a href="/messages.php" aria-label="Messages<?= $unread_messages ? ' (' . $unread_messages . ' unread)' : '' ?>">
-          <img src="/assets/envelope.svg" alt="Messages">
-          <?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?>
-        </a>
-      </li>
-
-      <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
+    <div class="header-user"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></div>
+    <nav class="site-nav header-links">
+      <ul>
+        <li><a href="/dashboard.php" data-i18n="dashboard">Dashboard</a></li>
+        <li>
+          <a href="/notifications.php" aria-label="Notifications<?= $unread_total ? ' (' . $unread_total . ' unread)' : '' ?>">
+            <img src="/assets/bell.svg" alt="Notifications">
+            <?php if (!empty($unread_total)): ?><span class="badge"><?= $unread_total ?></span><?php endif; ?>
+          </a>
+        </li>
+        <li>
+          <a href="/messages.php" aria-label="Messages<?= $unread_messages ? ' (' . $unread_messages . ' unread)' : '' ?>">
+            <img src="/assets/envelope.svg" alt="Messages">
+            <?php if (!empty($unread_messages)): ?><span class="badge"><?= $unread_messages ?></span><?php endif; ?>
+          </a>
+        </li>
+        <li><a href="/logout.php" data-i18n="logout">Logout</a></li>
+      </ul>
+    </nav>
 <?php endif; ?>
-      <li class="cart-link">
-        <a href="/cart.php">
-          <img src="/assets/cart.svg" alt="Cart">
-          <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
-        </a>
-      </li>
-      <li class="settings-toggles">
-        <button id="language-toggle" type="button" aria-haspopup="menu" aria-controls="language-menu">
-          <img src="/assets/flags/en.svg" alt="English">
-        </button>
-        <button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button>
-      </li>
-    </ul>
-  </nav>
+    <div class="site-nav header-cart">
+      <a href="/cart.php">
+        <img src="/assets/cart.svg" alt="Cart">
+        <?php if (!empty($cart_count)): ?><span class="badge"><?= $cart_count ?></span><?php endif; ?>
+      </a>
+    </div>
+    <div class="header-language">
+      <button id="language-toggle" type="button" aria-haspopup="menu" aria-controls="language-menu">
+        <img src="/assets/flags/en.svg" alt="English">
+      </button>
+    </div>
+    <div class="header-theme">
+      <button id="theme-toggle" type="button" aria-haspopup="dialog" aria-controls="theme-modal">Themes</button>
+    </div>
+  </div>
 </header>
 <div id="theme-modal" class="theme-modal" role="dialog" aria-modal="true" aria-labelledby="theme-modal-title" hidden tabindex="-1">
   <div class="modal-content">
