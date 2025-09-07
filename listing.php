@@ -9,7 +9,7 @@ if (!$listing_id) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT id, title, description, price, category, image FROM listings WHERE id = ? LIMIT 1');
+$stmt = $conn->prepare('SELECT l.id, l.product_sku, p.title, p.description, p.price, l.category, l.image FROM listings l JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
 $stmt->bind_param('i', $listing_id);
 $stmt->execute();
 $result = $stmt->get_result();

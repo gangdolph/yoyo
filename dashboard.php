@@ -23,6 +23,24 @@ if ($stmt === false) {
 $vip_active = $vip && (!$vip_expires || strtotime($vip_expires) > time());
 $unread_messages = count_unread_messages($conn, $id);
 $unread_notifications = count_unread_notifications($conn, $id);
+
+$my_products = [];
+if ($stmt = $conn->prepare('SELECT sku, title, quantity, reorder_threshold FROM products WHERE owner_id = ?')) {
+  $stmt->bind_param('i', $id);
+  $stmt->execute();
+  $my_products = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+  $stmt->close();
+}
+$low_stock = array_filter($my_products, function($p) {
+  return $p['reorder_threshold'] > 0 && $p['quantity'] <= $p['reorder_threshold'];
+});
+$my_shipments = [];
+if ($stmt = $conn->prepare('SELECT sku, status FROM order_fulfillments WHERE user_id = ? ORDER BY created_at DESC LIMIT 5')) {
+  $stmt->bind_param('i', $id);
+  $stmt->execute();
+  $my_shipments = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+  $stmt->close();
+}
 ?>
 <?php require 'includes/layout.php'; ?>
   <title>Dashboard</title>
@@ -67,6 +85,43 @@ $unread_notifications = count_unread_notifications($conn, $id);
           <li><a class="btn" role="button" href="logout.php">Logout</a></li>
         </ul>
       </div>
+    </div>
+    <div class="nav-section">
+      <h3>Inventory</h3>
+      <?php if ($low_stock): ?>
+      <p class="notice">Low stock: <?php $skus = array_map(function($p){return htmlspecialchars($p['sku']);}, $low_stock); echo implode(', ', $skus); ?></p>
+      <?php endif; ?>
+      <?php if ($my_products): ?>
+      <table>
+        <tr><th>SKU</th><th>Title</th><th>Qty</th><th>Threshold</th></tr>
+        <?php foreach ($my_products as $p): ?>
+        <tr>
+          <td><?= htmlspecialchars($p['sku']) ?></td>
+          <td><?= htmlspecialchars($p['title']) ?></td>
+          <td><?= (int)$p['quantity'] ?></td>
+          <td><?= (int)$p['reorder_threshold'] ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </table>
+      <?php else: ?>
+      <p>No products.</p>
+      <?php endif; ?>
+    </div>
+    <div class="nav-section">
+      <h3>Shipments</h3>
+      <?php if ($my_shipments): ?>
+      <table>
+        <tr><th>SKU</th><th>Status</th></tr>
+        <?php foreach ($my_shipments as $s): ?>
+        <tr>
+          <td><?= htmlspecialchars($s['sku']) ?></td>
+          <td><?= htmlspecialchars($s['status']) ?></td>
+        </tr>
+        <?php endforeach; ?>
+      </table>
+      <?php else: ?>
+      <p>No shipments.</p>
+      <?php endif; ?>
     </div>
   </div>
   <?php include 'includes/footer.php'; ?>

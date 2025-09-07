@@ -15,14 +15,45 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $offer_id = intval($_POST['offer_id'] ?? 0);
         $action = $_POST['action'] ?? '';
-        if ($offer_id && in_array($action, ['accept','decline'], true)) {
-            $status = $action === 'accept' ? 'accepted' : 'declined';
-            if ($stmt = $conn->prepare('UPDATE trade_offers o JOIN trade_listings l ON o.listing_id = l.id SET o.status=? WHERE o.id=? AND l.owner_id=? AND o.status="pending"')) {
-                $stmt->bind_param('sii', $status, $offer_id, $user_id);
-                $stmt->execute();
-                $stmt->close();
-            }
-        }
+          if ($offer_id && in_array($action, ['accept','decline'], true)) {
+              if ($action === 'accept') {
+                  if ($stmt = $conn->prepare('SELECT tl.have_sku, o.offered_sku, ph.quantity AS have_qty, po.quantity AS offer_qty FROM trade_offers o JOIN trade_listings tl ON o.listing_id = tl.id JOIN products ph ON tl.have_sku = ph.sku JOIN products po ON o.offered_sku = po.sku WHERE o.id=? AND tl.owner_id=? AND o.status="pending"')) {
+                      $stmt->bind_param('ii', $offer_id, $user_id);
+                      $stmt->execute();
+                      $stmt->bind_result($have_sku, $offered_sku, $have_qty, $offer_qty);
+                      if ($stmt->fetch() && $have_qty > 0 && $offer_qty > 0) {
+                          $stmt->close();
+                          $conn->begin_transaction();
+                          if ($stmt2 = $conn->prepare('UPDATE trade_offers o JOIN trade_listings l ON o.listing_id = l.id SET o.status="accepted", l.status="accepted" WHERE o.id=? AND l.owner_id=? AND o.status="pending"')) {
+                              $stmt2->bind_param('ii', $offer_id, $user_id);
+                              $stmt2->execute();
+                              $stmt2->close();
+                          }
+                          if ($stmt2 = $conn->prepare('UPDATE products SET quantity = quantity - 1 WHERE sku = ? AND quantity > 0')) {
+                              $stmt2->bind_param('s', $have_sku);
+                              $stmt2->execute();
+                              $stmt2->close();
+                          }
+                          if ($stmt2 = $conn->prepare('UPDATE products SET quantity = quantity - 1 WHERE sku = ? AND quantity > 0')) {
+                              $stmt2->bind_param('s', $offered_sku);
+                              $stmt2->execute();
+                              $stmt2->close();
+                          }
+                          $conn->commit();
+                      } else {
+                          $stmt->close();
+                          $error = 'Trade items out of stock.';
+                      }
+                  }
+              } else {
+                  $status = 'declined';
+                  if ($stmt = $conn->prepare('UPDATE trade_offers o JOIN trade_listings l ON o.listing_id = l.id SET o.status=? WHERE o.id=? AND l.owner_id=? AND o.status="pending"')) {
+                      $stmt->bind_param('sii', $status, $offer_id, $user_id);
+                      $stmt->execute();
+                      $stmt->close();
+                  }
+              }
+          }
         $redirect = 'trade.php';
         if ($listing_filter) {
             $redirect .= '?listing=' . $listing_filter;
