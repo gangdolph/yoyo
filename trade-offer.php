@@ -10,7 +10,7 @@ $listing = null;
 $inventory = [];
 
 if ($listing_id) {
-    if ($stmt = $conn->prepare('SELECT tl.id, tl.have_item, tl.want_item, tl.description, tl.image, tl.status, tl.owner_id, u.username FROM trade_listings tl JOIN users u ON tl.owner_id = u.id WHERE tl.id = ?')) {
+    if ($stmt = $conn->prepare('SELECT tl.id, tl.have_sku, tl.want_sku, tl.description, tl.image, tl.status, tl.owner_id, u.username, p_have.title AS have_title, p_want.title AS want_title FROM trade_listings tl JOIN users u ON tl.owner_id = u.id JOIN products p_have ON tl.have_sku = p_have.sku JOIN products p_want ON tl.want_sku = p_want.sku WHERE tl.id = ?')) {
         $stmt->bind_param('i', $listing_id);
         $stmt->execute();
         $listing = $stmt->get_result()->fetch_assoc();
@@ -18,7 +18,7 @@ if ($listing_id) {
     }
 }
 
-if ($stmt = $conn->prepare('SELECT id, name FROM inventory_items WHERE user_id = ?')) {
+if ($stmt = $conn->prepare('SELECT sku, title FROM products WHERE owner_id = ?')) {
     $stmt->bind_param('i', $user_id);
     $stmt->execute();
     $inventory = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -33,12 +33,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid CSRF token.';
     } else {
-        $offered_item_id = intval($_POST['offered_item_id'] ?? 0);
+        $offered_sku = $_POST['offered_sku'] ?? '';
         $use_escrow = isset($_POST['use_escrow']) ? 1 : 0;
         $message = trim($_POST['message'] ?? '');
         $valid_item = false;
         foreach ($inventory as $item) {
-            if ($item['id'] == $offered_item_id) {
+            if ($item['sku'] === $offered_sku) {
                 $valid_item = true;
                 break;
             }
@@ -47,8 +47,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Valid inventory item required.';
         }
         if (!$error) {
-            if ($stmt = $conn->prepare('INSERT INTO trade_offers (listing_id, offerer_id, offered_item_id, message, use_escrow) VALUES (?,?,?,?,?)')) {
-                $stmt->bind_param('iiisi', $listing_id, $user_id, $offered_item_id, $message, $use_escrow);
+            if ($stmt = $conn->prepare('INSERT INTO trade_offers (listing_id, offerer_id, offered_sku, message, use_escrow) VALUES (?,?,?,?,?)')) {
+                $stmt->bind_param('iissi', $listing_id, $user_id, $offered_sku, $message, $use_escrow);
                 $stmt->execute();
                 $stmt->close();
                 header('Location: trade.php?listing=' . $listing_id);
@@ -69,17 +69,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <h2>Offer Trade to <?= htmlspecialchars($listing['username']) ?></h2>
-  <p>They have: <strong><?= htmlspecialchars($listing['have_item']) ?></strong></p>
-  <p>They want: <strong><?= htmlspecialchars($listing['want_item']) ?></strong></p>
+  <p>They have: <strong><?= htmlspecialchars($listing['have_title']) ?></strong></p>
+  <p>They want: <strong><?= htmlspecialchars($listing['want_title']) ?></strong></p>
   <p><?= nl2br(htmlspecialchars($listing['description'])) ?></p>
   <?php if (!empty($listing['image'])): ?><p><img src="uploads/<?= htmlspecialchars($listing['image']) ?>" alt="Listing image" style="max-width:200px"></p><?php endif; ?>
   <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
   <form method="post">
     <label>Your Item Offer:<br>
-      <select name="offered_item_id" required>
+      <select name="offered_sku" required>
         <option value="">-- Select Item --</option>
         <?php foreach ($inventory as $item): ?>
-          <option value="<?= $item['id'] ?>"><?= htmlspecialchars($item['name']) ?></option>
+          <option value="<?= htmlspecialchars($item['sku']) ?>"><?= htmlspecialchars($item['title']) ?></option>
         <?php endforeach; ?>
       </select>
     </label><br>

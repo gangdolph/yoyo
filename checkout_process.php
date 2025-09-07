@@ -78,16 +78,21 @@ try {
   }
 
   /* --------------------------- Server-side pricing ----------------------------- */
-  $price = null; // decimal dollars
-  $stmt = $db->prepare('SELECT price FROM listings WHERE id = ? LIMIT 1');
-  $stmt->bind_param('i', $listing_id);
-  $stmt->execute();
-  $stmt->bind_result($price);
-  if (!$stmt->fetch()) {
+    $price = null; // decimal dollars
+    $sku = null;
+    $stock = 0;
+    $stmt = $db->prepare('SELECT l.price, l.product_sku, p.quantity FROM listings l JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+    $stmt->bind_param('i', $listing_id);
+    $stmt->execute();
+    $stmt->bind_result($price, $sku, $stock);
+    if (!$stmt->fetch()) {
+      $stmt->close();
+      $fail('listing_not_found', 'listing_id=' . $listing_id);
+    }
     $stmt->close();
-    $fail('listing_not_found', 'listing_id=' . $listing_id);
-  }
-  $stmt->close();
+    if ($stock <= 0) {
+      $fail('out_of_stock', 'sku=' . $sku);
+    }
 
   $amount = (int)round(((float)$price) * 100); // cents
   if ($amount <= 0) {
@@ -160,11 +165,16 @@ try {
         $ship = $_SESSION['shipping'][$listing_id];
         $tracking = null;
         $orderStatus = 'pending';
-        if ($stmt = $db->prepare('INSERT INTO order_fulfillments (payment_id, user_id, listing_id, shipping_address, delivery_method, notes, tracking_number, status) VALUES (?,?,?,?,?,?,?,?)')) {
-          $stmt->bind_param('iiisssss', $paymentDbId, $user_id, $listing_id, $ship['address'], $ship['method'], $ship['notes'], $tracking, $orderStatus);
-          $stmt->execute();
-          $stmt->close();
-        }
+          if ($stmt = $db->prepare('INSERT INTO order_fulfillments (payment_id, user_id, listing_id, sku, shipping_address, delivery_method, notes, tracking_number, status) VALUES (?,?,?,?,?,?,?,?,?)')) {
+            $stmt->bind_param('iiissssss', $paymentDbId, $user_id, $listing_id, $sku, $ship['address'], $ship['method'], $ship['notes'], $tracking, $orderStatus);
+            $stmt->execute();
+            $stmt->close();
+          }
+          if ($stmt = $db->prepare('UPDATE products SET quantity = quantity - 1 WHERE sku = ? AND quantity > 0')) {
+            $stmt->bind_param('s', $sku);
+            $stmt->execute();
+            $stmt->close();
+          }
         unset($_SESSION['shipping'][$listing_id]);
       }
     } catch (\Throwable $e) {

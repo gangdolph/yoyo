@@ -4,6 +4,7 @@ CREATE TABLE order_fulfillments (
     payment_id INT NOT NULL,
     user_id INT NOT NULL,
     listing_id INT NOT NULL,
+    sku VARCHAR(64) NOT NULL,
     shipping_address TEXT NOT NULL,
     delivery_method VARCHAR(100) NOT NULL,
     notes TEXT,
@@ -12,5 +13,6 @@ CREATE TABLE order_fulfillments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (payment_id) REFERENCES payments(id),
     FOREIGN KEY (user_id) REFERENCES users(id),
-    FOREIGN KEY (listing_id) REFERENCES listings(id)
+    FOREIGN KEY (listing_id) REFERENCES listings(id),
+    FOREIGN KEY (sku) REFERENCES products(sku)
 );

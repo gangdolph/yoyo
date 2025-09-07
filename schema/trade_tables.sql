@@ -3,30 +3,22 @@
 CREATE TABLE trade_listings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     owner_id INT NOT NULL,
-    have_item VARCHAR(255) NOT NULL,
-    want_item VARCHAR(255) NOT NULL,
+    have_sku VARCHAR(64) NOT NULL,
+    want_sku VARCHAR(64) NOT NULL,
     description TEXT,
     image VARCHAR(255),
     status ENUM('open','accepted','closed') DEFAULT 'open',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (owner_id) REFERENCES users(id)
-);
-
-CREATE TABLE inventory_items (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id INT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    description TEXT,
-    quantity INT DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id)
+    FOREIGN KEY (owner_id) REFERENCES users(id),
+    FOREIGN KEY (have_sku) REFERENCES products(sku),
+    FOREIGN KEY (want_sku) REFERENCES products(sku)
 );
 
 CREATE TABLE trade_offers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     listing_id INT NOT NULL,
     offerer_id INT NOT NULL,
-    offered_item_id INT NOT NULL,
+    offered_sku VARCHAR(64) NOT NULL,
     message TEXT,
     use_escrow BOOLEAN DEFAULT 0,
     status ENUM('pending','accepted','declined') DEFAULT 'pending',
@@ -37,7 +29,7 @@ CREATE TABLE trade_offers (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (listing_id) REFERENCES trade_listings(id),
     FOREIGN KEY (offerer_id) REFERENCES users(id),
-    FOREIGN KEY (offered_item_id) REFERENCES inventory_items(id)
+    FOREIGN KEY (offered_sku) REFERENCES products(sku)
 );
 
 CREATE TABLE escrow_transactions (
