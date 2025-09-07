@@ -1,0 +1,1 @@
+ALTER TABLE listings ADD pickup_only TINYINT(1) NOT NULL DEFAULT 0;

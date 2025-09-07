@@ -48,7 +48,7 @@ if ($sort === 'price') {
     $orderBy = 'created_at DESC';
 }
 
-$sql = "SELECT id, title, description, price, category, image FROM listings $where ORDER BY $orderBy LIMIT ? OFFSET ?";
+$sql = "SELECT id, title, description, price, sale_price, category, image FROM listings $where ORDER BY $orderBy LIMIT ? OFFSET ?";
 $paramsLimit = $params;
 $typesLimit = $types . 'ii';
 $paramsLimit[] = $limit;
@@ -131,7 +131,13 @@ $stmt->close();
                 <?php endforeach; ?>
               </ul>
             <?php endif; ?>
-            <p class="price">$<?= htmlspecialchars($l['price']) ?></p>
+            <?php if ($l['sale_price'] !== null): ?>
+              <p class="price"><span class="original">
+                $<?= htmlspecialchars($l['price']) ?></span>
+                <span class="sale">$<?= htmlspecialchars($l['sale_price']) ?></span></p>
+            <?php else: ?>
+              <p class="price">$<?= htmlspecialchars($l['price']) ?></p>
+            <?php endif; ?>
             <div class="rating">★★★★★</div>
             <button class="add-to-cart" data-id="<?= $l['id'] ?>">Add to Cart</button>
             <?php if (!empty($_SESSION['is_admin'])): ?>

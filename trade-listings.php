@@ -6,7 +6,7 @@ require 'includes/csrf.php';
 
 $user_id = $_SESSION['user_id'] ?? null;
 
-$sql = 'SELECT tl.id, tl.have_item, tl.want_item, tl.description, tl.image, tl.status, tl.owner_id, u.username,
+$sql = 'SELECT tl.id, tl.have_item, tl.want_item, tl.trade_type, tl.description, tl.image, tl.status, tl.owner_id, u.username,
         (SELECT COUNT(*) FROM trade_offers o WHERE o.listing_id = tl.id AND o.status IN ("pending","accepted")) AS offers
         FROM trade_listings tl JOIN users u ON tl.owner_id = u.id ORDER BY tl.created_at DESC';
 $listings = [];
@@ -28,13 +28,14 @@ if ($result = $conn->query($sql)) {
     <a href="trade.php">Trade Offers</a> |
     <a href="trade-listing.php">Create Listing</a>
   </p>
-  <table>
-    <tr><th>Have</th><th>Want</th><th>Description</th><th>Image</th><th>Status</th><th>Owner</th><th>Offers</th><th>Actions</th></tr>
+    <table>
+      <tr><th>Have</th><th>Want</th><th>Type</th><th>Description</th><th>Image</th><th>Status</th><th>Owner</th><th>Offers</th><th>Actions</th></tr>
     <?php foreach ($listings as $l): ?>
       <tr>
         <td><?= htmlspecialchars($l['have_item']) ?></td>
         <td><?= htmlspecialchars($l['want_item']) ?></td>
-        <td><?= htmlspecialchars($l['description']) ?></td>
+          <td><?= htmlspecialchars($l['trade_type']) ?></td>
+          <td><?= htmlspecialchars($l['description']) ?></td>
         <td><?php if ($l['image']): ?><img src="uploads/<?= htmlspecialchars($l['image']) ?>" alt="Image" style="max-width:100px"><?php endif; ?></td>
         <td><?= htmlspecialchars($l['status']) ?></td>
         <td><?= username_with_avatar($conn, $l['owner_id'], $l['username']) ?></td>

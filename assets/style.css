@@ -994,12 +994,14 @@ tbody tr:nth-child(even) {
 .content {
   display: flex;
   gap: 1rem;
+  width: 100%;
 }
 .filters {
   max-width: 200px;
 }
 .listing-results {
   flex: 1;
+  width: 100%;
 }
 .listing-toolbar {
   display: flex;
@@ -1029,6 +1031,7 @@ tbody tr:nth-child(even) {
   display: grid;
   gap: 1rem;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-auto-flow: row dense;
 }
 
 @media (min-width: 800px) {
