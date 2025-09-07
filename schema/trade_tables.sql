@@ -5,6 +5,7 @@ CREATE TABLE trade_listings (
     owner_id INT NOT NULL,
     have_sku VARCHAR(64) NOT NULL,
     want_sku VARCHAR(64) NOT NULL,
+    trade_type ENUM('item','cash_card') DEFAULT 'item',
     description TEXT,
     image VARCHAR(255),
     status ENUM('open','accepted','closed') DEFAULT 'open',
@@ -18,7 +19,9 @@ CREATE TABLE trade_offers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     listing_id INT NOT NULL,
     offerer_id INT NOT NULL,
-    offered_sku VARCHAR(64) NOT NULL,
+    offered_sku VARCHAR(64) DEFAULT NULL,
+    payment_amount DECIMAL(10,2) DEFAULT NULL,
+    payment_method VARCHAR(50) DEFAULT NULL,
     message TEXT,
     use_escrow BOOLEAN DEFAULT 0,
     status ENUM('pending','accepted','declined') DEFAULT 'pending',
@@ -35,7 +38,9 @@ CREATE TABLE trade_offers (
 CREATE TABLE escrow_transactions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     offer_id INT NOT NULL,
-    status ENUM('initiated','funded','released','refunded') DEFAULT 'initiated',
+    status ENUM('initiated','funded','verified','released','refunded') DEFAULT 'initiated',
+    verified_by INT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (offer_id) REFERENCES trade_offers(id)
+    FOREIGN KEY (offer_id) REFERENCES trade_offers(id),
+    FOREIGN KEY (verified_by) REFERENCES users(id)
 );

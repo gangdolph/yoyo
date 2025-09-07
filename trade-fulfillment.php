@@ -10,7 +10,7 @@ $error = '';
 $offer = null;
 
 if ($offer_id) {
-    if ($stmt = $conn->prepare('SELECT o.*, l.owner_id FROM trade_offers o JOIN trade_listings l ON o.listing_id = l.id WHERE o.id = ? AND o.status = "accepted"')) {
+    if ($stmt = $conn->prepare('SELECT o.*, l.owner_id, e.status AS escrow_status FROM trade_offers o JOIN trade_listings l ON o.listing_id = l.id LEFT JOIN escrow_transactions e ON e.offer_id = o.id WHERE o.id = ? AND o.status = "accepted"')) {
         $stmt->bind_param('i', $offer_id);
         $stmt->execute();
         $offer = $stmt->get_result()->fetch_assoc();
@@ -58,12 +58,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $msg = notification_message('shipping_update', ['offer_id' => $offer_id]);
                 create_notification($conn, $other_user_id, 'shipping_update', $msg);
             }
+            if ($offer['use_escrow'] && $offer['escrow_status'] === 'initiated' && $offer['offerer_id'] == $user_id) {
+                if ($stmt = $conn->prepare("UPDATE escrow_transactions SET status='funded' WHERE offer_id=?")) {
+                    $stmt->bind_param('i', $offer_id);
+                    $stmt->execute();
+                    $stmt->close();
+                    $offer['escrow_status'] = 'funded';
+                }
+            }
             header('Location: trade-fulfillment.php?offer=' . $offer_id);
             exit;
         }
     }
     // reload offer after update or validation
-    if ($stmt = $conn->prepare('SELECT o.*, l.owner_id FROM trade_offers o JOIN trade_listings l ON o.listing_id = l.id WHERE o.id = ?')) {
+    if ($stmt = $conn->prepare('SELECT o.*, l.owner_id, e.status AS escrow_status FROM trade_offers o JOIN trade_listings l ON o.listing_id = l.id LEFT JOIN escrow_transactions e ON e.offer_id = o.id WHERE o.id = ?')) {
         $stmt->bind_param('i', $offer_id);
         $stmt->execute();
         $offer = $stmt->get_result()->fetch_assoc();
@@ -126,6 +134,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       radios.forEach(r => r.addEventListener('change', toggleFields));
       toggleFields();
     </script>
+  <?php endif; ?>
+  <?php if ($offer['use_escrow']): ?>
+    <h3>Escrow</h3>
+    <p>Status: <strong><?= htmlspecialchars($offer['escrow_status'] ?? 'initiated') ?></strong></p>
+    <?php if ($offer['escrow_status'] === 'initiated' && $offer['offerer_id'] == $user_id): ?>
+      <form method="post" action="escrow.php?offer=<?= $offer_id ?>">
+        <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+        <button type="submit" name="action" value="fund">Fund Escrow</button>
+      </form>
+    <?php endif; ?>
+    <?php if (!empty($_SESSION['is_admin']) && $offer['escrow_status'] === 'funded'): ?>
+      <form method="post" action="escrow.php?offer=<?= $offer_id ?>">
+        <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+        <button type="submit" name="action" value="verify">Verify Item</button>
+      </form>
+    <?php endif; ?>
+    <?php if (!empty($_SESSION['is_admin']) && $offer['escrow_status'] === 'verified'): ?>
+      <form method="post" action="escrow.php?offer=<?= $offer_id ?>">
+        <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+        <button type="submit" name="action" value="release">Release Escrow</button>
+      </form>
+    <?php endif; ?>
   <?php endif; ?>
   <?php include 'includes/footer.php'; ?>
 </body>

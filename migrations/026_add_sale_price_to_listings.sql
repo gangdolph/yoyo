@@ -1,0 +1,1 @@
+ALTER TABLE listings ADD sale_price DECIMAL(10,2) DEFAULT NULL;

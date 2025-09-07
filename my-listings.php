@@ -17,7 +17,7 @@ if (isset($_GET['delete'])) {
   exit;
 }
 
-$stmt = $conn->prepare("SELECT id, title, price, category, image, status, created_at FROM listings WHERE owner_id = ? ORDER BY created_at DESC");
+$stmt = $conn->prepare("SELECT id, title, price, category, image, status, pickup_only, created_at FROM listings WHERE owner_id = ? ORDER BY created_at DESC");
 $stmt->bind_param('i', $user_id);
 $stmt->execute();
 $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -33,7 +33,7 @@ $stmt->close();
   <h2>My Listings</h2>
   <p><a href="sell.php">Create a new listing</a></p>
   <table>
-    <tr><th>Title</th><th>Price</th><th>Category</th><th>Image</th><th>Status</th><th>Actions</th></tr>
+    <tr><th>Title</th><th>Price</th><th>Category</th><th>Image</th><th>Status</th><th>Pickup Only</th><th>Actions</th></tr>
     <?php foreach ($listings as $l): ?>
       <tr>
         <td><?= htmlspecialchars($l['title']) ?></td>
@@ -41,6 +41,7 @@ $stmt->close();
         <td><?= htmlspecialchars($l['category']) ?></td>
         <td><?php if ($l['image']): ?><img class="thumb-square" style="--thumb-size:60px;" src="uploads/<?= htmlspecialchars($l['image']) ?>" alt=""><?php endif; ?></td>
         <td><?= htmlspecialchars($l['status']) ?></td>
+        <td><?= $l['pickup_only'] ? 'Yes' : 'No' ?></td>
         <td><a href="?delete=<?= $l['id'] ?>" onclick="return confirm('Delete listing?');">Delete</a></td>
       </tr>
     <?php endforeach; ?>

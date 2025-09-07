@@ -32,6 +32,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $allowedConditions = ['new', 'used', 'refurbished'];
         $price = trim($_POST['price'] ?? '');
         $category = trim($_POST['category'] ?? '');
+        $pickup_only = isset($_POST['pickup_only']) ? 1 : 0;
         $imageName = null;
 
         if ($title === '' || $description === '' || $condition === '' || !in_array($condition, $allowedConditions, true) || $price === '' || !is_numeric($price)) {
@@ -71,9 +72,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$error) {
             $status = $is_vip ? 'approved' : 'pending';
-            $stmt = $conn->prepare("INSERT INTO listings (owner_id, title, description, `condition`, price, category, image, status) VALUES (?,?,?,?,?,?,?,?)");
+            $stmt = $conn->prepare("INSERT INTO listings (owner_id, title, description, `condition`, price, category, image, status, pickup_only) VALUES (?,?,?,?,?,?,?,?,?)");
             if ($stmt) {
-                $stmt->bind_param('isssssss', $user_id, $title, $description, $condition, $price, $category, $imageName, $status);
+                $stmt->bind_param('isssssssi', $user_id, $title, $description, $condition, $price, $category, $imageName, $status, $pickup_only);
                 $stmt->execute();
                 $stmt->close();
                 header('Location: my-listings.php');
@@ -121,6 +122,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <option value="other">Other</option>
       </select>
     </label><br>
+    <label><input type="checkbox" name="pickup_only" value="1"> Pickup only (no shipping)</label><br>
     <label>Image:<br><input type="file" name="image" accept="image/png,image/jpeg" required></label><br>
     <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
     <button type="submit">Save Listing</button>

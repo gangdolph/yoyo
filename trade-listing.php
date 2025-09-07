@@ -10,7 +10,7 @@ $listing = null;
 $edit_id = isset($_GET['edit']) ? intval($_GET['edit']) : 0;
 
 if ($edit_id) {
-    if ($stmt = $conn->prepare('SELECT id, have_item, want_item, description, image, status FROM trade_listings WHERE id = ? AND owner_id = ?')) {
+    if ($stmt = $conn->prepare('SELECT id, have_item, want_item, trade_type, description, image, status FROM trade_listings WHERE id = ? AND owner_id = ?')) {
         $stmt->bind_param('ii', $edit_id, $user_id);
         $stmt->execute();
         $listing = $stmt->get_result()->fetch_assoc();
@@ -27,8 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $have_item = trim($_POST['have_item'] ?? '');
         $want_item = trim($_POST['want_item'] ?? '');
-        $description = trim($_POST['description'] ?? '');
-        $status = $_POST['status'] ?? 'open';
+          $description = trim($_POST['description'] ?? '');
+          $trade_type = $_POST['trade_type'] ?? 'item';
+          $status = $_POST['status'] ?? 'open';
         $imageName = $listing['image'] ?? null;
 
         if ($have_item === '' || $want_item === '' || $description === '') {
@@ -63,8 +64,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$error) {
             if ($editing) {
-                if ($stmt = $conn->prepare('UPDATE trade_listings SET have_item=?, want_item=?, description=?, status=?, image=? WHERE id=? AND owner_id=?')) {
-                    $stmt->bind_param('sssssii', $have_item, $want_item, $description, $status, $imageName, $edit_id, $user_id);
+                  if ($stmt = $conn->prepare('UPDATE trade_listings SET have_item=?, want_item=?, trade_type=?, description=?, status=?, image=? WHERE id=? AND owner_id=?')) {
+                      $stmt->bind_param('ssssssii', $have_item, $want_item, $trade_type, $description, $status, $imageName, $edit_id, $user_id);
                     $stmt->execute();
                     $stmt->close();
                     header('Location: trade-listings.php');
@@ -73,8 +74,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $error = 'Database error.';
                 }
             } else {
-                if ($stmt = $conn->prepare('INSERT INTO trade_listings (owner_id, have_item, want_item, description, image, status) VALUES (?,?,?,?,?,?)')) {
-                    $stmt->bind_param('isssss', $user_id, $have_item, $want_item, $description, $imageName, $status);
+                  if ($stmt = $conn->prepare('INSERT INTO trade_listings (owner_id, have_item, want_item, trade_type, description, image, status) VALUES (?,?,?,?,?,?,?)')) {
+                      $stmt->bind_param('issssss', $user_id, $have_item, $want_item, $trade_type, $description, $imageName, $status);
                     $stmt->execute();
                     $stmt->close();
                     header('Location: trade-listings.php');
@@ -99,8 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
   <form method="post" enctype="multipart/form-data">
     <label>Item You Have:<br><input type="text" name="have_item" value="<?= htmlspecialchars($listing['have_item'] ?? '') ?>" required></label><br>
-    <label>Item You Want:<br><input type="text" name="want_item" value="<?= htmlspecialchars($listing['want_item'] ?? '') ?>" required></label><br>
-    <label>Description:<br><textarea name="description" required><?= htmlspecialchars($listing['description'] ?? '') ?></textarea></label><br>
+      <label>Item You Want:<br><input type="text" name="want_item" value="<?= htmlspecialchars($listing['want_item'] ?? '') ?>" required></label><br>
+      <label>Trade Type:<br>
+        <select name="trade_type">
+          <option value="item" <?= (($listing['trade_type'] ?? 'item') === 'item') ? 'selected' : '' ?>>Item</option>
+          <option value="cash_card" <?= (($listing['trade_type'] ?? '') === 'cash_card') ? 'selected' : '' ?>>Cash Card</option>
+        </select>
+      </label><br>
+      <label>Description:<br><textarea name="description" required><?= htmlspecialchars($listing['description'] ?? '') ?></textarea></label><br>
     <?php if (!empty($listing['image'])): ?><img src="uploads/<?= htmlspecialchars($listing['image']) ?>" alt="Listing image" style="max-width:150px"><br><?php endif; ?>
     <label>Image:<br><input type="file" name="image" accept="image/png,image/jpeg"></label><br>
     <label>Status:<br>

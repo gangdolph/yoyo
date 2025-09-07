@@ -10,7 +10,7 @@ if (!$listing_id) {
 }
 
 // Fetch listing to confirm exists
-if ($stmt = $conn->prepare('SELECT id, title, price FROM listings WHERE id = ? LIMIT 1')) {
+if ($stmt = $conn->prepare('SELECT id, title, price, pickup_only FROM listings WHERE id = ? LIMIT 1')) {
     $stmt->bind_param('i', $listing_id);
     $stmt->execute();
     $listing = $stmt->get_result()->fetch_assoc();
@@ -19,6 +19,17 @@ if ($stmt = $conn->prepare('SELECT id, title, price FROM listings WHERE id = ? L
 if (!$listing) {
     http_response_code(404);
     echo 'Listing not found';
+    exit;
+}
+
+// If pickup only, skip shipping form
+if (!empty($listing['pickup_only'])) {
+    $_SESSION['shipping'][$listing_id] = [
+        'address' => '',
+        'method' => 'pickup',
+        'notes' => ''
+    ];
+    header('Location: checkout.php?listing_id=' . $listing_id);
     exit;
 }
 

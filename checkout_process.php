@@ -59,6 +59,7 @@ try {
     $sourceId = trim($_POST['source_id']);
   }
   $listing_id = isset($_POST['listing_id']) ? (int)$_POST['listing_id'] : 0;
+  $coupon_code = isset($_POST['coupon_code']) && is_string($_POST['coupon_code']) ? trim($_POST['coupon_code']) : '';
 
   // Helper: redirect to cancel with short reason + log
   $fail = function (string $reason, string $logDetail = '') {
@@ -79,17 +80,41 @@ try {
 
   /* --------------------------- Server-side pricing ----------------------------- */
     $price = null; // decimal dollars
+    $salePrice = null;
     $sku = null;
     $stock = 0;
-    $stmt = $db->prepare('SELECT l.price, l.product_sku, p.quantity FROM listings l JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.quantity FROM listings l JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
     $stmt->bind_param('i', $listing_id);
     $stmt->execute();
-    $stmt->bind_result($price, $sku, $stock);
+    $stmt->bind_result($price, $salePrice, $sku, $stock);
     if (!$stmt->fetch()) {
       $stmt->close();
       $fail('listing_not_found', 'listing_id=' . $listing_id);
     }
     $stmt->close();
+    $price = ($salePrice !== null) ? $salePrice : $price;
+    $discount = 0.0;
+    if ($coupon_code !== '') {
+      $stmt = $db->prepare('SELECT discount_type, discount_value FROM coupons WHERE listing_id = ? AND code = ? AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1');
+      $stmt->bind_param('is', $listing_id, $coupon_code);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      if ($c = $res->fetch_assoc()) {
+        if ($c['discount_type'] === 'percentage') {
+          $discount = $price * ((float)$c['discount_value'] / 100);
+        } else {
+          $discount = (float)$c['discount_value'];
+        }
+        if ($discount > $price) {
+          $discount = $price;
+        }
+      }
+      $stmt->close();
+    }
+    $price -= $discount;
+    if ($price < 0) {
+      $price = 0;
+    }
     if ($stock <= 0) {
       $fail('out_of_stock', 'sku=' . $sku);
     }
