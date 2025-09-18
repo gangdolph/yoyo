@@ -39,6 +39,12 @@ try {
     $mysqli = new mysqli($host, $user, $pass, $db, $port);
   }
   $mysqli->set_charset('utf8mb4');
+
+  /* Back-compat for legacy code expecting $conn */
+  if (!isset($conn) || !($conn instanceof mysqli)) {
+    $conn = $mysqli;
+  }
+
   return $mysqli;
 } catch (mysqli_sql_exception $e) {
   error_log(sprintf('[db.php] Connect failed: %s | host=%s port=%d socket=%s',

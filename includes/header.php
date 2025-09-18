@@ -2,25 +2,35 @@
 if (session_status() === PHP_SESSION_NONE):
   session_start();
 endif;
-require_once __DIR__ . '/db.php';
+require_once __DIR__ . '/auth.php';
+$db = require __DIR__ . '/db.php';
 require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/notifications.php';
 
 $username = '';
 $status = '';
-$unread_messages = 0;
 $unread_notifications = 0;
 $unread_total = 0;
 $pending_requests = 0;
 $cart_count = isset($_SESSION['cart']) ? array_sum($_SESSION['cart']) : 0;
 
-if (!empty($_SESSION['user_id'])):
+$uid = isset($user_id) ? (int)$user_id : (int)($_SESSION['user_id'] ?? 0);
+
+$unread_messages = 0;
+try {
+  $unread_messages = count_unread_messages($db, $uid);
+} catch (Throwable $e) {
+  error_log('[header.php] unread count failed: ' . $e->getMessage());
+  $unread_messages = 0;
+}
+
+if ($uid > 0):
   if (!empty($_SESSION['username']) && !empty($_SESSION['status'])):
     $username = $_SESSION['username'];
     $status = $_SESSION['status'];
   else:
-    if ($stmt = $conn->prepare('SELECT username, status FROM users WHERE id = ?')):
-      $stmt->bind_param('i', $_SESSION['user_id']);
+    if ($stmt = $db->prepare('SELECT username, status FROM users WHERE id = ?')):
+      $stmt->bind_param('i', $uid);
       $stmt->execute();
       $stmt->bind_result($username, $status);
       $stmt->fetch();
@@ -30,11 +40,10 @@ if (!empty($_SESSION['user_id'])):
     endif;
   endif;
 
-  $unread_messages = count_unread_messages($conn, $_SESSION['user_id']);
-  $unread_notifications = count_unread_notifications($conn, $_SESSION['user_id']);
+  $unread_notifications = count_unread_notifications($db, $uid);
   $unread_total = $unread_messages + $unread_notifications;
-  if ($stmt = $conn->prepare('SELECT COUNT(*) FROM friends WHERE friend_id = ? AND status = "pending"')):
-    $stmt->bind_param('i', $_SESSION['user_id']);
+  if ($stmt = $db->prepare('SELECT COUNT(*) FROM friends WHERE friend_id = ? AND status = "pending"')):
+    $stmt->bind_param('i', $uid);
     $stmt->execute();
     $stmt->bind_result($pending_requests);
     $stmt->fetch();
@@ -66,13 +75,13 @@ endif;
     </form>
   </div>
   <div class="header-right">
-<?php if (empty($_SESSION['user_id'])): ?>
+<?php if ($uid <= 0): ?>
     <nav class="site-nav header-links">
       <a href="/login.php" class="btn" data-i18n="login">Login</a>
       <a href="/register.php" class="btn" data-i18n="register">Register</a>
     </nav>
 <?php else: ?>
-    <div class="header-user"><?= username_with_avatar($conn, $_SESSION['user_id'], $username) ?></div>
+    <div class="header-user"><?= username_with_avatar($db, $uid, $username) ?></div>
     <nav class="site-nav header-links">
       <a href="/dashboard.php" class="btn" data-i18n="dashboard">Dashboard</a>
       <a href="/friend-requests.php" aria-label="Friend Requests<?= $pending_requests ? ' (' . $pending_requests . ' pending)' : '' ?>">

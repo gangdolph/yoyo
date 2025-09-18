@@ -1,4 +1,6 @@
 <?php
+declare(strict_types=1);
+
 require_once __DIR__ . '/db.php';
 
 /**
@@ -74,16 +76,19 @@ function count_unread_notifications($conn, $user_id) {
     return 0;
 }
 
-function count_unread_messages($conn, $user_id) {
-    if ($stmt = $conn->prepare('SELECT COUNT(*) FROM messages WHERE recipient_id = ? AND read_at IS NULL')) {
-        $stmt->bind_param('i', $user_id);
+function count_unread_messages(mysqli $db, int $userId): int {
+    if ($userId <= 0) return 0;
+    $sql = "SELECT COUNT(*) FROM message_requests WHERE recipient_id = ? AND read_at IS NULL";
+    $stmt = $db->prepare($sql);
+    try {
+        $stmt->bind_param('i', $userId);
         $stmt->execute();
         $stmt->bind_result($count);
         $stmt->fetch();
+        return (int)$count;
+    } finally {
         $stmt->close();
-        return $count;
     }
-    return 0;
 }
 
 
