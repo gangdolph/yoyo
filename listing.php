@@ -2,6 +2,7 @@
 session_start();
 require 'includes/db.php';
 require 'includes/csrf.php';
+require 'includes/tags.php';
 
 $listing_id = isset($_GET['listing_id']) ? intval($_GET['listing_id']) : 0;
 if (!$listing_id) {
@@ -9,7 +10,7 @@ if (!$listing_id) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT l.id, l.product_sku, p.title, p.description, p.price AS original_price, l.sale_price, l.category, l.image, l.pickup_only FROM listings l JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+$stmt = $conn->prepare('SELECT l.id, l.product_sku, p.title, p.description, p.price AS original_price, l.sale_price, l.category, l.tags, l.image, l.pickup_only FROM listings l JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
 $stmt->bind_param('i', $listing_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -41,6 +42,14 @@ if (!$listing) {
       <p class="description">
         <?= nl2br(htmlspecialchars($listing['description'])); ?>
       </p>
+      <?php $detailTags = tags_from_storage($listing['tags']); ?>
+      <?php if ($detailTags): ?>
+        <ul class="tag-badge-list">
+          <?php foreach ($detailTags as $tag): ?>
+            <li class="tag-chip tag-chip-static">#<?= htmlspecialchars($tag); ?></li>
+          <?php endforeach; ?>
+        </ul>
+      <?php endif; ?>
       <?php if ($listing['sale_price'] !== null): ?>
         <p class="price"><span class="original">$<?= htmlspecialchars($listing['original_price']); ?></span> <span class="sale">$<?= htmlspecialchars($listing['sale_price']); ?></span></p>
       <?php else: ?>

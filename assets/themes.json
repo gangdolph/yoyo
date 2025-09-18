@@ -5,7 +5,7 @@
       "--bg": "#2d1e59",
       "--fg": "#f8f9fa",
       "--accent": "#ff71ce",
-      "--btn-text": "#000000",
+      "--btn-text": "#1b1135",
       "--gradient": "linear-gradient(135deg, #ff71ce 0%, #01cdfe 100%)",
       "--font-header": "'Share Tech Mono', monospace",
       "--font-body": "'Share Tech Mono', monospace",
@@ -20,7 +20,7 @@
       "--bg": "#1b1135",
       "--fg": "#e0d9f6",
       "--accent": "#01cdfe",
-      "--btn-text": "#000000",
+      "--btn-text": "#041227",
       "--gradient": "linear-gradient(135deg, #2d1e59 0%, #09002e 100%)",
       "--font-header": "'Share Tech Mono', monospace",
       "--font-body": "'Share Tech Mono', monospace",
@@ -35,7 +35,7 @@
       "--bg": "rgba(0, 0, 0, 0.3)",
       "--fg": "#ffffff",
       "--accent": "var(--vap1)",
-      "--btn-text": "#000000",
+      "--btn-text": "#12002c",
       "--gradient": "linear-gradient(-45deg, var(--vap1), var(--vap2), var(--vap3), var(--vap1))",
       "--vap1": "#ff71ce",
       "--vap2": "#01cdfe",
@@ -47,11 +47,17 @@
       "--cta-depth": "20px"
     },
     "pattern": {
-      "frequency": 5,
-      "amplitude": 20,
-      "poly": [0],
-      "hue": 0,
-      "sat": 100
+      "preset": "dramatic",
+      "frequency": 6,
+      "amplitude": 16,
+      "poly": [0, 12, -10],
+      "hue": 280,
+      "sat": 130,
+      "features": {
+        "poly": true,
+        "hue": true,
+        "sat": true
+      }
     }
   },
   "pastel": {
@@ -60,7 +66,7 @@
       "--bg": "#ffe4e1",
       "--fg": "#333333",
       "--accent": "#ffb6c1",
-      "--btn-text": "#000000",
+      "--btn-text": "#2d1e59",
       "--gradient": "linear-gradient(135deg, #ffe4e1 0%, #e0ffff 100%)",
       "--font-header": "'Share Tech Mono', monospace",
       "--font-body": "'Share Tech Mono', monospace",
@@ -75,7 +81,7 @@
       "--bg": "#2e3d2f",
       "--fg": "#e6e8e6",
       "--accent": "#4caf50",
-      "--btn-text": "#000000",
+      "--btn-text": "#102512",
       "--gradient": "linear-gradient(135deg, #2e3d2f 0%, #1b2c20 100%)",
       "--font-header": "'Share Tech Mono', monospace",
       "--font-body": "'Share Tech Mono', monospace",

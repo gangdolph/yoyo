@@ -1,6 +1,7 @@
 <?php
 require 'includes/auth.php';
 require 'includes/db.php';
+require 'includes/support.php';
 
 $user_id = $_SESSION['user_id'];
 $other_id = isset($_GET['user']) ? intval($_GET['user']) : 0;
@@ -29,14 +30,55 @@ $friend->store_result();
 $is_friend = $friend->num_rows > 0;
 $friend->close();
 $table = $is_friend ? 'messages' : 'message_requests';
+$support_ticket_id = null;
+$support_owner_id = null;
+
+if ($table === 'message_requests') {
+  if ($stmt = $conn->prepare('SELECT support_ticket_id FROM message_requests '
+    . 'WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)) '
+    . 'AND support_ticket_id IS NOT NULL ORDER BY created_at DESC LIMIT 1')) {
+    $stmt->bind_param('iiii', $user_id, $other_id, $other_id, $user_id);
+    $stmt->execute();
+    $stmt->bind_result($found_ticket);
+    if ($stmt->fetch()) {
+      $support_ticket_id = (int) $found_ticket;
+    }
+    $stmt->close();
+  }
+  if ($support_ticket_id) {
+    if ($ticketStmt = $conn->prepare('SELECT user_id FROM support_tickets WHERE id = ?')) {
+      $ticketStmt->bind_param('i', $support_ticket_id);
+      $ticketStmt->execute();
+      $ticketStmt->bind_result($owner_id);
+      if ($ticketStmt->fetch()) {
+        $support_owner_id = (int) $owner_id;
+      }
+      $ticketStmt->close();
+    }
+  }
+}
 
 if (!empty($_POST['body'])) {
   $body = trim($_POST['body']);
   if ($body !== '') {
-    $stmt = $conn->prepare("INSERT INTO $table (sender_id, recipient_id, body) VALUES (?, ?, ?)");
-    $stmt->bind_param('iis', $user_id, $other_id, $body);
-    $stmt->execute();
-    $stmt->close();
+    if ($table === 'message_requests' && $support_ticket_id) {
+      $category = 'support';
+      $stmt = $conn->prepare('INSERT INTO message_requests (sender_id, recipient_id, body, support_ticket_id, category) VALUES (?, ?, ?, ?, ?)');
+      $stmt->bind_param('iisis', $user_id, $other_id, $body, $support_ticket_id, $category);
+      $stmt->execute();
+      $stmt->close();
+      if ($support_owner_id) {
+        $status = ($user_id === $support_owner_id) ? 'open' : 'pending';
+        touch_support_ticket($conn, $support_ticket_id, $status);
+      } else {
+        touch_support_ticket($conn, $support_ticket_id, null);
+      }
+    } else {
+      $stmt = $conn->prepare("INSERT INTO $table (sender_id, recipient_id, body) VALUES (?, ?, ?)");
+      $stmt->bind_param('iis', $user_id, $other_id, $body);
+      $stmt->execute();
+      $stmt->close();
+    }
     header("Location: message-thread.php?user=$other_id");
     exit;
   }

@@ -2,6 +2,7 @@
 session_start();
 require 'includes/db.php';
 require 'includes/csrf.php';
+require 'includes/tags.php';
 
 $search = trim($_GET['search'] ?? '');
 $category = trim($_GET['category'] ?? '');
@@ -11,6 +12,20 @@ $limitOptions = [25, 50, 100];
 $limit = in_array($limitParam, $limitOptions) ? $limitParam : 25;
 $page = max(1, (int)($_GET['page'] ?? 1));
 $offset = ($page - 1) * $limit;
+
+$tagFilters = [];
+$tagsParam = $_GET['tags'] ?? [];
+if (is_string($tagsParam)) {
+    $tagFilters = tags_from_input($tagsParam);
+} elseif (is_array($tagsParam)) {
+    foreach ($tagsParam as $tagCandidate) {
+        $normalized = normalize_tag($tagCandidate);
+        if ($normalized !== null) {
+            $tagFilters[$normalized] = true;
+        }
+    }
+    $tagFilters = array_keys($tagFilters);
+}
 
 $where = "WHERE status='approved'";
 $params = [];
@@ -28,6 +43,14 @@ if ($category !== '') {
     $where .= " AND category = ?";
     $params[] = $category;
     $types .= 's';
+}
+
+if (!empty($tagFilters)) {
+    foreach ($tagFilters as $tag) {
+        $where .= " AND tags LIKE ?";
+        $params[] = tag_like_parameter($tag);
+        $types .= 's';
+    }
 }
 
 $countSql = "SELECT COUNT(*) FROM listings $where";
@@ -48,7 +71,7 @@ if ($sort === 'price') {
     $orderBy = 'created_at DESC';
 }
 
-$sql = "SELECT id, title, description, price, sale_price, category, image FROM listings $where ORDER BY $orderBy LIMIT ? OFFSET ?";
+$sql = "SELECT id, title, description, price, sale_price, category, tags, image FROM listings $where ORDER BY $orderBy LIMIT ? OFFSET ?";
 $paramsLimit = $params;
 $typesLimit = $types . 'ii';
 $paramsLimit[] = $limit;
@@ -58,6 +81,27 @@ $stmt->bind_param($typesLimit, ...$paramsLimit);
 $stmt->execute();
 $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
+
+$availableTags = [];
+$tagQuery = $conn->query("SELECT tags FROM listings WHERE status='approved' AND tags IS NOT NULL AND tags <> ''");
+if ($tagQuery) {
+    while ($row = $tagQuery->fetch_assoc()) {
+        foreach (tags_from_storage($row['tags']) as $tag) {
+            $availableTags[$tag] = true;
+        }
+    }
+    $tagQuery->close();
+}
+ksort($availableTags);
+$availableTags = array_keys($availableTags);
+if ($tagFilters) {
+    foreach ($tagFilters as $tag) {
+        if (!in_array($tag, $availableTags, true)) {
+            $availableTags[] = $tag;
+        }
+    }
+    sort($availableTags);
+}
 ?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
@@ -71,7 +115,7 @@ $stmt->close();
   <h2>Available Listings</h2>
   <div class="content">
     <aside class="filters">
-      <form method="get">
+      <form method="get" class="filter-form">
         <input type="text" name="search" placeholder="Search" value="<?= htmlspecialchars($search) ?>">
         <select name="category">
           <option value="">All Categories</option>
@@ -80,6 +124,17 @@ $stmt->close();
           <option value="pc" <?= $category==='pc'?'selected':'' ?>>PC</option>
           <option value="other" <?= $category==='other'?'selected':'' ?>>Other</option>
         </select>
+        <?php if ($availableTags): ?>
+          <fieldset class="tag-filter">
+            <legend>Tags</legend>
+            <?php foreach ($availableTags as $tag): ?>
+              <label class="tag-filter-option">
+                <input type="checkbox" name="tags[]" value="<?= htmlspecialchars($tag); ?>" <?= in_array($tag, $tagFilters, true) ? 'checked' : ''; ?>>
+                <span><?= htmlspecialchars($tag); ?></span>
+              </label>
+            <?php endforeach; ?>
+          </fieldset>
+        <?php endif; ?>
         <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
         <input type="hidden" name="limit" value="<?= $limit ?>">
         <button type="submit">Filter</button>
@@ -94,6 +149,9 @@ $stmt->close();
         <form method="get">
           <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
           <input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>">
+          <?php foreach ($tagFilters as $tag): ?>
+            <input type="hidden" name="tags[]" value="<?= htmlspecialchars($tag); ?>">
+          <?php endforeach; ?>
           <label>Sort by:
             <select name="sort" onchange="this.form.submit()">
               <option value="" <?= $sort===''?'selected':'' ?>>Default</option>
@@ -128,6 +186,14 @@ $stmt->close();
               <ul class="product-features">
                 <?php foreach ($features as $f): ?>
                   <li><?= htmlspecialchars($f) ?></li>
+                <?php endforeach; ?>
+              </ul>
+            <?php endif; ?>
+            <?php $cardTags = tags_from_storage($l['tags']); ?>
+            <?php if ($cardTags): ?>
+              <ul class="tag-badge-list">
+                <?php foreach ($cardTags as $tag): ?>
+                  <li class="tag-chip tag-chip-static">#<?= htmlspecialchars($tag) ?></li>
                 <?php endforeach; ?>
               </ul>
             <?php endif; ?>

@@ -20,6 +20,7 @@
       <li><a href="forum/">Forum</a></li>
       <li><a href="terms.php">Terms</a></li>
       <li><a href="privacy.php">Privacy</a></li>
+      <li><a href="support.php">Support</a></li>
     </ul>
   </div>
 </nav>

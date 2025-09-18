@@ -15,6 +15,7 @@
         <li><a href="/dashboard.php">Dashboard</a></li>
         <li><a href="/my-listings.php">My Listings</a></li>
         <li><a href="/messages.php">Messages</a></li>
+        <li><a href="/support.php">Support</a></li>
         <li><a href="/logout.php">Logout</a></li>
       </ul>
     </nav>
@@ -23,6 +24,7 @@
       <ul>
         <li><a href="/about.php">About Us</a></li>
         <li><a href="/help.php">Help</a></li>
+        <li><a href="/support.php">Contact Support</a></li>
         <li><a href="/vip.php">VIP Plans</a></li>
         <li><a href="/terms.php">Terms</a></li>
         <li><a href="/privacy.php">Privacy</a></li>

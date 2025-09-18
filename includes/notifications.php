@@ -14,6 +14,12 @@ function notification_message($type, $context = []) {
         'shipping_update' => 'Shipping details updated for trade offer #' . ($context['offer_id'] ?? ''),
     ];
 
+    if ($type === 'support_ticket') {
+        $from = $context['username'] ?? 'a user';
+        $subject = $context['subject'] ?? 'Support ticket';
+        return "New support ticket from $from: $subject";
+    }
+
     if ($type === 'service_status') {
         $map = [
             'New'              => 'Your service request was received.',

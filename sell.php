@@ -2,6 +2,7 @@
 require 'includes/auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
+require 'includes/tags.php';
 
 $user_id = $_SESSION['user_id'];
 $is_vip = false;
@@ -21,6 +22,7 @@ if (!$is_vip) {
 }
 
 $error = '';
+$tags_input = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
@@ -32,8 +34,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $allowedConditions = ['new', 'used', 'refurbished'];
         $price = trim($_POST['price'] ?? '');
         $category = trim($_POST['category'] ?? '');
+        $tags_input = trim($_POST['tags'] ?? '');
         $pickup_only = isset($_POST['pickup_only']) ? 1 : 0;
         $imageName = null;
+
+        $tags = tags_from_input($tags_input);
+        $tags_input = tags_to_input_value($tags);
+        $tags_storage = tags_to_storage($tags);
 
         if ($title === '' || $description === '' || $condition === '' || !in_array($condition, $allowedConditions, true) || $price === '' || !is_numeric($price)) {
             $error = 'Title, description, valid condition, and a valid price are required.';
@@ -72,9 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$error) {
             $status = $is_vip ? 'approved' : 'pending';
-            $stmt = $conn->prepare("INSERT INTO listings (owner_id, title, description, `condition`, price, category, image, status, pickup_only) VALUES (?,?,?,?,?,?,?,?,?)");
+            $stmt = $conn->prepare("INSERT INTO listings (owner_id, title, description, `condition`, price, category, tags, image, status, pickup_only) VALUES (?,?,?,?,?,?,?,?,?,?)");
             if ($stmt) {
-                $stmt->bind_param('isssssssi', $user_id, $title, $description, $condition, $price, $category, $imageName, $status, $pickup_only);
+                $stmt->bind_param('issssssssi', $user_id, $title, $description, $condition, $price, $category, $tags_storage, $imageName, $status, $pickup_only);
                 $stmt->execute();
                 $stmt->close();
                 header('Location: my-listings.php');
@@ -90,6 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <title>Create Listing</title>
   <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/tags.js" defer></script>
 </head>
 <body>
   <?php include 'includes/sidebar.php'; ?>
@@ -121,6 +129,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <option value="pc">PC</option>
         <option value="other">Other</option>
       </select>
+    </label><br>
+    <label>Tags:<br>
+      <div class="tag-input" data-tag-editor>
+        <div class="tag-list" data-tag-list></div>
+        <input type="text" data-tag-source placeholder="Add tag and press Enter">
+        <input type="hidden" name="tags" value="<?= htmlspecialchars($tags_input); ?>" data-tag-store>
+      </div>
+      <small class="field-hint">Use short keywords like "official" or "bundle".</small>
     </label><br>
     <label><input type="checkbox" name="pickup_only" value="1"> Pickup only (no shipping)</label><br>
     <label>Image:<br><input type="file" name="image" accept="image/png,image/jpeg" required></label><br>

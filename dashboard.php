@@ -2,6 +2,7 @@
 require 'includes/auth.php';
 require 'includes/db.php';
 require 'includes/notifications.php';
+require 'includes/orders.php';
 
 $id = $_SESSION['user_id'];
 $username = '';
@@ -34,13 +35,7 @@ if ($stmt = $conn->prepare('SELECT sku, title, quantity, reorder_threshold FROM 
 $low_stock = array_filter($my_products, function($p) {
   return $p['reorder_threshold'] > 0 && $p['quantity'] <= $p['reorder_threshold'];
 });
-$my_shipments = [];
-if ($stmt = $conn->prepare('SELECT sku, status FROM order_fulfillments WHERE user_id = ? ORDER BY created_at DESC LIMIT 5')) {
-  $stmt->bind_param('i', $id);
-  $stmt->execute();
-  $my_shipments = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-  $stmt->close();
-}
+$orders = fetch_orders_for_user($conn, (int) $id);
 ?>
 <?php require 'includes/layout.php'; ?>
   <title>Dashboard</title>
@@ -73,6 +68,7 @@ if ($stmt = $conn->prepare('SELECT sku, status FROM order_fulfillments WHERE use
         <ul class="nav-links">
           <li><a class="btn" role="button" href="notifications.php">Notifications<?php if (!empty($unread_notifications)): ?> <span class="badge"><?= $unread_notifications ?></span><?php endif; ?></a></li>
           <li><a class="btn" role="button" href="messages.php">Messages<?php if (!empty($unread_messages)): ?> <span class="badge"><?= $unread_messages ?></span><?php endif; ?></a></li>
+          <li><a class="btn" role="button" href="support.php">Support</a></li>
         </ul>
       </div>
       <div class="nav-section">
@@ -108,19 +104,65 @@ if ($stmt = $conn->prepare('SELECT sku, status FROM order_fulfillments WHERE use
       <?php endif; ?>
     </div>
     <div class="nav-section">
-      <h3>Shipments</h3>
-      <?php if ($my_shipments): ?>
-      <table>
-        <tr><th>SKU</th><th>Status</th></tr>
-        <?php foreach ($my_shipments as $s): ?>
-        <tr>
-          <td><?= htmlspecialchars($s['sku']) ?></td>
-          <td><?= htmlspecialchars($s['status']) ?></td>
-        </tr>
+      <h3>Orders</h3>
+      <?php if ($orders): ?>
+      <table class="orders-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Direction</th>
+            <th>Product</th>
+            <th>Inventory</th>
+            <th>Official</th>
+            <th>Payment</th>
+            <th>Shipping</th>
+            <th>Counterparty</th>
+            <th>Placed</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+        <?php foreach ($orders as $order): ?>
+          <?php
+            $isOfficial = $order['product']['is_official'];
+            $badgeClass = $isOfficial ? 'badge-official' : 'badge-community';
+            $badgeLabel = $isOfficial ? 'Official' : 'Community';
+            $counterparty = $order['direction'] === 'buy'
+              ? ($order['listing']['owner_username'] ?? 'Seller')
+              : ($order['buyer']['username'] ?? 'Buyer');
+            $amount = $order['payment']['amount'];
+            $amountDisplay = $amount !== null ? '$' . number_format(((int) $amount) / 100, 2) : '—';
+            $paymentStatus = $order['payment']['status'] ?? 'pending';
+            $shippingStatus = $order['shipping_status'] ?? 'pending';
+          ?>
+          <tr>
+            <td>#<?= (int) $order['id'] ?></td>
+            <td class="order-direction order-direction-<?= htmlspecialchars($order['direction'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars(ucfirst($order['direction']), ENT_QUOTES, 'UTF-8') ?></td>
+            <td>
+              <strong><?= htmlspecialchars($order['product']['title'] ?: $order['listing']['title'], ENT_QUOTES, 'UTF-8') ?></strong><br>
+              <small><?= htmlspecialchars($order['product']['sku'], ENT_QUOTES, 'UTF-8') ?></small>
+            </td>
+            <td><?= (int) $order['product']['quantity'] ?></td>
+            <td><span class="badge <?= htmlspecialchars($badgeClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($badgeLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
+            <td>
+              <?= htmlspecialchars($amountDisplay, ENT_QUOTES, 'UTF-8') ?><br>
+              <small>Status: <?= htmlspecialchars(ucfirst($paymentStatus ?? 'pending'), ENT_QUOTES, 'UTF-8') ?></small>
+            </td>
+            <td>
+              <?= htmlspecialchars(ucfirst($shippingStatus), ENT_QUOTES, 'UTF-8') ?>
+              <?php if (!empty($order['tracking_number'])): ?>
+                <br><small>Tracking: <?= htmlspecialchars($order['tracking_number'], ENT_QUOTES, 'UTF-8') ?></small>
+              <?php endif; ?>
+            </td>
+            <td><?= htmlspecialchars($counterparty ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
+            <td><?= htmlspecialchars($order['placed_at'], ENT_QUOTES, 'UTF-8') ?></td>
+            <td><a href="order.php?id=<?= (int) $order['id'] ?>">View</a></td>
+          </tr>
         <?php endforeach; ?>
+        </tbody>
       </table>
       <?php else: ?>
-      <p>No shipments.</p>
+      <p>No orders yet.</p>
       <?php endif; ?>
     </div>
   </div>
