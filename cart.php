@@ -67,6 +67,8 @@ $grand_total = $total + $tax + $shipping;
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3601799131755099"
+        crossorigin="anonymous"></script>
     <title>Your Cart</title>
     <link rel="stylesheet" href="assets/style.css">
 </head>
