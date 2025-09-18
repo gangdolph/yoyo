@@ -1,6 +1,11 @@
 <?php
-session_start();
-require 'includes/db.php';
+declare(strict_types=1);
+require_once __DIR__ . '/includes/auth.php';
+
+if (!isset($db) || !($db instanceof mysqli)) {
+    $db = require __DIR__ . '/includes/db.php';
+}
+
 require 'includes/user.php';
 require 'includes/tags.php';
 
@@ -29,7 +34,7 @@ if ($q !== '') {
         $countParams[] = $role;
         $countTypes .= 's';
     }
-    if ($stmt = $conn->prepare($countSql)) {
+    if ($stmt = $db->prepare($countSql)) {
         $stmt->bind_param($countTypes, ...$countParams);
         if ($stmt->execute()) {
             $stmt->bind_result($totalUsers);
@@ -43,7 +48,7 @@ if ($q !== '') {
         }
         $stmt->close();
     } else {
-        error_log($conn->error);
+        error_log($db->error);
         http_response_code(500);
         $searchError = true;
         $errorMessage = 'Search is currently unavailable.';
@@ -61,7 +66,7 @@ if ($q !== '') {
     $userParams[] = $perPage;
     $userParams[] = $offset;
     $userTypes .= 'ii';
-    if ($stmt = $conn->prepare($userSql)) {
+    if ($stmt = $db->prepare($userSql)) {
         $stmt->bind_param($userTypes, ...$userParams);
         if ($stmt->execute()) {
             $userResults = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -73,7 +78,7 @@ if ($q !== '') {
         }
         $stmt->close();
     } else {
-        error_log($conn->error);
+        error_log($db->error);
         http_response_code(500);
         $searchError = true;
         $errorMessage = 'Search is currently unavailable.';
@@ -95,7 +100,7 @@ if ($q !== '') {
             $countTypes .= 's';
         }
     }
-    if ($stmt = $conn->prepare($countSql)) {
+    if ($stmt = $db->prepare($countSql)) {
         $stmt->bind_param($countTypes, ...$countParams);
         if ($stmt->execute()) {
             $stmt->bind_result($totalListings);
@@ -109,7 +114,7 @@ if ($q !== '') {
         }
         $stmt->close();
     } else {
-        error_log($conn->error);
+        error_log($db->error);
         http_response_code(500);
         $searchError = true;
         $errorMessage = 'Search is currently unavailable.';
@@ -136,7 +141,7 @@ if ($q !== '') {
     $listParams[] = $perPage;
     $listParams[] = $offset;
     $listTypes .= 'ii';
-    if ($stmt = $conn->prepare($listSql)) {
+    if ($stmt = $db->prepare($listSql)) {
         $stmt->bind_param($listTypes, ...$listParams);
         if ($stmt->execute()) {
             $listingResults = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -148,7 +153,7 @@ if ($q !== '') {
         }
         $stmt->close();
     } else {
-        error_log($conn->error);
+        error_log($db->error);
         http_response_code(500);
         $searchError = true;
         $errorMessage = 'Search is currently unavailable.';
@@ -158,7 +163,7 @@ if ($q !== '') {
     $countSql = "SELECT COUNT(*) FROM service_requests WHERE type='trade' AND (make LIKE ? OR model LIKE ? OR device_type LIKE ?)";
     $countParams = [$like, $like, $like];
     $countTypes = 'sss';
-    if ($stmt = $conn->prepare($countSql)) {
+    if ($stmt = $db->prepare($countSql)) {
         $stmt->bind_param($countTypes, ...$countParams);
         if ($stmt->execute()) {
             $stmt->bind_result($totalTrades);
@@ -172,7 +177,7 @@ if ($q !== '') {
         }
         $stmt->close();
     } else {
-        error_log("Trade count prepare failed: {$conn->error} | SQL: {$countSql}");
+        error_log("Trade count prepare failed: {$db->error} | SQL: {$countSql}");
         http_response_code(500);
         $searchError = true;
         $errorMessage = 'Search is currently unavailable.';
@@ -187,7 +192,7 @@ if ($q !== '') {
                  LIMIT ? OFFSET ?";
     $tradeParams = [$like, $like, $like, $perPage, $offset];
     $tradeTypes = 'sssii';
-    if ($stmt = $conn->prepare($tradeSql)) {
+    if ($stmt = $db->prepare($tradeSql)) {
         $stmt->bind_param($tradeTypes, ...$tradeParams);
         if ($stmt->execute()) {
             $tradeResults = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -199,7 +204,7 @@ if ($q !== '') {
         }
         $stmt->close();
     } else {
-        error_log("Trade search prepare failed: {$conn->error} | SQL: {$tradeSql}");
+        error_log("Trade search prepare failed: {$db->error} | SQL: {$tradeSql}");
         http_response_code(500);
         $searchError = true;
         $errorMessage = 'Search is currently unavailable.';

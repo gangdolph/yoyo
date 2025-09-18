@@ -1,7 +1,11 @@
 <?php
-session_start();
-// Ensure the database connection file is loaded relative to this directory
-require_once __DIR__ . '/db.php';
+declare(strict_types=1);
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
+
+$db = require __DIR__ . '/db.php';
 
 if (!isset($_SESSION['user_id'])) {
   // Redirect to the login page at the site root
@@ -10,5 +14,7 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 // Optional: update last_active for online tracking
-$conn->query("UPDATE users SET last_active = NOW() WHERE id = " . intval($_SESSION['user_id']));
+if ($db instanceof mysqli) {
+  $db->query("UPDATE users SET last_active = NOW() WHERE id = " . intval($_SESSION['user_id']));
+}
 ?>

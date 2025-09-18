@@ -40,7 +40,7 @@ try {
   }
   $mysqli->set_charset('utf8mb4');
 
-  /* Back-compat for legacy code expecting $conn */
+  /* Back-compat alias for legacy code */
   if (!isset($conn) || !($conn instanceof mysqli)) {
     $conn = $mysqli;
   }
