@@ -1,49 +1,48 @@
 <?php
+declare(strict_types=1);
+
 /**
- * Centralised database connection.
- *
- * Loads credentials from the application config or environment
- * and exposes an open `mysqli` instance via `$conn`.
+ * Robust MySQL connector for cPanel/shared hosting:
+ * - Prefer UNIX socket when host == 'localhost' (avoids TCP “connection refused”)
+ * - Fallback to TCP (127.0.0.1:port)
+ * - Throws on errors, sets utf8mb4
+ * - Returns mysqli instance
  */
 
-// Attempt to load configuration file (../config.php relative to this file)
-$configPath = __DIR__ . '/../config.php';
-if (file_exists($configPath)) {
-    $config = require $configPath;
-} else {
-    $config = [
-        'db_host' => getenv('DB_HOST'),
-        'db_user' => getenv('DB_USER'),
-        'db_pass' => getenv('DB_PASS'),
-        'db_name' => getenv('DB_NAME'),
-        'db_port' => getenv('DB_PORT'),
-    ];
+$config = require __DIR__ . '/../config.php';
+
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+$host   = (string)($config['db_host']   ?? 'localhost');
+$user   = (string)($config['db_user']   ?? '');
+$pass   = (string)($config['db_pass']   ?? '');
+$db     = (string)($config['db_name']   ?? '');
+$port   = (int)   ($config['db_port']   ?? 3306);
+$socket = $config['db_socket'] ?? null; // string|null
+
+// If using 'localhost' and no explicit socket, try to auto-detect.
+if ($host === 'localhost' && !$socket) {
+  $socket = ini_get('mysqli.default_socket') ?: null;
+  if (!$socket) {
+    foreach (['/var/lib/mysql/mysql.sock', '/tmp/mysql.sock'] as $guess) {
+      if (@is_readable($guess)) { $socket = $guess; break; }
+    }
+  }
 }
 
-// Legacy "host:port" strings are split so port can be passed separately.
-$host = $config['db_host'] ?? '';
-$port = $config['db_port'] ?? null;
-if (strpos($host, ':') !== false) {
-    [$host, $port] = explode(':', $host, 2);
+try {
+  if ($host === 'localhost') {
+    // Socket-first
+    $mysqli = new mysqli('localhost', $user, $pass, $db, 0, $socket ?: null);
+  } else {
+    // Explicit TCP
+    $mysqli = new mysqli($host, $user, $pass, $db, $port);
+  }
+  $mysqli->set_charset('utf8mb4');
+  return $mysqli;
+} catch (mysqli_sql_exception $e) {
+  error_log(sprintf('[db.php] Connect failed: %s | host=%s port=%d socket=%s',
+    $e->getMessage(), $host, $port, $socket ?: '(none)'
+  ));
+  throw $e;
 }
-$host = $host ?: '127.0.0.1';
-$port = (int) ($port ?: 3306);
-
-// Create the database connection using config values.
-$conn = new mysqli(
-    $host,
-    $config['db_user'] ?? '',
-    $config['db_pass'] ?? '',
-    $config['db_name'] ?? '',
-    $port
-);
-
-// Abort immediately if the connection fails.
-if ($conn->connect_error) {
-    die('Database connection failed: ' . $conn->connect_error);
-}
-
-$conn->set_charset('utf8mb4');
-$conn->query("SET sql_mode=''");
-
-?>

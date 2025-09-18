@@ -20,6 +20,7 @@
   --bg: var(--color-bg);
   --fg: var(--color-text);
   --accent: var(--color-accent);
+  --btn-text-idle: var(--fg);
   --btn-text: var(--fg);
   --gradient: linear-gradient(135deg, #ff71ce 0%, #01cdfe 100%);
   --vap1: #ff71ce;
@@ -1072,7 +1073,7 @@ form button:active {
 
 .btn {
   background: var(--accent);
-  color: var(--btn-text);
+  color: var(--btn-text-idle, var(--btn-text));
   margin-right: var(--space-sm);
   border-top: 2px solid rgba(255, 255, 255, 0.4);
   border-left: 2px solid rgba(255, 255, 255, 0.4);
@@ -1701,6 +1702,33 @@ body.nav-open .hero {
   display: flex;
   gap: 0.5rem;
   margin: 0.5rem 0;
+}
+
+.input-with-select {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.input-with-select select {
+  min-width: 12rem;
+}
+
+.input-with-select input[type="text"],
+.input-with-select input[type="search"] {
+  flex: 1 1 220px;
+}
+
+.select-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.5rem 0;
+}
+
+.select-inline select {
+  min-width: 12rem;
 }
 
 .gradient-preset {

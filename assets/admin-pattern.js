@@ -1,3 +1,20 @@
+function waveValue(type, cycles) {
+  switch (type) {
+    case 'cosine':
+      return Math.cos(cycles * Math.PI * 2);
+    case 'triangle': {
+      const phase = cycles - Math.floor(cycles);
+      return 1 - 4 * Math.abs(phase - 0.5);
+    }
+    case 'sawtooth': {
+      const phase = cycles - Math.floor(cycles);
+      return 2 * (phase - 0.5);
+    }
+    default:
+      return Math.sin(cycles * Math.PI * 2);
+  }
+}
+
 function drawPattern(opts) {
   const canvas = document.createElement('canvas');
   const width = 400;
@@ -12,7 +29,13 @@ function drawPattern(opts) {
     const nx = x / width;
     const amplitude = Number.isFinite(opts.amplitude) ? opts.amplitude : 0;
     const frequency = Number.isFinite(opts.frequency) ? opts.frequency : 0;
-    let y = height / 2 + amplitude * Math.sin(nx * frequency * Math.PI * 2);
+    const fn = typeof opts.function === 'string' ? opts.function : 'sine';
+    let wave = 0;
+    if (amplitude !== 0 && frequency !== 0) {
+      const cycles = nx * frequency;
+      wave = amplitude * waveValue(fn, cycles);
+    }
+    let y = height / 2 + wave;
     if (Array.isArray(opts.poly)) {
       let poly = 0;
       for (let i = 0; i < opts.poly.length; i++) {
@@ -49,6 +72,7 @@ function applyPattern(s) {
   const data = {
     frequency: Number(s.frequency) || 0,
     amplitude: Number(s.amplitude) || 0,
+    function: typeof s.function === 'string' ? s.function : 'sine',
     poly: polyValues,
   };
   const url = drawPattern(data);

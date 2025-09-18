@@ -7,11 +7,89 @@ document.addEventListener('DOMContentLoaded', () => {
   const ctaGradientInput = form.querySelector('[name="cta_gradient"]');
   const ctaDepthInput = form.querySelector('[name="cta_depth"]');
   const btnTextInput = form.querySelector('[name="btn_text"]');
+  const btnTextIdleInput = form.querySelector('[name="btn_text_idle"]');
+
+  const selectPairs = new Map();
+
+  function normalizeValue(value, mode = 'css') {
+    if (!value) return '';
+    if (mode === 'numbers') {
+      return value
+        .split(',')
+        .map(v => Number(v.trim()))
+        .filter(n => Number.isFinite(n))
+        .join(',');
+    }
+    return value.toLowerCase().replace(/['"\s]+/g, '');
+  }
+
+  function attachSelectInputPair(select) {
+    const targetName = select.dataset.syncTarget;
+    if (!targetName) return;
+    const input = form.querySelector(`[name="${targetName}"]`);
+    if (!input) return;
+    const normalizeMode = select.dataset.syncNormalize || 'css';
+    const customValue = select.dataset.customValue || '__custom__';
+    const options = Array.from(select.options).map(option => ({
+      option,
+      value: option.dataset.value ?? option.value,
+    }));
+
+    function updateSelectFromInput() {
+      const currentValue = normalizeValue(input.value, normalizeMode);
+      let matched = false;
+      options.forEach(({ option, value }) => {
+        if (option.value === customValue) {
+          return;
+        }
+        if (normalizeValue(value, normalizeMode) === currentValue) {
+          option.selected = true;
+          matched = true;
+        } else {
+          option.selected = false;
+        }
+      });
+      if (!matched) {
+        const customOption = select.querySelector(`option[value="${customValue}"]`);
+        if (customOption) {
+          customOption.selected = true;
+        }
+      }
+    }
+
+    function updateInputFromSelect() {
+      const selectedOption = select.options[select.selectedIndex];
+      if (!selectedOption || selectedOption.value === customValue) {
+        return;
+      }
+      const nextValue = selectedOption.dataset.value ?? selectedOption.value;
+      if (typeof input.value === 'string') {
+        input.value = nextValue;
+      }
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    select.addEventListener('change', () => {
+      updateInputFromSelect();
+      preview();
+    });
+
+    input.addEventListener('input', () => {
+      updateSelectFromInput();
+    });
+
+    updateSelectFromInput();
+    selectPairs.set(targetName, { updateSelectFromInput });
+  }
 
   document.querySelectorAll('.gradient-preset').forEach(btn => {
     btn.addEventListener('click', () => {
       if (gradientInput) {
         gradientInput.value = btn.dataset.gradient;
+        const pair = selectPairs.get('gradient');
+        if (pair) {
+          pair.updateSelectFromInput();
+        }
       }
       document.querySelectorAll('.gradient-preset').forEach(b => b.classList.remove('selected'));
       btn.classList.add('selected');
@@ -54,6 +132,8 @@ document.addEventListener('DOMContentLoaded', () => {
     presetRadios = Array.from(patternSettings.querySelectorAll('input[name="pattern_preset"]'));
   }
 
+  form.querySelectorAll('select[data-sync-target]').forEach(select => attachSelectInputPair(select));
+
   const isPatternEnabled = () => !patternToggle || patternToggle.checked;
 
   function toggleFeature(feature, enabled) {
@@ -93,6 +173,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     if (form.pattern_poly) {
       form.pattern_poly.value = Array.isArray(preset.poly) ? preset.poly.join(',') : '';
+      const pair = selectPairs.get('pattern_poly');
+      if (pair) {
+        pair.updateSelectFromInput();
+      }
     }
     if (form.pattern_hue) {
       form.pattern_hue.value = typeof preset.hue === 'number' ? preset.hue : 0;
@@ -108,6 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
           cb.checked = !!preset.features[cb.value];
         }
       });
+    }
+    if (form.pattern_function && preset.function) {
+      form.pattern_function.value = preset.function;
     }
     syncFeatures();
     preview();
@@ -163,6 +250,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (ctaGradientInput) root.style.setProperty('--cta-gradient', ctaGradientInput.value);
     if (ctaDepthInput) root.style.setProperty('--cta-depth', `${ctaDepthInput.value}px`);
     if (btnTextInput) root.style.setProperty('--btn-text', btnTextInput.value);
+    if (btnTextIdleInput) root.style.setProperty('--btn-text-idle', btnTextIdleInput.value);
     ['vap1', 'vap2', 'vap3'].forEach(v => {
       const el = form.querySelector(`[name="${v}"]`);
       if (el) root.style.setProperty(`--${v}`, el.value);
@@ -188,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
         poly: features.poly && form.pattern_poly ? form.pattern_poly.value.split(',').map(Number).filter(n => !Number.isNaN(n)) : [],
         hue: features.hue && form.pattern_hue ? form.pattern_hue.value : 0,
         sat: features.sat && form.pattern_sat ? form.pattern_sat.value : 100,
+        function: form.pattern_function ? form.pattern_function.value : 'sine',
         features,
       };
       if (window.generateVaporwavePattern) {
@@ -199,6 +288,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   form.querySelectorAll('input').forEach(inp => inp.addEventListener('input', preview));
+  if (form.pattern_function) {
+    form.pattern_function.addEventListener('change', preview);
+  }
+  form.querySelectorAll('select:not([data-sync-target])').forEach(sel => {
+    sel.addEventListener('change', preview);
+  });
   preview();
 
   form.addEventListener('submit', e => {

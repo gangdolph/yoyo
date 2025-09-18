@@ -27,10 +27,12 @@ function normalizePattern(pattern) {
   const hue = features.hue ? Number(pattern.hue) || 0 : 0;
   const sat = features.sat ? Number(pattern.sat) || 100 : 100;
   const preset = typeof pattern.preset === 'string' ? pattern.preset : 'custom';
+  const fn = typeof pattern.function === 'string' ? pattern.function : 'sine';
   return {
     preset,
     frequency: Number.isFinite(frequency) ? frequency : 0,
     amplitude: Number.isFinite(amplitude) ? amplitude : 0,
+    function: fn,
     poly: polyValues,
     hue,
     sat,

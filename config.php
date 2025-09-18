@@ -2,11 +2,12 @@
 // Copy this file to config.php and fill in real credentials.
 // Never commit your actual config.php to version control.
 return [
-  'db_host' => '127.0.0.1', 
-  'db_port' => 3306,
-  'db_user' => 'skuzqsas_Developer',
-  'db_pass' => '1zTh1z4n0k4yPAssw02d?!',
-  'db_name' => 'skuzqsas_MainDB',
+  'db_host'   => 'localhost',
+  'db_port'   => 3306,
+  'db_socket' => null,
+  'db_user'   => 'skuzqsas_Developer',
+  'db_pass'   => '1zTh1z4n0k4yPAssw02d?!',
+  'db_name'   => 'skuzqsas_MainDB',
 
   'smtp_host' => 'skuze.tech',
   'smtp_user' => 'owner@skuze.tech',
