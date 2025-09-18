@@ -28,6 +28,8 @@ $products = $conn->query('SELECT sku, title, quantity, reorder_threshold, owner_
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3601799131755099"
+        crossorigin="anonymous"></script>
     <title>Admin - Products</title>
     <link rel="stylesheet" href="../assets/style.css">
 </head>
