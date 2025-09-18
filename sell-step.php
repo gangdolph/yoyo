@@ -1,5 +1,5 @@
 <?php
-require 'includes/auth.php';
+require_once __DIR__ . '/includes/auth.php';
 require 'includes/csrf.php';
 
 $category = $_GET['category'] ?? '';

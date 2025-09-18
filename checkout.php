@@ -3,7 +3,7 @@ require __DIR__ . '/_debug_bootstrap.php';
 $client = require __DIR__ . '/includes/square.php';
 $squareConfig = require __DIR__ . '/includes/square-config.php';
 require 'includes/requirements.php';
-require 'includes/auth.php';
+require_once __DIR__ . '/includes/auth.php';
 require 'includes/db.php';
 require 'includes/url.php';
 

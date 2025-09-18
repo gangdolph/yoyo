@@ -1,4 +1,4 @@
-<?php session_start(); ?>
+<?php require_once __DIR__ . '/includes/auth.php'; ?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
   <title>Terms of Service</title>
