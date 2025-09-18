@@ -9,6 +9,35 @@ const errorMsg = modal ? modal.querySelector('.theme-error') : null;
 let themes = {};
 let borders = {};
 
+function normalizePattern(pattern) {
+  if (!pattern || typeof pattern !== 'object') {
+    return null;
+  }
+  const rawFeatures = pattern.features && typeof pattern.features === 'object' ? pattern.features : {};
+  const features = {
+    poly: !!rawFeatures.poly,
+    hue: !!rawFeatures.hue,
+    sat: !!rawFeatures.sat,
+  };
+  const frequency = Number(pattern.frequency);
+  const amplitude = Number(pattern.amplitude);
+  const polyValues = features.poly && Array.isArray(pattern.poly)
+    ? pattern.poly.map(Number).filter(n => Number.isFinite(n))
+    : [];
+  const hue = features.hue ? Number(pattern.hue) || 0 : 0;
+  const sat = features.sat ? Number(pattern.sat) || 100 : 100;
+  const preset = typeof pattern.preset === 'string' ? pattern.preset : 'custom';
+  return {
+    preset,
+    frequency: Number.isFinite(frequency) ? frequency : 0,
+    amplitude: Number.isFinite(amplitude) ? amplitude : 0,
+    poly: polyValues,
+    hue,
+    sat,
+    features,
+  };
+}
+
 function setActiveButton(name) {
   if (!optionsContainer) return;
   optionsContainer.querySelectorAll('button').forEach(btn => {
@@ -25,10 +54,11 @@ function applyTheme(name) {
   if (preview) preview.setAttribute('data-theme', name);
   Object.keys(t.vars || {}).forEach(k => root.style.setProperty(k, t.vars[k]));
   if (window.generateVaporwavePattern) {
-    if (t.pattern) {
-      window.generateVaporwavePattern(t.pattern);
+    const normalized = normalizePattern(t.pattern);
+    if (normalized) {
+      window.generateVaporwavePattern(normalized);
     } else {
-      window.generateVaporwavePattern({});
+      window.generateVaporwavePattern(null);
     }
   }
   localStorage.setItem('theme', name);

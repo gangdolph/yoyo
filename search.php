@@ -2,10 +2,13 @@
 session_start();
 require 'includes/db.php';
 require 'includes/user.php';
+require 'includes/tags.php';
 
 $q = trim($_GET['q'] ?? '');
 $category = trim($_GET['category'] ?? '');
 $role = trim($_GET['role'] ?? '');
+$tagsQuery = trim($_GET['tags'] ?? '');
+$tagFilters = tags_from_input($tagsQuery);
 $page = max(1, (int)($_GET['page'] ?? 1));
 $perPage = 10;
 $offset = ($page - 1) * $perPage;
@@ -85,6 +88,13 @@ if ($q !== '') {
         $countParams[] = $category;
         $countTypes .= 's';
     }
+    if ($tagFilters) {
+        foreach ($tagFilters as $tag) {
+            $countSql .= " AND tags LIKE ?";
+            $countParams[] = tag_like_parameter($tag);
+            $countTypes .= 's';
+        }
+    }
     if ($stmt = $conn->prepare($countSql)) {
         $stmt->bind_param($countTypes, ...$countParams);
         if ($stmt->execute()) {
@@ -105,7 +115,7 @@ if ($q !== '') {
         $errorMessage = 'Search is currently unavailable.';
     }
 
-    $listSql = "SELECT l.id, l.title, l.description, l.category
+    $listSql = "SELECT l.id, l.title, l.description, l.category, l.tags
                 FROM listings l
                 WHERE (l.title LIKE ? OR l.description LIKE ? OR l.category LIKE ?)";
     $listParams = [$like, $like, $like];
@@ -114,6 +124,13 @@ if ($q !== '') {
         $listSql .= " AND l.category = ?";
         $listParams[] = $category;
         $listTypes .= 's';
+    }
+    if ($tagFilters) {
+        foreach ($tagFilters as $tag) {
+            $listSql .= " AND l.tags LIKE ?";
+            $listParams[] = tag_like_parameter($tag);
+            $listTypes .= 's';
+        }
     }
     $listSql .= " ORDER BY l.created_at DESC LIMIT ? OFFSET ?";
     $listParams[] = $perPage;
@@ -215,6 +232,7 @@ $totalPages = max($totalUserPages, $totalListingPages, $totalTradePages);
         <option value="admin" <?= $role==='admin'?'selected':'' ?>>Admin</option>
         <option value="user" <?= $role==='user'?'selected':'' ?>>User</option>
       </select>
+      <input type="text" name="tags" value="<?= htmlspecialchars($tagsQuery) ?>" placeholder="Tags (comma separated)">
       <button type="submit">Search</button>
     </form>
   <?php if ($q === ''): ?>
@@ -237,9 +255,20 @@ $totalPages = max($totalUserPages, $totalListingPages, $totalTradePages);
     <section>
       <h3>Listings</h3>
       <?php if ($listingResults): ?>
-        <ul>
+        <ul class="listing-search-results">
           <?php foreach ($listingResults as $l): ?>
-            <li><a href="shipping.php?listing_id=<?= $l['id']; ?>"><?= htmlspecialchars($l['title']) ?></a> - <?= htmlspecialchars($l['category']) ?></li>
+            <?php $resultTags = tags_from_storage($l['tags']); ?>
+            <li>
+              <a href="shipping.php?listing_id=<?= $l['id']; ?>"><?= htmlspecialchars($l['title']) ?></a>
+              <span class="result-meta"><?= htmlspecialchars($l['category']) ?></span>
+              <?php if ($resultTags): ?>
+                <span class="result-tags">
+                  <?php foreach ($resultTags as $tag): ?>
+                    <span class="tag-chip tag-chip-static">#<?= htmlspecialchars($tag); ?></span>
+                  <?php endforeach; ?>
+                </span>
+              <?php endif; ?>
+            </li>
           <?php endforeach; ?>
         </ul>
       <?php else: ?>

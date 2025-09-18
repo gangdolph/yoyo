@@ -53,6 +53,7 @@ endif;
       <a href="/index.php" data-i18n="home">Home</a>
       <a href="/about.php" data-i18n="about">About</a>
       <a href="/help.php" data-i18n="help">Help/FAQ</a>
+      <a href="/support.php" data-i18n="support">Support</a>
     </nav>
   </div>
   <div class="search-container header-center">
