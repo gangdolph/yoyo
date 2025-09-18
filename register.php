@@ -28,74 +28,106 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   } elseif ($isBusiness && ($company === '' || !filter_var($website, FILTER_VALIDATE_URL))) {
     $error = "Please provide a valid company name and website.";
   } else {
-    $stmt = $conn->prepare("SELECT id FROM users WHERE username=? OR email=?");
-    if ($stmt === false) {
-      error_log('Prepare failed: ' . $conn->error);
-      $error = "Database error.";
-    } else {
-      $stmt->bind_param("ss", $user, $email);
-      if (!$stmt->execute()) {
-        error_log('Execute failed: ' . $stmt->error);
-        $error = "Database error.";
-        $stmt->close();
-      } else {
-        $stmt->store_result();
-
-        if ($stmt->num_rows > 0) {
-          $error = "Username or email already exists.";
-          $stmt->close();
+    // NOTE: Use try/finally to close mysqli_stmt exactly once.
+    try {
+      $stmtCheckUser = $conn->prepare("SELECT id FROM users WHERE username=? OR email=?");
+      if (!$stmtCheckUser) {
+        throw new RuntimeException('Prepare failed: ' . $conn->error);
+      }
+      try {
+        $stmtCheckUser->bind_param("ss", $user, $email);
+        if (!$stmtCheckUser->execute()) {
+          error_log('Execute failed: ' . $stmtCheckUser->error);
+          $error = "Database error.";
         } else {
-          $hash = password_hash($pass, PASSWORD_DEFAULT);
-          $status = 'offline';
-          $accountType = $isBusiness ? 'business' : 'standard';
-          $stmt->close();
-          $stmt = $conn->prepare("INSERT INTO users (username, email, password, status, account_type, company_name, company_website) VALUES (?, ?, ?, ?, ?, ?, ?)");
-          if ($stmt === false) {
-            error_log('Prepare failed: ' . $conn->error);
+          $stmtCheckUser->store_result();
+          $existingUserCount = $stmtCheckUser->num_rows;
+        }
+      } finally {
+        if ($stmtCheckUser instanceof mysqli_stmt) {
+          $stmtCheckUser->close();
+        }
+      }
+    } catch (RuntimeException $e) {
+      error_log($e->getMessage());
+      $error = "Database error.";
+    }
+
+    if (empty($error) && isset($existingUserCount) && $existingUserCount > 0) {
+      $error = "Username or email already exists.";
+    }
+
+    if (empty($error)) {
+      $hash = password_hash($pass, PASSWORD_DEFAULT);
+      $status = 'offline';
+      $accountType = $isBusiness ? 'business' : 'standard';
+
+      try {
+        $stmtInsertUser = $conn->prepare("INSERT INTO users (username, email, password, status, account_type, company_name, company_website) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        if (!$stmtInsertUser) {
+          throw new RuntimeException('Prepare failed: ' . $conn->error);
+        }
+        try {
+          $stmtInsertUser->bind_param("sssssss", $user, $email, $hash, $status, $accountType, $company, $website);
+          if (!$stmtInsertUser->execute()) {
+            error_log('Execute failed: ' . $stmtInsertUser->error);
+            $error = "Registration failed. Please try again.";
+          } elseif ($stmtInsertUser->affected_rows !== 1) {
+            error_log('Unexpected insert result for user registration.');
             $error = "Registration failed. Please try again.";
           } else {
-            $stmt->bind_param("sssssss", $user, $email, $hash, $status, $accountType, $company, $website);
-            if (!$stmt->execute()) {
-              error_log('Execute failed: ' . $stmt->error);
-              $error = "Registration failed. Please try again.";
-            } elseif ($stmt->affected_rows !== 1) {
-              error_log('Unexpected insert result for user registration.');
-              $error = "Registration failed. Please try again.";
-            } else {
-              $uid = $stmt->insert_id;
-              $token = bin2hex(random_bytes(32));
-              $expires = date('Y-m-d H:i:s', time() + 3600);
-              $stmt->close();
-              $stmt = $conn->prepare("INSERT INTO tokens (user_id, token, type, expires_at) VALUES (?, ?, 'verify', ?)");
-              if ($stmt === false) {
-                error_log('Prepare failed: ' . $conn->error);
-                $error = "Database error.";
-              } else {
-                $stmt->bind_param("iss", $uid, $token, $expires);
-                if (!$stmt->execute()) {
-                  error_log('Execute failed: ' . $stmt->error);
-                  $error = "Database error.";
-                } else {
-                  $link = "https://skuze.tech/verify.php?token=$token";
-                  $body = "Welcome to SkuzE!\n\nPlease verify your email: $link";
-                  try {
-                    send_email($email, "Verify your account", $body);
-                    $success = "Check your email to verify your account.";
-                  } catch (Exception $e) {
-                    error_log('Email dispatch failed: ' . $e->getMessage());
-                    $error = "Failed to send verification email.";
-                  }
-                }
-                $stmt->close();
-              }
-            }
-            $stmt->close();
+            $uid = $stmtInsertUser->insert_id;
           }
+        } finally {
+          if ($stmtInsertUser instanceof mysqli_stmt) {
+            $stmtInsertUser->close();
+          }
+        }
+      } catch (RuntimeException $e) {
+        error_log($e->getMessage());
+        $error = "Registration failed. Please try again.";
+      }
+    }
+
+    if (empty($error) && isset($uid)) {
+      $token = bin2hex(random_bytes(32));
+      $expires = date('Y-m-d H:i:s', time() + 3600);
+
+      try {
+        $stmtInsertToken = $conn->prepare("INSERT INTO tokens (user_id, token, type, expires_at) VALUES (?, ?, 'verify', ?)");
+        if (!$stmtInsertToken) {
+          throw new RuntimeException('Prepare failed: ' . $conn->error);
+        }
+        try {
+          $stmtInsertToken->bind_param("iss", $uid, $token, $expires);
+          if (!$stmtInsertToken->execute()) {
+            error_log('Execute failed: ' . $stmtInsertToken->error);
+            $error = "Database error.";
+          }
+        } finally {
+          if ($stmtInsertToken instanceof mysqli_stmt) {
+            $stmtInsertToken->close();
+          }
+        }
+      } catch (RuntimeException $e) {
+        error_log($e->getMessage());
+        $error = "Database error.";
+      }
+
+      if (empty($error)) {
+        $link = "https://skuze.tech/verify.php?token=$token";
+        $body = "Welcome to SkuzE!\n\nPlease verify your email: $link";
+        try {
+          send_email($email, "Verify your account", $body);
+          $success = "Check your email to verify your account.";
+        } catch (Exception $e) {
+          error_log('Email dispatch failed: ' . $e->getMessage());
+          $error = "Failed to send verification email.";
         }
       }
     }
-    }
   }
+}
 }
 
 ?>
