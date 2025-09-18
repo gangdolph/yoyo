@@ -49,6 +49,10 @@ endif;
     <a href="/index.php" class="logo-link">
       <img class="logo-img" src="/assets/logo.png" alt="SkuzE Logo">
     </a>
+    <h1 class="logo">
+      <span class="logo-word">SKUZE</span>
+      <span class="logo-pronounce">sk-uh-zee</span>
+    </h1>
     <nav class="site-nav">
       <a href="/index.php" data-i18n="home">Home</a>
       <a href="/about.php" data-i18n="about">About</a>
