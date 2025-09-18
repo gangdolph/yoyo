@@ -1,5 +1,5 @@
 <?php
-require '../includes/auth.php';
+require_once __DIR__ . '/../includes/auth.php';
 if (!$_SESSION['is_admin']) {
     header('Location: /index.php');
     exit;

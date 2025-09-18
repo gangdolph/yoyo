@@ -1,5 +1,7 @@
 <?php
-session_start();
+if (session_status() !== PHP_SESSION_ACTIVE) {
+    session_start();
+}
 require_once 'includes/db.php';
 
 if (!isset($_SESSION['cart'])) {

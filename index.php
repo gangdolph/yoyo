@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/_debug_bootstrap.php';
-session_start();
+require_once __DIR__ . '/includes/auth.php';
 ?>
 <?php require 'includes/layout.php'; ?>
 <?php require 'includes/components.php'; ?>

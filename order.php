@@ -1,5 +1,5 @@
 <?php
-require 'includes/auth.php';
+require_once __DIR__ . '/includes/auth.php';
 require 'includes/orders.php';
 
 $orderId = isset($_GET['id']) ? (int) $_GET['id'] : 0;

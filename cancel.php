@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 require __DIR__ . '/_debug_bootstrap.php';
-require __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/auth.php';
 ?>
 <?php require 'includes/layout.php'; ?>
   <title>Payment Canceled</title>
