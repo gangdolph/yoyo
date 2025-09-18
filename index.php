@@ -26,10 +26,9 @@ session_start();
       <div class="hero-content">
         <p class="tagline">Fix, buy, sell, or trade your electronics in one place.</p>
         <div class="portal-links">
-          <?= render_button('services.php', 'Services'); ?>
-          <?= render_button('buy.php', 'Buy'); ?>
-          <?= render_button('sell.php', 'Sell'); ?>
-          <?= render_button('trade.php', 'Trade'); ?>
+          <div class="cta3d" data-label="Services" data-url="/services.php"></div>
+          <div class="cta3d" data-label="Buy" data-url="/buy.php"></div>
+          <div class="cta3d" data-label="Trade" data-url="/trade.php"></div>
         </div>
       </div>
     </div>

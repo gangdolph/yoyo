@@ -8,3 +8,4 @@ $theme = 'light';
     document.documentElement.dataset.theme = localStorage.getItem('theme') || document.documentElement.dataset.theme;
   </script>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap">
+  <script type="module" src="/assets/3d-buttons.js" defer></script>

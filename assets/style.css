@@ -221,9 +221,19 @@ body.site-frame {
   text-align: center;
 }
 
+.portal-links .cta3d {
+  flex: 1 1 clamp(180px, 28vw, 240px);
+  max-width: 260px;
+}
+
 @media (max-width: 600px) {
   .portal-links {
     flex-direction: column;
+  }
+
+  .portal-links .cta3d {
+    max-width: none;
+    width: 100%;
   }
 
   .hero {
@@ -236,6 +246,151 @@ body.site-frame {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
+}
+
+.cta3d {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 5.75rem;
+  padding: 0;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: radial-gradient(circle at 20% 20%, rgba(1, 205, 254, 0.28), transparent 55%),
+    radial-gradient(circle at 80% 80%, rgba(255, 113, 206, 0.35), transparent 60%),
+    linear-gradient(135deg, rgba(7, 23, 46, 0.8), rgba(3, 8, 18, 0.95));
+  box-shadow: 0 18px 30px rgba(4, 9, 24, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--fg);
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.cta3d::after {
+  content: attr(data-label);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #e9f6ff;
+  text-shadow: 0 0 16px rgba(1, 205, 254, 0.6), 0 0 32px rgba(255, 113, 206, 0.4);
+  pointer-events: none;
+  transition: opacity 0.35s ease;
+  z-index: 1;
+}
+
+.cta3d canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  filter: saturate(1.15) contrast(1.05);
+}
+
+.cta3d__label {
+  position: relative;
+  z-index: 2;
+  font-size: clamp(1rem, 2.4vw, 1.25rem);
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #f6fbff;
+  text-shadow: 0 0 18px rgba(1, 205, 254, 0.75), 0 0 28px rgba(255, 113, 206, 0.5);
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.45s ease, transform 0.45s ease;
+  pointer-events: none;
+}
+
+.cta3d:hover,
+.cta3d:focus-visible {
+  transform: translateY(-6px);
+  box-shadow: 0 22px 40px rgba(3, 10, 29, 0.65), 0 0 28px rgba(1, 205, 254, 0.35);
+}
+
+.cta3d:focus {
+  outline: none;
+}
+
+.cta3d:focus-visible {
+  outline: 3px solid rgba(1, 205, 254, 0.8);
+  outline-offset: 4px;
+}
+
+.cta3d--ready::after {
+  opacity: 0;
+}
+
+.cta3d--ready .cta3d__label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.cta3d--fallback::after {
+  opacity: 1;
+}
+
+.cta3d--fallback .cta3d-fallback-link {
+  font-size: clamp(1rem, 2.4vw, 1.35rem);
+  letter-spacing: 0.32em;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.cta3d--active {
+  box-shadow: 0 24px 48px rgba(2, 9, 26, 0.7), 0 0 36px rgba(255, 113, 206, 0.4);
+}
+
+.cta3d[aria-disabled='true'] {
+  opacity: 0.92;
+  box-shadow: 0 16px 28px rgba(4, 9, 24, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.cta3d[aria-disabled='true']:hover,
+.cta3d[aria-disabled='true']:focus-visible {
+  transform: none;
+  box-shadow: 0 18px 30px rgba(4, 9, 24, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.cta3d--reduced-motion {
+  transition: box-shadow 0.3s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cta3d,
+  .cta3d__label {
+    transition: none;
+  }
+
+  .cta3d:hover,
+  .cta3d:focus-visible {
+    transform: none;
+  }
+}
+
+.cta3d-fallback-link {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  color: inherit;
+  text-decoration: none;
 }
 
 @keyframes ctaPulse {
@@ -599,6 +754,103 @@ footer:focus-within {
 
 .logo-link {
   margin-right: var(--space-sm);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.35rem;
+  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(1, 205, 254, 0.25), rgba(255, 113, 206, 0.18));
+  box-shadow: 0 12px 20px rgba(5, 12, 33, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+  transition: transform 0.35s ease, box-shadow 0.35s ease;
+}
+
+.logo-link:focus-visible,
+.logo-link:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 16px 28px rgba(3, 10, 29, 0.55), 0 0 18px rgba(1, 205, 254, 0.35);
+}
+
+.logo-link:focus-visible {
+  outline: 2px solid rgba(1, 205, 254, 0.7);
+  outline-offset: 3px;
+}
+
+.logo {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.15rem;
+  line-height: 1;
+  color: var(--fg);
+  text-transform: none;
+}
+
+.logo-word {
+  position: relative;
+  display: inline-block;
+  font-size: clamp(1.5rem, 4vw, 2.4rem);
+  letter-spacing: 0.45em;
+  font-weight: 700;
+  color: #f4fbff;
+  text-shadow: 0 0 22px rgba(1, 205, 254, 0.65);
+  padding-right: 0.2em;
+  overflow: hidden;
+}
+
+.logo-word::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -120%;
+  width: 120%;
+  height: 100%;
+  background: linear-gradient(110deg, transparent 10%, rgba(255, 255, 255, 0.75) 45%, transparent 80%);
+  transform: skewX(-18deg);
+  animation: shine 4.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.logo-pronounce {
+  font-size: clamp(0.7rem, 1.8vw, 0.85rem);
+  letter-spacing: 0.28em;
+  font-weight: 500;
+  color: rgba(233, 246, 255, 0.8);
+  text-transform: none;
+  opacity: 0.9;
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(0) skewX(-18deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  45% {
+    transform: translateX(180%) skewX(-18deg);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(180%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .logo-link {
+    transition: none;
+  }
+
+  .logo-link:hover,
+  .logo-link:focus-visible {
+    transform: none;
+  }
+
+  .logo-word::before {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 .header-center {
