@@ -1,6 +1,13 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    if (headers_sent($sentFile, $sentLine)) {
+        trigger_error(
+            sprintf('Unable to start session because headers were sent in %s on line %d.', $sentFile, $sentLine),
+            E_USER_WARNING
+        );
+    } else {
+        session_start();
+    }
 }
 
 function generate_token() {

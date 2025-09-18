@@ -4,8 +4,23 @@ declare(strict_types=1);
 if (!defined('AUTH_BOOTSTRAPPED')) {
     define('AUTH_BOOTSTRAPPED', true);
 
-    if (session_status() !== PHP_SESSION_ACTIVE) {
+    $sessionStatus = session_status();
+
+    if ($sessionStatus === PHP_SESSION_ACTIVE) {
+        // Session is already active, so nothing else to bootstrap here.
+    } elseif ($sessionStatus === PHP_SESSION_NONE) {
+        if (headers_sent($sentFile, $sentLine)) {
+            trigger_error(
+                sprintf('Unable to start session because headers were sent in %s on line %d.', $sentFile, $sentLine),
+                E_USER_WARNING
+            );
+            return;
+        }
+
         session_start();
+    } else {
+        // Sessions are disabled; nothing to do.
+        return;
     }
 
     $db = require __DIR__ . '/db.php';
