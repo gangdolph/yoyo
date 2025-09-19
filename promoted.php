@@ -26,23 +26,53 @@ if ($stmt = $conn->prepare('SELECT id, username, company_name, company_website, 
   <div class="page-container">
     <h2>Promoted Shops</h2>
     <?php if ($shops): ?>
-      <ul>
+      <section class="promoted-grid" aria-label="Promoted shops">
         <?php foreach ($shops as $s): ?>
-          <?php $logo = $s['company_logo'] ? '/assets/logos/' . $s['company_logo'] : ''; ?>
-          <li>
-            <?php if ($logo): ?><img src="<?= htmlspecialchars($logo, ENT_QUOTES, 'UTF-8'); ?>" alt="Logo" width="50"> <?php endif; ?>
-            <?php if (!empty($s['company_website'])): ?>
-              <a href="<?= htmlspecialchars($s['company_website'], ENT_QUOTES, 'UTF-8'); ?>" target="_blank">
-                <?= htmlspecialchars($s['company_name'] ?: $s['username'], ENT_QUOTES, 'UTF-8'); ?>
-              </a>
-            <?php else: ?>
-              <a href="view-profile.php?id=<?= $s['id']; ?>">
-                <?= htmlspecialchars($s['company_name'] ?: $s['username'], ENT_QUOTES, 'UTF-8'); ?>
-              </a>
+          <?php
+            $logo = $s['company_logo'] ? '/assets/logos/' . $s['company_logo'] : '';
+            $shopName = $s['company_name'] ?: $s['username'];
+            $hasWebsite = !empty($s['company_website']);
+            $url = $hasWebsite ? $s['company_website'] : 'view-profile.php?id=' . $s['id'];
+            $domain = '';
+            if ($hasWebsite) {
+              $parsedHost = parse_url($s['company_website'], PHP_URL_HOST) ?: '';
+              $domain = preg_replace('/^www\./i', '', $parsedHost);
+            }
+          ?>
+          <article class="card-neo promoted-card">
+            <?php if ($logo): ?>
+              <div class="promoted-card__media">
+                <img
+                  src="<?= htmlspecialchars($logo, ENT_QUOTES, 'UTF-8'); ?>"
+                  alt="<?= htmlspecialchars($shopName . ' logo', ENT_QUOTES, 'UTF-8'); ?>"
+                  class="promoted-card__logo"
+                  loading="lazy"
+                >
+              </div>
             <?php endif; ?>
-          </li>
+            <div class="promoted-card__body">
+              <h3 class="promoted-card__title">
+                <a
+                  class="promoted-card__link"
+                  href="<?= htmlspecialchars($url, ENT_QUOTES, 'UTF-8'); ?>"
+                  <?php if ($hasWebsite): ?> target="_blank" rel="noopener noreferrer"<?php endif; ?>
+                >
+                  <?= htmlspecialchars($shopName, ENT_QUOTES, 'UTF-8'); ?>
+                </a>
+              </h3>
+              <p class="promoted-card__meta">
+                <span class="promoted-card__handle">@<?= htmlspecialchars($s['username'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="promoted-card__divider" aria-hidden="true">•</span>
+                <?php if ($domain): ?>
+                  <span class="promoted-card__domain"><?= htmlspecialchars($domain, ENT_QUOTES, 'UTF-8'); ?></span>
+                <?php else: ?>
+                  <span class="promoted-card__domain">On Yoyo Market</span>
+                <?php endif; ?>
+              </p>
+            </div>
+          </article>
         <?php endforeach; ?>
-      </ul>
+      </section>
     <?php else: ?>
       <p>No promoted shops at this time.</p>
     <?php endif; ?>
