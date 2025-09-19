@@ -1,8 +1,10 @@
 :root {
   /* Design system: colors */
-  --color-bg: #2d1e59;
-  --color-text: #f8f9fa;
-  --color-accent: #ff71ce;
+  --color-bg: #030016;
+  --color-text: #f1fbff;
+  --color-accent: #9bf6ff;
+  --color-accent-alt: #b28cff;
+  --color-highlight: #ffe8ff;
 
   /* Design system: typography */
   --font-family-base: 'Share Tech Mono', monospace;
@@ -22,11 +24,13 @@
   --accent: var(--color-accent);
   --btn-text-idle: var(--fg);
   --btn-text: var(--fg);
-  --gradient: linear-gradient(135deg, #ff71ce 0%, #01cdfe 100%);
-  --vap1: #ff71ce;
-  --vap2: #01cdfe;
-  --vap3: #05ffa1;
-  --vap-speed: 20s;
+  --gradient: radial-gradient(circle at 18% 22%, rgba(123, 255, 255, 0.36) 0%, rgba(15, 4, 46, 0.1) 40%, transparent 68%),
+    radial-gradient(circle at 82% 12%, rgba(195, 153, 255, 0.38) 0%, rgba(10, 3, 38, 0.1) 45%, transparent 70%),
+    linear-gradient(125deg, #05001d 0%, #0a0432 46%, #120744 100%);
+  --vap1: #6dfdff;
+  --vap2: #b28cff;
+  --vap3: #ffe8ff;
+  --vap-speed: 18s;
   --header-depth: 10px;
   --nav-depth: 12px;
   --footer-depth: 10px;
@@ -39,7 +43,9 @@
   --font-paragraph: var(--font-family-base);
   --btn-depth: 6px;
   --cta-depth: 20px;
-  --cta-gradient: linear-gradient(45deg, var(--accent), var(--vap2), var(--vap3));
+  --cta-gradient: linear-gradient(45deg, var(--accent), var(--color-accent-alt), var(--color-highlight));
+  --text-negative-color: #e5f8ff;
+  --text-negative-shadow: 0 0 0.65rem rgba(115, 255, 255, 0.55), 0 0 1.45rem rgba(255, 255, 255, 0.6);
 }
 
 [data-theme='dark'] {
@@ -87,11 +93,13 @@ html[data-theme='vaporwave'] body {
 }
 
 body {
+  position: relative;
   background: var(--gradient);
   background-attachment: fixed;
   background-repeat: no-repeat;
   background-size: cover;
-  color: var(--fg);
+  color: var(--text-negative-color);
+  text-shadow: var(--text-negative-shadow);
   font-family: var(--font-family-base);
   text-transform: uppercase;
   font-size: var(--font-size-base);
@@ -100,6 +108,36 @@ body {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
+  overflow-x: hidden;
+}
+
+body::before,
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: -2;
+}
+
+body::before {
+  background:
+    radial-gradient(circle at 16% 22%, rgba(141, 255, 255, 0.45) 0%, rgba(3, 0, 22, 0) 60%),
+    radial-gradient(circle at 78% 12%, rgba(214, 166, 255, 0.35) 0%, rgba(5, 1, 28, 0) 55%),
+    radial-gradient(circle at 50% 75%, rgba(111, 91, 255, 0.24) 0%, rgba(7, 2, 30, 0) 65%);
+  filter: blur(0px);
+  opacity: 0.9;
+  mix-blend-mode: screen;
+  z-index: -3;
+}
+
+body::after {
+  background:
+    linear-gradient(140deg, rgba(9, 0, 45, 0.8) 0%, rgba(10, 12, 56, 0.55) 45%, rgba(22, 8, 70, 0.85) 100%);
+  box-shadow: inset 0 0 120px rgba(11, 0, 40, 0.8);
+  opacity: 0.6;
+  mix-blend-mode: color-dodge;
+  z-index: -4;
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -111,17 +149,19 @@ p {
 }
 
 a {
-  color: var(--accent);
+  color: color-mix(in srgb, var(--accent) 85%, white 15%);
   text-decoration: none;
+  text-shadow: var(--text-negative-shadow);
 }
 
 a:visited {
-  color: var(--accent);
+  color: color-mix(in srgb, var(--accent) 70%, white 30%);
 }
 
 a:hover,
 a:focus {
-  color: var(--fg);
+  color: var(--text-negative-color);
+  text-shadow: 0 0 1.2rem rgba(155, 246, 255, 0.85), 0 0 2.4rem rgba(178, 140, 255, 0.75);
   text-decoration: none;
 }
 .card {
@@ -181,6 +221,13 @@ body.site-frame {
   position: relative;
   margin: 0 auto;
   max-width: 1200px;
+  background: rgba(8, 12, 44, 0.32);
+  border-radius: 28px;
+  border: 1px solid rgba(161, 246, 255, 0.28);
+  box-shadow: 0 0 48px rgba(125, 255, 255, 0.18), inset 0 0 35px rgba(88, 0, 150, 0.25);
+  backdrop-filter: blur(28px) saturate(140%);
+  -webkit-backdrop-filter: blur(28px) saturate(140%);
+  overflow: hidden;
 }
 
 
@@ -189,6 +236,7 @@ body.site-frame {
   display: flex;
   justify-content: center;
   width: 100%;
+  position: relative;
 }
 
 .hero-ascii pre {
@@ -197,6 +245,13 @@ body.site-frame {
   line-height: 1;
   text-align: center;
   margin: 0;
+  letter-spacing: 0.12em;
+  color: var(--text-negative-color);
+  text-shadow: 0 0 0.9rem rgba(155, 246, 255, 0.7), 0 0 2.2rem rgba(178, 140, 255, 0.6), 0 0 3.4rem rgba(255, 232, 255, 0.6);
+  filter: drop-shadow(0 0 18px rgba(118, 255, 255, 0.45));
+  padding: var(--space-sm);
+  background: linear-gradient(135deg, rgba(146, 255, 255, 0.1) 0%, rgba(178, 140, 255, 0.16) 100%);
+  border-radius: 16px;
 }
 
 /* Promoted shops */
@@ -301,6 +356,14 @@ body.site-frame {
   align-items: center;
   text-align: center;
   gap: 1rem;
+}
+
+.tagline {
+  margin: 0;
+  font-size: clamp(1rem, 2.8vw, 1.4rem);
+  letter-spacing: 0.18em;
+  max-width: 720px;
+  text-shadow: var(--text-negative-shadow);
 }
 
 .portal-links {
