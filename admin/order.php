@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require '../includes/orders.php';
+require '../includes/csrf.php';
 
 if (empty($_SESSION['is_admin'])) {
     header('Location: ../dashboard.php');
@@ -23,6 +24,12 @@ $paymentStatus = 'pending';
 $shippingStatus = 'pending';
 $badgeClass = 'badge-community';
 $badgeLabel = 'Community Listing';
+$statusOptions = order_fulfillment_status_options();
+$statusLabel = $statusOptions[$shippingStatus] ?? ucfirst($shippingStatus);
+$flash = $_SESSION['order_admin_flash'] ?? null;
+if ($flash) {
+    unset($_SESSION['order_admin_flash']);
+}
 if ($order) {
     $amount = $order['payment']['amount'] ?? null;
     if ($amount !== null) {
@@ -30,6 +37,7 @@ if ($order) {
     }
     $paymentStatus = $order['payment']['status'] ?? 'pending';
     $shippingStatus = $order['shipping_status'] ?? 'pending';
+    $statusLabel = $statusOptions[$shippingStatus] ?? ucfirst($shippingStatus);
     $isOfficial = $order['product']['is_official'] ?? false;
     $badgeClass = $isOfficial ? 'badge-official' : 'badge-community';
     $badgeLabel = $isOfficial ? 'Official SkuzE' : 'Community Listing';
@@ -44,6 +52,11 @@ if ($order) {
   <div class="page-container order-detail">
     <h2>Order Review</h2>
     <p><a class="btn" href="orders.php">← Back to Orders</a></p>
+    <?php if ($flash): ?>
+      <div class="alert <?= htmlspecialchars($flash['type'] ?? 'success', ENT_QUOTES, 'UTF-8') ?>">
+        <?= htmlspecialchars($flash['message'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+      </div>
+    <?php endif; ?>
     <?php if (!$order): ?>
       <p class="notice">Order not found.</p>
     <?php else: ?>
@@ -85,7 +98,7 @@ if ($order) {
         <h3>Fulfillment</h3>
         <ul>
           <li><strong>Delivery method:</strong> <?= htmlspecialchars($order['delivery_method'] ?? '—', ENT_QUOTES, 'UTF-8') ?></li>
-          <li><strong>Shipping status:</strong> <?= htmlspecialchars(ucfirst($shippingStatus), ENT_QUOTES, 'UTF-8') ?></li>
+          <li><strong>Shipping status:</strong> <?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></li>
           <?php if (!empty($order['tracking_number'])): ?>
           <li><strong>Tracking number:</strong> <?= htmlspecialchars($order['tracking_number'], ENT_QUOTES, 'UTF-8') ?></li>
           <?php endif; ?>
@@ -93,6 +106,41 @@ if ($order) {
           <li><strong>Notes:</strong> <?= nl2br(htmlspecialchars($order['notes'], ENT_QUOTES, 'UTF-8')) ?></li>
           <?php endif; ?>
         </ul>
+      </section>
+      <section class="order-admin-actions">
+        <h3>Update Fulfillment</h3>
+        <form method="post" action="order-update.php" class="order-admin-form">
+          <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+          <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+          <input type="hidden" name="context" value="detail">
+          <div class="form-row">
+            <label for="status">Fulfillment status</label>
+            <select id="status" name="status" required>
+              <?php foreach ($statusOptions as $value => $label): ?>
+                <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?>" <?= $shippingStatus === $value ? 'selected' : '' ?>><?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?></option>
+              <?php endforeach; ?>
+            </select>
+          </div>
+          <div class="form-row">
+            <label for="tracking_number">Tracking number</label>
+            <input type="text" id="tracking_number" name="tracking_number" value="<?= htmlspecialchars($order['tracking_number'] ?? '', ENT_QUOTES, 'UTF-8') ?>" maxlength="100" autocomplete="off">
+            <small class="help-text">Leave blank to clear the tracking number.</small>
+          </div>
+          <div class="form-row">
+            <label for="inventory_delta">Inventory adjustment</label>
+            <input type="number" id="inventory_delta" name="inventory_delta" value="0" step="1">
+            <small class="help-text">Positive numbers restock units, negative numbers deduct from stock.</small>
+          </div>
+          <div class="form-row checkbox">
+            <label>
+              <input type="checkbox" name="auto_restock" value="1">
+              Auto-restock one unit when cancelling this order.
+            </label>
+          </div>
+          <div class="form-row">
+            <button type="submit" class="btn">Save changes</button>
+          </div>
+        </form>
       </section>
     <?php endif; ?>
   </div>

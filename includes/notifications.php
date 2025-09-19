@@ -16,6 +16,12 @@ function notification_message($type, $context = []) {
         'shipping_update' => 'Shipping details updated for trade offer #' . ($context['offer_id'] ?? ''),
     ];
 
+    if ($type === 'order_status') {
+        $orderId = $context['order_id'] ?? '';
+        $statusLabel = ucfirst((string) ($context['status'] ?? ''));
+        return trim("Order #$orderId status updated to $statusLabel.");
+    }
+
     if ($type === 'support_ticket') {
         $from = $context['username'] ?? 'a user';
         $subject = $context['subject'] ?? 'Support ticket';

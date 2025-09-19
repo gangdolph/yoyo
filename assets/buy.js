@@ -49,4 +49,47 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
   });
+
+  const tagFilter = document.querySelector('[data-tag-filter]');
+  if (tagFilter) {
+    const searchInput = tagFilter.querySelector('[data-tag-search]');
+    const tagOptions = Array.from(tagFilter.querySelectorAll('.tag-filter-option'));
+    const emptyState = tagFilter.querySelector('.tag-filter-empty');
+
+    if (searchInput && tagOptions.length) {
+      const applyFilter = () => {
+        const rawTerm = searchInput.value.trim().toLowerCase();
+        const term = rawTerm.replace(/\s+/g, '-');
+        let matches = 0;
+
+        tagOptions.forEach(option => {
+          const tag = option.dataset.tag || '';
+          const checkbox = option.querySelector('input[type="checkbox"]');
+          const isSelected = checkbox ? checkbox.checked : false;
+          const isMatch = term === '' || tag.includes(term) || tag.includes(rawTerm);
+          const shouldShow = isSelected || isMatch;
+          option.classList.toggle('is-hidden', !shouldShow);
+          if (shouldShow) {
+            matches += 1;
+          }
+        });
+
+        if (emptyState) {
+          emptyState.hidden = matches !== 0;
+        }
+      };
+
+      searchInput.addEventListener('input', applyFilter);
+      searchInput.addEventListener('search', applyFilter);
+
+      tagOptions.forEach(option => {
+        const checkbox = option.querySelector('input[type="checkbox"]');
+        if (checkbox) {
+          checkbox.addEventListener('change', applyFilter);
+        }
+      });
+
+      applyFilter();
+    }
+  }
 });

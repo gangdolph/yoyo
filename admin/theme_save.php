@@ -2,6 +2,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/theme_store.php';
 
 header('Content-Type: application/json');
 
@@ -25,13 +26,21 @@ if ($rawBody === false || $rawBody === '') {
 }
 
 $decoded = json_decode($rawBody, true);
-if (!is_array($decoded)) {
-    http_response_code(400);
-    echo json_encode(['status' => 'error', 'message' => 'Invalid JSON payload.']);
+$validation = yoyo_theme_store_validate_submission($decoded);
+
+if (!empty($validation['errors'])) {
+    http_response_code(422);
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Theme collection validation failed.',
+        'errors' => $validation['errors'],
+    ]);
     exit;
 }
 
-$storageDir = dirname(__DIR__) . '/data';
+$collection = $validation['collection'];
+
+$storageDir = dirname(yoyo_theme_store_path());
 if (!is_dir($storageDir)) {
     if (!mkdir($storageDir, 0775, true) && !is_dir($storageDir)) {
         http_response_code(500);
@@ -40,9 +49,9 @@ if (!is_dir($storageDir)) {
     }
 }
 
-$filePath = $storageDir . '/theme.json';
-$jsonOptions = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES;
-$encoded = json_encode($decoded, $jsonOptions);
+$filePath = yoyo_theme_store_path();
+$jsonOptions = JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE;
+$encoded = json_encode($collection, $jsonOptions);
 if ($encoded === false) {
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Failed to encode theme data.']);
@@ -56,4 +65,7 @@ if (file_put_contents($filePath, $encoded, LOCK_EX) === false) {
     exit;
 }
 
-echo json_encode(['status' => 'ok']);
+echo json_encode([
+    'status' => 'ok',
+    'collection' => $collection,
+]);

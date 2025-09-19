@@ -83,6 +83,10 @@ $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
 $stmt->close();
 
 $availableTags = [];
+foreach (canonical_tags() as $canonicalTag) {
+    $availableTags[$canonicalTag] = true;
+}
+
 $tagQuery = $conn->query("SELECT tags FROM listings WHERE status='approved' AND tags IS NOT NULL AND tags <> ''");
 if ($tagQuery) {
     while ($row = $tagQuery->fetch_assoc()) {
@@ -92,16 +96,15 @@ if ($tagQuery) {
     }
     $tagQuery->close();
 }
-ksort($availableTags);
-$availableTags = array_keys($availableTags);
+
 if ($tagFilters) {
     foreach ($tagFilters as $tag) {
-        if (!in_array($tag, $availableTags, true)) {
-            $availableTags[] = $tag;
-        }
+        $availableTags[$tag] = true;
     }
-    sort($availableTags);
 }
+
+$availableTags = array_keys($availableTags);
+sort($availableTags);
 ?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
@@ -125,14 +128,23 @@ if ($tagFilters) {
           <option value="other" <?= $category==='other'?'selected':'' ?>>Other</option>
         </select>
         <?php if ($availableTags): ?>
-          <fieldset class="tag-filter">
+          <fieldset class="tag-filter" data-tag-filter>
             <legend>Tags</legend>
-            <?php foreach ($availableTags as $tag): ?>
-              <label class="tag-filter-option">
-                <input type="checkbox" name="tags[]" value="<?= htmlspecialchars($tag); ?>" <?= in_array($tag, $tagFilters, true) ? 'checked' : ''; ?>>
-                <span><?= htmlspecialchars($tag); ?></span>
-              </label>
-            <?php endforeach; ?>
+            <input type="search" class="tag-filter-search-input" placeholder="Search tags" aria-label="Search tags" autocomplete="off" data-tag-search list="tag-filter-datalist">
+            <datalist id="tag-filter-datalist">
+              <?php foreach ($availableTags as $tagOption): ?>
+                <option value="<?= htmlspecialchars($tagOption); ?>"></option>
+              <?php endforeach; ?>
+            </datalist>
+            <div class="tag-filter-options" data-tag-options>
+              <?php foreach ($availableTags as $tag): ?>
+                <label class="tag-filter-option" data-tag="<?= htmlspecialchars($tag); ?>">
+                  <input type="checkbox" name="tags[]" value="<?= htmlspecialchars($tag); ?>" <?= in_array($tag, $tagFilters, true) ? 'checked' : ''; ?>>
+                  <span><?= htmlspecialchars($tag); ?></span>
+                </label>
+              <?php endforeach; ?>
+            </div>
+            <p class="tag-filter-empty" hidden>No tags match your search.</p>
           </fieldset>
         <?php endif; ?>
         <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
