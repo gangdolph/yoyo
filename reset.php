@@ -2,6 +2,10 @@
 require 'includes/csrf.php';
 require 'includes/db.php';
 
+if (!defined('HEADER_SKIP_AUTH')) {
+  define('HEADER_SKIP_AUTH', true);
+}
+
 $token = $_GET['token'] ?? '';
 $valid = false;
 

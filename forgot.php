@@ -4,6 +4,10 @@ require 'includes/db.php';
 // Mail helper lives in the project root
 require 'mail.php';
 
+if (!defined('HEADER_SKIP_AUTH')) {
+  define('HEADER_SKIP_AUTH', true);
+}
+
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
       $msg = "Invalid CSRF token.";

@@ -1,6 +1,10 @@
 <?php
 require 'includes/db.php';
 
+if (!defined('HEADER_SKIP_AUTH')) {
+  define('HEADER_SKIP_AUTH', true);
+}
+
 $token = $_GET['token'] ?? '';
 if ($token) {
   $stmt = $conn->prepare("SELECT user_id, expires_at FROM tokens WHERE token = ? AND type = 'verify'");
