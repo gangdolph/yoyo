@@ -3,22 +3,54 @@ require_once __DIR__ . '/includes/auth.php';
 require 'includes/db.php';
 require 'includes/user.php';
 require 'includes/csrf.php';
+require 'includes/listing-query.php';
 
 $user_id = $_SESSION['user_id'] ?? null;
 
-$sql = 'SELECT tl.id, tl.have_item, tl.want_item, tl.trade_type, tl.description, tl.image, tl.status, tl.owner_id, u.username,
-        (SELECT COUNT(*) FROM trade_offers o WHERE o.listing_id = tl.id AND o.status IN ("pending","accepted")) AS offers
-        FROM trade_listings tl JOIN users u ON tl.owner_id = u.id ORDER BY tl.created_at DESC';
-$listings = [];
-if ($result = $conn->query($sql)) {
-    $listings = $result->fetch_all(MYSQLI_ASSOC);
-    $result->close();
-}
+$filters = sanitize_trade_filters($_GET);
+$search = $filters['search'];
+$category = $filters['category'];
+$subcategory = $filters['subcategory'];
+$condition = $filters['condition'];
+$tradeType = $filters['trade_type'];
+$sort = $filters['sort'];
+$limit = $filters['limit'];
+$page = $filters['page'];
+
+$queryResult = run_trade_listing_query($conn, $filters);
+$listings = $queryResult['items'];
+$total = $queryResult['total'];
+$totalPages = $queryResult['total_pages'];
+$filters = $queryResult['filters'];
+$page = $filters['page'];
+$limit = $filters['limit'];
+
+$categoryOptions = listing_filter_categories('trade');
+$subcategoryOptions = listing_filter_subcategories('trade', $category);
+$conditionOptions = listing_filter_conditions('trade', $category);
+$formatOptions = listing_filter_format_options('trade');
+$sortOptions = trade_sort_options();
+$limitOptions = trade_limit_options();
+
+$baseQuery = [
+    'search' => $search !== '' ? $search : null,
+    'category' => $category !== '' ? $category : null,
+    'subcategory' => $subcategory !== '' ? $subcategory : null,
+    'condition' => $condition !== '' ? $condition : null,
+    'trade_type' => $tradeType !== '' ? $tradeType : null,
+    'sort' => $sort !== '' ? $sort : null,
+    'limit' => $limit,
+];
+
+$baseQuery = array_filter($baseQuery, static function ($value) {
+    return $value !== null;
+});
 ?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
   <title>Trade Listings</title>
   <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/js/filters.js" defer></script>
 </head>
 <body>
   <?php include 'includes/sidebar.php'; ?>
@@ -28,40 +60,74 @@ if ($result = $conn->query($sql)) {
     <a href="trade.php">Trade Offers</a> |
     <a href="trade-listing.php">Create Listing</a>
   </p>
-    <table>
-      <tr><th>Have</th><th>Want</th><th>Type</th><th>Description</th><th>Image</th><th>Status</th><th>Owner</th><th>Offers</th><th>Actions</th></tr>
-    <?php foreach ($listings as $l): ?>
-      <tr>
-        <td><?= htmlspecialchars($l['have_item']) ?></td>
-        <td><?= htmlspecialchars($l['want_item']) ?></td>
-          <td><?= htmlspecialchars($l['trade_type']) ?></td>
-          <td><?= htmlspecialchars($l['description']) ?></td>
-        <td><?php if ($l['image']): ?><img src="uploads/<?= htmlspecialchars($l['image']) ?>" alt="Image" style="max-width:100px"><?php endif; ?></td>
-        <td><?= htmlspecialchars($l['status']) ?></td>
-        <td><?= username_with_avatar($conn, $l['owner_id'], $l['username']) ?></td>
-        <td>
-          <?php if ($l['owner_id'] == $user_id): ?>
-            <a href="trade.php?listing=<?= $l['id'] ?>">Offers <span class="badge"><?= $l['offers'] ?></span></a>
-          <?php else: ?>
-            <span class="badge"><?= $l['offers'] ?></span>
-          <?php endif; ?>
-        </td>
-        <td>
-          <?php if ($l['owner_id'] == $user_id || !empty($_SESSION['is_admin'])): ?>
-            <a href="trade-listing.php?edit=<?= $l['id'] ?>">Edit</a>
-            <form method="post" action="trade-listing-delete.php" style="display:inline" onsubmit="return confirm('Delete listing?');">
-              <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-              <input type="hidden" name="id" value="<?= $l['id']; ?>">
-              <input type="hidden" name="redirect" value="trade-listings.php">
-              <button type="submit">Delete</button>
-            </form>
-          <?php elseif ($l['status'] === 'open' && $user_id): ?>
-            <a href="trade-offer.php?id=<?= $l['id'] ?>">Make Offer</a>
-          <?php endif; ?>
-        </td>
-      </tr>
-    <?php endforeach; ?>
-  </table>
+  <form method="get" class="filter-bar" data-filter-form data-filter-context="trade" data-filter-endpoint="api/listings.php" data-filter-results="#trade-results" data-filter-status="#trade-filters-status">
+    <div class="filter-bar__row">
+      <div class="filter-field">
+        <label for="trade-search">Search</label>
+        <input type="search" id="trade-search" name="search" value="<?= htmlspecialchars($search); ?>" placeholder="Search trades" autocomplete="off" data-filter-input>
+      </div>
+      <div class="filter-field">
+        <label for="trade-category">Category</label>
+        <select name="category" id="trade-category" data-filter-dimension="category">
+          <?php foreach ($categoryOptions as $value => $meta): ?>
+            <option value="<?= htmlspecialchars($value); ?>" <?= $category === $value ? 'selected' : ''; ?>><?= htmlspecialchars($meta['label']); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="trade-subcategory">Subcategory</label>
+        <select name="subcategory" id="trade-subcategory" data-filter-dimension="subcategory" <?= ($category === '' || count($subcategoryOptions) <= 1) ? 'disabled' : ''; ?>>
+          <?php foreach ($subcategoryOptions ?: ['' => ['label' => 'Select a category first']] as $value => $meta): ?>
+            <option value="<?= htmlspecialchars($value); ?>" <?= $subcategory === $value ? 'selected' : ''; ?>><?= htmlspecialchars($meta['label'] ?? $meta); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="trade-condition">Status</label>
+        <select name="condition" id="trade-condition" data-filter-dimension="condition">
+          <?php foreach ($conditionOptions as $value => $label): ?>
+            <option value="<?= htmlspecialchars($value); ?>" <?= $condition === $value ? 'selected' : ''; ?>><?= htmlspecialchars($label); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="trade-format">Format</label>
+        <select name="trade_type" id="trade-format" data-filter-dimension="trade_type">
+          <?php foreach ($formatOptions as $value => $label): ?>
+            <option value="<?= htmlspecialchars($value); ?>" <?= $tradeType === $value ? 'selected' : ''; ?>><?= htmlspecialchars($label); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="trade-sort">Sort</label>
+        <select name="sort" id="trade-sort" data-filter-dimension="sort">
+          <?php foreach ($sortOptions as $value => $label): ?>
+            <option value="<?= htmlspecialchars($value); ?>" <?= $sort === $value ? 'selected' : ''; ?>><?= htmlspecialchars($label); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="filter-field">
+        <label for="trade-limit">Per page</label>
+        <select name="limit" id="trade-limit" data-filter-dimension="limit">
+          <?php foreach ($limitOptions as $option): ?>
+            <option value="<?= $option; ?>" <?= $limit === $option ? 'selected' : ''; ?>><?= $option; ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+    </div>
+    <div class="filter-actions">
+      <input type="hidden" name="context" value="trade" data-filter-context-value>
+      <input type="hidden" name="page" value="<?= $page; ?>" data-filter-page>
+      <button type="submit" class="btn">Apply filters</button>
+      <span class="filter-status" id="trade-filters-status" role="status" aria-live="polite"></span>
+    </div>
+  </form>
+  <section class="listing-results" id="trade-results" data-filter-results>
+    <?php
+      $resultCount = count($listings);
+      include __DIR__ . '/includes/partials/trade-results.php';
+    ?>
+  </section>
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>

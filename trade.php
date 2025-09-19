@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
+require 'includes/trade.php';
 
 $user_id = $_SESSION['user_id'];
 $listing_filter = isset($_GET['listing']) ? intval($_GET['listing']) : null;
@@ -15,66 +16,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $offer_id = intval($_POST['offer_id'] ?? 0);
         $action = $_POST['action'] ?? '';
-        if ($offer_id && in_array($action, ['accept','decline'], true)) {
-            if ($action === 'accept') {
-                if ($stmt = $conn->prepare('SELECT tl.trade_type, tl.have_sku, o.offered_sku, o.use_escrow, ph.quantity AS have_qty, po.quantity AS offer_qty FROM trade_offers o JOIN trade_listings tl ON o.listing_id = tl.id LEFT JOIN products ph ON tl.have_sku = ph.sku LEFT JOIN products po ON o.offered_sku = po.sku WHERE o.id=? AND tl.owner_id=? AND o.status="pending"')) {
-                    $stmt->bind_param('ii', $offer_id, $user_id);
-                    $stmt->execute();
-                    $stmt->bind_result($trade_type, $have_sku, $offered_sku, $use_escrow, $have_qty, $offer_qty);
-                    if ($stmt->fetch()) {
-                        $stmt->close();
-                        $conn->begin_transaction();
-                        if ($stmt2 = $conn->prepare('UPDATE trade_offers o JOIN trade_listings l ON o.listing_id = l.id SET o.status="accepted", l.status="accepted" WHERE o.id=? AND l.owner_id=? AND o.status="pending"')) {
-                            $stmt2->bind_param('ii', $offer_id, $user_id);
-                            $stmt2->execute();
-                            $stmt2->close();
-                        }
-                        if ($trade_type === 'item') {
-                            if ($have_sku && $offered_sku && $have_qty > 0 && $offer_qty > 0) {
-                                if ($stmt2 = $conn->prepare('UPDATE products SET quantity = quantity - 1 WHERE sku = ? AND quantity > 0')) {
-                                    $stmt2->bind_param('s', $have_sku);
-                                    $stmt2->execute();
-                                    $stmt2->close();
-                                }
-                                if ($stmt2 = $conn->prepare('UPDATE products SET quantity = quantity - 1 WHERE sku = ? AND quantity > 0')) {
-                                    $stmt2->bind_param('s', $offered_sku);
-                                    $stmt2->execute();
-                                    $stmt2->close();
-                                }
-                                $conn->commit();
-                            } else {
-                                $conn->rollback();
-                                $error = 'Trade items out of stock.';
-                            }
-                        } else {
-                            $conn->commit();
-                        }
-                        if ($use_escrow) {
-                            if ($stmt2 = $conn->prepare('INSERT INTO escrow_transactions (offer_id) VALUES (?)')) {
-                                $stmt2->bind_param('i', $offer_id);
-                                $stmt2->execute();
-                                $stmt2->close();
-                            }
-                        }
-                    } else {
-                        $stmt->close();
-                    }
+        if ($offer_id && in_array($action, ['accept', 'decline'], true)) {
+            try {
+                if ($action === 'accept') {
+                    trade_accept_offer($conn, $offer_id, $user_id);
+                } else {
+                    trade_decline_offer($conn, $offer_id, $user_id, 'declined');
                 }
-            } else {
-                $status = 'declined';
-                if ($stmt = $conn->prepare('UPDATE trade_offers o JOIN trade_listings l ON o.listing_id = l.id SET o.status=? WHERE o.id=? AND l.owner_id=? AND o.status="pending"')) {
-                    $stmt->bind_param('sii', $status, $offer_id, $user_id);
-                    $stmt->execute();
-                    $stmt->close();
+
+                $redirect = 'trade.php';
+                if ($listing_filter) {
+                    $redirect .= '?listing=' . $listing_filter;
                 }
+                header('Location: ' . $redirect);
+                exit;
+            } catch (RuntimeException $e) {
+                $error = $e->getMessage();
+            } catch (Throwable $e) {
+                error_log('[trade] Failed to update offer #' . $offer_id . ': ' . $e->getMessage());
+                $error = 'Unable to update the offer. Please try again later.';
             }
         }
-        $redirect = 'trade.php';
-        if ($listing_filter) {
-            $redirect .= '?listing=' . $listing_filter;
-        }
-        header('Location: ' . $redirect);
-        exit;
     }
 }
 

@@ -2,16 +2,6 @@
 require_once __DIR__ . '/includes/auth.php';
 require 'includes/csrf.php';
 require 'includes/db.php';
-
-$serviceTaxonomy = require __DIR__ . '/includes/service_taxonomy.php';
-$brandOptions = [];
-if ($result = $conn->query('SELECT id, name FROM service_brands ORDER BY name')) {
-    while ($row = $result->fetch_assoc()) {
-        $brandOptions[] = $row;
-    }
-    $result->close();
-}
-$modelsEndpoint = 'api/models.php';
 ?>
 <?php require 'includes/layout.php'; ?>
   <title>Request a Service</title>
@@ -24,9 +14,34 @@ $modelsEndpoint = 'api/models.php';
   <h2>Request a Service</h2>
   <p class="wizard-intro">Pick the flow that best matches what you need and we will guide you through the right questions.</p>
 
-  <?php include __DIR__ . '/includes/partials/service-wizard.php'; ?>
+  <ul class="service-cta-grid" role="list">
+    <li class="service-cta-item" role="listitem">
+      <a class="service-cta-card" href="service-wizard.php?path=repair">
+        <h3 class="service-cta-card__title">Request a Repair</h3>
+        <p class="service-cta-card__description">Fix hardware, screen, and component issues with certified technicians.</p>
+        <span class="service-cta-card__action" aria-hidden="true">Start repair request →</span>
+      </a>
+    </li>
+    <li class="service-cta-item" role="listitem">
+      <a class="service-cta-card" href="service-wizard.php?path=clean">
+        <h3 class="service-cta-card__title">Schedule a Cleaning</h3>
+        <p class="service-cta-card__description">Improve performance with deep cleanings, malware removal, and tune-ups.</p>
+        <span class="service-cta-card__action" aria-hidden="true">Plan a cleaning visit →</span>
+      </a>
+    </li>
+    <li class="service-cta-item" role="listitem">
+      <a class="service-cta-card" href="service-wizard.php?path=build">
+        <h3 class="service-cta-card__title">Start a Custom Build</h3>
+        <p class="service-cta-card__description">Plan a bespoke PC or workstation build with component sourcing.</p>
+        <span class="service-cta-card__action" aria-hidden="true">Design my build →</span>
+      </a>
+    </li>
+  </ul>
 
-  <script src="assets/service-wizard.js" defer></script>
+  <p class="service-cta-secondary">
+    Looking for something else? <a href="service-wizard.php">Browse the full service wizard.</a>
+  </p>
+
   <?php include 'includes/footer.php'; ?>
 </body>
 </html>

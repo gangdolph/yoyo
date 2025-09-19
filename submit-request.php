@@ -6,6 +6,49 @@ require_once 'mail.php';
 
 $serviceTaxonomy = require __DIR__ . '/includes/service_taxonomy.php';
 
+function service_wizard_active_payload(array $payload, string $category): array
+{
+    if ($category === '' || !isset($payload[$category]) || !is_array($payload[$category])) {
+        return [];
+    }
+
+    return $payload[$category];
+}
+
+function service_wizard_value(array $activePayload, string $field, $default = null)
+{
+    if (array_key_exists($field, $_POST)) {
+        return $_POST[$field];
+    }
+    if (array_key_exists($field, $activePayload)) {
+        return $activePayload[$field];
+    }
+
+    return $default;
+}
+
+function service_wizard_file(array $files, string $category, string $field): ?array
+{
+    if (!isset($files['name'][$category][$field])) {
+        return null;
+    }
+
+    $name = $files['name'][$category][$field];
+    $error = $files['error'][$category][$field] ?? UPLOAD_ERR_NO_FILE;
+
+    if ($error === UPLOAD_ERR_NO_FILE || $name === '') {
+        return null;
+    }
+
+    return [
+        'name' => $name,
+        'type' => $files['type'][$category][$field] ?? '',
+        'tmp_name' => $files['tmp_name'][$category][$field] ?? '',
+        'error' => $error,
+        'size' => $files['size'][$category][$field] ?? 0,
+    ];
+}
+
 $success = false;
 $error = '';
 $filename = null;
@@ -27,15 +70,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid CSRF token.';
     } else {
-        $category   = htmlspecialchars(trim($_POST['category'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $brand_id   = isset($_POST['brand_id']) ? (int)$_POST['brand_id'] : null;
-        $model_id   = isset($_POST['model_id']) ? (int)$_POST['model_id'] : null;
-        $make       = isset($_POST['make']) ? htmlspecialchars(trim($_POST['make']), ENT_QUOTES, 'UTF-8') : null;
-        $model      = isset($_POST['model']) ? htmlspecialchars(trim($_POST['model']), ENT_QUOTES, 'UTF-8') : null;
-        $serial     = isset($_POST['serial']) ? htmlspecialchars(trim($_POST['serial']), ENT_QUOTES, 'UTF-8') : null;
-        $issue      = htmlspecialchars(trim($_POST['issue'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $build      = htmlspecialchars(trim($_POST['build'] ?? 'no'), ENT_QUOTES, 'UTF-8');
-        $device_type= isset($_POST['device_type']) ? htmlspecialchars(trim($_POST['device_type']), ENT_QUOTES, 'UTF-8') : null;
+        $category = htmlspecialchars(trim($_POST['category'] ?? ''), ENT_QUOTES, 'UTF-8');
+        $servicePayload = isset($_POST['service']) && is_array($_POST['service']) ? $_POST['service'] : [];
+        $activePayload = service_wizard_active_payload($servicePayload, $category);
+
+        $brandRaw = service_wizard_value($activePayload, 'brand_id');
+        $brand_id = ($brandRaw !== null && $brandRaw !== '') ? (int) $brandRaw : null;
+
+        $modelRaw = service_wizard_value($activePayload, 'model_id');
+        $model_id = ($modelRaw !== null && $modelRaw !== '') ? (int) $modelRaw : null;
+
+        $makeValue = service_wizard_value($activePayload, 'make');
+        $make = $makeValue !== null ? htmlspecialchars(trim((string) $makeValue), ENT_QUOTES, 'UTF-8') : null;
+
+        $modelValue = service_wizard_value($activePayload, 'model');
+        $model = $modelValue !== null ? htmlspecialchars(trim((string) $modelValue), ENT_QUOTES, 'UTF-8') : null;
+
+        $serialValue = service_wizard_value($activePayload, 'serial');
+        $serial = $serialValue !== null ? htmlspecialchars(trim((string) $serialValue), ENT_QUOTES, 'UTF-8') : null;
+
+        $issueValue = service_wizard_value($activePayload, 'issue', '');
+        $issue = htmlspecialchars(trim((string) $issueValue), ENT_QUOTES, 'UTF-8');
+
+        $buildRaw = service_wizard_value($activePayload, 'build', null);
+        $build = $buildRaw !== null ? htmlspecialchars(trim((string) $buildRaw), ENT_QUOTES, 'UTF-8') : 'no';
+
+        $deviceTypeValue = service_wizard_value($activePayload, 'device_type');
+        $device_type = $deviceTypeValue !== null ? htmlspecialchars(trim((string) $deviceTypeValue), ENT_QUOTES, 'UTF-8') : null;
 
         if ($category === '') {
           $error = 'Category is required.';
@@ -69,8 +130,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $error = 'Please choose a model.';
         }
 
-        if (!$error && $requiresBuild && (!isset($_POST['build']) || !in_array($build, ['yes', 'no'], true))) {
-          $error = 'Please confirm if this is a full custom build.';
+        if (!$error && $requiresBuild) {
+          if ($buildRaw === null || !in_array($build, ['yes', 'no'], true)) {
+            $error = 'Please confirm if this is a full custom build.';
+          }
         }
 
         if (!$error && $requiresBrand && $brand_id) {
@@ -99,28 +162,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if (!$error) {
           $extraNotes = [];
-          if (!empty($_POST['symptoms']) && is_array($_POST['symptoms'])) {
+          $symptomsInput = service_wizard_value($activePayload, 'symptoms', []);
+          if (!is_array($symptomsInput)) {
+            $symptomsInput = [];
+          }
+          if ($symptomsInput) {
             $symptoms = array_map(static function ($value) {
               return preg_replace('/[^a-z0-9 \-]/i', '', (string) $value);
-            }, $_POST['symptoms']);
+            }, $symptomsInput);
             $symptoms = array_filter($symptoms);
             if ($symptoms) {
               $extraNotes[] = 'Reported symptoms: ' . implode(', ', $symptoms);
             }
           }
-          if (!empty($_POST['contact_preference'])) {
-            $contactPreference = preg_replace('/[^a-z0-9 \-]/i', '', (string) $_POST['contact_preference']);
+
+          $contactPreferenceInput = service_wizard_value($activePayload, 'contact_preference', '');
+          if ($contactPreferenceInput !== null) {
+            $contactPreference = preg_replace('/[^a-z0-9 \-]/i', '', (string) $contactPreferenceInput);
             if ($contactPreference !== '') {
               $extraNotes[] = 'Preferred contact: ' . $contactPreference;
             }
           }
+
           if ($extraNotes) {
             $issue = trim($issue . "\n\n" . implode("\n", $extraNotes));
           }
         }
 
+        $uploadedFile = null;
+        if (isset($_FILES['photo']) && is_array($_FILES['photo'])) {
+          $photoError = $_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE;
+          if ($photoError !== UPLOAD_ERR_NO_FILE && ($_FILES['photo']['name'] ?? '') !== '') {
+            $uploadedFile = $_FILES['photo'];
+          }
+        }
+
+        if (!$uploadedFile && isset($_FILES['service']) && is_array($_FILES['service'])) {
+          $nestedFile = service_wizard_file($_FILES['service'], $category, 'photo');
+          if ($nestedFile) {
+            $uploadedFile = $nestedFile;
+          }
+        }
+
         // ✅ Handle optional file upload
-        if (!$error && !empty($_FILES['photo']['name'])) {
+        if (!$error && $uploadedFile) {
           $upload_path = __DIR__ . '/uploads/';
           if (!is_dir($upload_path)) {
             mkdir($upload_path, 0755, true);
@@ -128,19 +213,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $maxSize = 5 * 1024 * 1024; // 5MB
           $allowed = ['image/jpeg', 'image/png'];
 
-          if ($_FILES['photo']['size'] > $maxSize) {
+          if (($uploadedFile['size'] ?? 0) > $maxSize) {
             $error = "Image exceeds 5MB limit.";
           } else {
             $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = finfo_file($finfo, $_FILES['photo']['tmp_name']);
-            finfo_close($finfo);
-            if (!in_array($mime, $allowed)) {
+            $mime = false;
+            if ($finfo) {
+              $mime = finfo_file($finfo, $uploadedFile['tmp_name']);
+              finfo_close($finfo);
+            }
+            if (!in_array($mime, $allowed, true)) {
               $error = "Only JPEG and PNG images allowed.";
             } else {
               $ext = $mime === 'image/png' ? '.png' : '.jpg';
               $filename = uniqid('upload_', true) . $ext;
               $target = $upload_path . $filename;
-              if (!move_uploaded_file($_FILES['photo']['tmp_name'], $target)) {
+              if (!move_uploaded_file($uploadedFile['tmp_name'], $target)) {
                 $error = "Failed to upload image.";
               }
             }
