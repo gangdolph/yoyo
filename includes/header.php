@@ -67,7 +67,7 @@ endif;
 <header class="site-header">
   <div class="header-left">
     <a href="/index.php" class="logo-link">
-      <img class="logo-img" src="/assets/logo.png" alt="SkuzE Logo">
+      <img class="logo-img" src="/assets/logo.png" alt="SkuzE Logo" loading="lazy">
     </a>
     <h1 class="logo">
       <span class="logo-word">SKUZE</span>

@@ -79,20 +79,29 @@ try {
   }
 
   /* --------------------------- Server-side pricing ----------------------------- */
-    $price = null; // decimal dollars
+    $basePrice = null; // decimal dollars
     $salePrice = null;
     $sku = null;
-    $stock = 0;
-    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.quantity FROM listings l JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+    $stock = null;
+    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.quantity FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
     $stmt->bind_param('i', $listing_id);
     $stmt->execute();
-    $stmt->bind_result($price, $salePrice, $sku, $stock);
+    $stmt->bind_result($basePrice, $salePrice, $sku, $stock);
     if (!$stmt->fetch()) {
       $stmt->close();
       $fail('listing_not_found', 'listing_id=' . $listing_id);
     }
     $stmt->close();
-    $price = ($salePrice !== null) ? $salePrice : $price;
+
+    if ($basePrice === null) {
+      $fail('invalid_listing', 'missing base price for listing_id=' . $listing_id);
+    }
+
+    $basePrice = (float)$basePrice;
+    $salePrice = ($salePrice !== null && $salePrice !== '') ? (float)$salePrice : null;
+    $stock = ($stock !== null) ? (int)$stock : null;
+
+    $price = $salePrice !== null ? $salePrice : $basePrice;
     $discount = 0.0;
     if ($coupon_code !== '') {
       $stmt = $db->prepare('SELECT discount_type, discount_value FROM coupons WHERE listing_id = ? AND code = ? AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1');
@@ -115,8 +124,8 @@ try {
     if ($price < 0) {
       $price = 0;
     }
-    if ($stock <= 0) {
-      $fail('out_of_stock', 'sku=' . $sku);
+    if ($stock !== null && $stock <= 0) {
+      $fail('out_of_stock', 'sku=' . (string)$sku);
     }
 
   $amount = (int)round(((float)$price) * 100); // cents
@@ -195,10 +204,12 @@ try {
             $stmt->execute();
             $stmt->close();
           }
-          if ($stmt = $db->prepare('UPDATE products SET quantity = quantity - 1 WHERE sku = ? AND quantity > 0')) {
-            $stmt->bind_param('s', $sku);
-            $stmt->execute();
-            $stmt->close();
+          if ($sku !== null && $sku !== '' && $stock !== null) {
+            if ($stmt = $db->prepare('UPDATE products SET quantity = quantity - 1 WHERE sku = ? AND quantity > 0')) {
+              $stmt->bind_param('s', $sku);
+              $stmt->execute();
+              $stmt->close();
+            }
           }
         unset($_SESSION['shipping'][$listing_id]);
       }

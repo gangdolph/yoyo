@@ -10,7 +10,7 @@ if (!$listing_id) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT l.id, l.product_sku, p.title, p.description, p.price AS original_price, l.sale_price, l.category, l.tags, l.image, l.pickup_only FROM listings l JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+$stmt = $conn->prepare('SELECT l.id, l.product_sku, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.pickup_only FROM listings l WHERE l.id = ? LIMIT 1');
 $stmt->bind_param('i', $listing_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -51,9 +51,9 @@ if (!$listing) {
         </ul>
       <?php endif; ?>
       <?php if ($listing['sale_price'] !== null): ?>
-        <p class="price"><span class="original">$<?= htmlspecialchars($listing['original_price']); ?></span> <span class="sale">$<?= htmlspecialchars($listing['sale_price']); ?></span></p>
+        <p class="price"><span class="original">$<?= htmlspecialchars($listing['price']); ?></span> <span class="sale">$<?= htmlspecialchars($listing['sale_price']); ?></span></p>
       <?php else: ?>
-        <p class="price">$<?= htmlspecialchars($listing['original_price']); ?></p>
+        <p class="price">$<?= htmlspecialchars($listing['price']); ?></p>
       <?php endif; ?>
       <?php if (!empty($listing['pickup_only'])): ?>
         <p class="pickup-only">Pickup only - no shipping available</p>

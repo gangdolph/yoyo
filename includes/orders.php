@@ -3,7 +3,9 @@
  * Helper functions for retrieving enriched order data.
  */
 
-require_once __DIR__ . '/db.php';
+if (!defined('YOYO_SKIP_DB_BOOTSTRAP')) {
+    require_once __DIR__ . '/db.php';
+}
 
 /**
  * Fetch all orders that involve the provided viewer.
@@ -178,7 +180,7 @@ function _orders_build_select_sql(string $directionExpression): string {
         . ' ' . $directionExpression . ' AS direction'
         . ' FROM order_fulfillments of'
         . ' JOIN listings l ON of.listing_id = l.id'
-        . ' JOIN products prod ON l.product_sku = prod.sku'
+        . ' LEFT JOIN products prod ON l.product_sku = prod.sku'
         . ' LEFT JOIN payments pay ON of.payment_id = pay.id'
         . ' LEFT JOIN users seller ON l.owner_id = seller.id'
         . ' LEFT JOIN users buyer ON pay.user_id = buyer.id';
@@ -208,9 +210,9 @@ function _orders_normalize_row(array $row): array {
         'product' => [
             'sku' => $row['product_sku'],
             'title' => $row['product_title'],
-            'quantity' => (int) $row['product_quantity'],
-            'reorder_threshold' => (int) $row['product_reorder_threshold'],
-            'is_official' => (bool) $row['product_is_official'],
+            'quantity' => $row['product_quantity'] !== null ? (int) $row['product_quantity'] : null,
+            'reorder_threshold' => $row['product_reorder_threshold'] !== null ? (int) $row['product_reorder_threshold'] : null,
+            'is_official' => $row['product_is_official'] !== null ? (bool) $row['product_is_official'] : null,
         ],
         'payment' => [
             'id' => $row['payment_id'] !== null ? (int) $row['payment_id'] : null,
