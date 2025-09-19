@@ -21,8 +21,7 @@ require_once __DIR__ . '/includes/auth.php';
     ╚█████╔╝  █████╔╝   ██║   ██║    ███╔╝   █████╗     
      ╚═══██╗  ██╔═██╗   ██║   ██║   ███╔╝    ██╔══╝     
      ██████╔╝  ██║  ██╗  ╚██████╔╝  ███████╗  ███████╗    
-◥◣    ╚═════╝   ╚═╝  ╚═╝   ╚═════╝   ╚══════╝  ╚══════╝   ◢◤
-        </pre>
+◥◣    ╚═════╝   ╚═╝  ╚═╝   ╚═════╝   ╚══════╝  ╚══════╝   ◢◤</pre>
       </div>
       <div class="hero-content">
         <p class="tagline">Fix, buy, sell, or trade your electronics in one place.</p>
