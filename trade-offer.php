@@ -2,6 +2,7 @@
 require_once __DIR__ . '/includes/auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
+require 'includes/trade.php';
 
 $user_id = $_SESSION['user_id'];
 $listing_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
@@ -18,7 +19,7 @@ if ($listing_id) {
     }
 }
 
-if ($stmt = $conn->prepare('SELECT sku, title FROM products WHERE owner_id = ?')) {
+if ($stmt = $conn->prepare('SELECT sku, title, quantity, reserved FROM products WHERE owner_id = ? AND quantity > 0 ORDER BY title')) {
     $stmt->bind_param('i', $user_id);
     $stmt->execute();
     $inventory = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
@@ -33,54 +34,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid CSRF token.';
     } else {
-          $use_escrow = isset($_POST['use_escrow']) ? 1 : 0;
-          $message = trim($_POST['message'] ?? '');
-          if ($listing['trade_type'] === 'cash_card') {
-              $payment_amount = isset($_POST['payment_amount']) ? floatval($_POST['payment_amount']) : 0;
-              $payment_method = trim($_POST['payment_method'] ?? '');
-              if ($payment_amount <= 0 || $payment_method === '') {
-                  $error = 'Payment amount and method required.';
-              }
-              if (!$error) {
-                  $offered_sku = null;
-                  if ($stmt = $conn->prepare('INSERT INTO trade_offers (listing_id, offerer_id, offered_sku, payment_amount, payment_method, message, use_escrow) VALUES (?,?,?,?,?,?,?)')) {
-                      $stmt->bind_param('iisdssi', $listing_id, $user_id, $offered_sku, $payment_amount, $payment_method, $message, $use_escrow);
-                      $stmt->execute();
-                      $stmt->close();
-                      header('Location: trade.php?listing=' . $listing_id);
-                      exit;
-                  } else {
-                      $error = 'Database error.';
-                  }
-              }
-          } else {
-              $offered_sku = $_POST['offered_sku'] ?? '';
-              $valid_item = false;
-              foreach ($inventory as $item) {
-                  if ($item['sku'] === $offered_sku) {
-                      $valid_item = true;
-                      break;
-                  }
-              }
-              if (!$valid_item) {
-                  $error = 'Valid inventory item required.';
-              }
-              if (!$error) {
-                  $payment_amount = null;
-                  $payment_method = null;
-                  if ($stmt = $conn->prepare('INSERT INTO trade_offers (listing_id, offerer_id, offered_sku, payment_amount, payment_method, message, use_escrow) VALUES (?,?,?,?,?,?,?)')) {
-                      $stmt->bind_param('iissssi', $listing_id, $user_id, $offered_sku, $payment_amount, $payment_method, $message, $use_escrow);
-                      $stmt->execute();
-                      $stmt->close();
-                      header('Location: trade.php?listing=' . $listing_id);
-                      exit;
-                  } else {
-                      $error = 'Database error.';
-                  }
-              }
-          }
-      }
-  }
+        $payload = [
+            'offered_sku' => $_POST['offered_sku'] ?? null,
+            'payment_amount' => $_POST['payment_amount'] ?? null,
+            'payment_method' => $_POST['payment_method'] ?? null,
+            'message' => $_POST['message'] ?? '',
+            'use_escrow' => isset($_POST['use_escrow']) ? 1 : 0,
+        ];
+
+        try {
+            trade_create_offer($conn, $listing_id, $user_id, $payload);
+            header('Location: trade.php?listing=' . $listing_id);
+            exit;
+        } catch (RuntimeException $e) {
+            $error = $e->getMessage();
+        } catch (Throwable $e) {
+            error_log('[trade-offer] Failed to create offer: ' . $e->getMessage());
+            $error = 'An unexpected error occurred while submitting your offer.';
+        }
+    }
+}
 ?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
@@ -105,7 +78,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <select name="offered_sku" required>
             <option value="">-- Select Item --</option>
             <?php foreach ($inventory as $item): ?>
-              <option value="<?= htmlspecialchars($item['sku']) ?>"><?= htmlspecialchars($item['title']) ?></option>
+              <?php $isReserved = (int)($item['reserved'] ?? 0) === 1; ?>
+              <option value="<?= htmlspecialchars($item['sku']) ?>" <?= $isReserved ? 'disabled' : '' ?>><?= htmlspecialchars($item['title']) ?><?= $isReserved ? ' (reserved)' : '' ?></option>
             <?php endforeach; ?>
           </select>
         </label><br>

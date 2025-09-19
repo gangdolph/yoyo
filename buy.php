@@ -3,113 +3,57 @@ require_once __DIR__ . '/includes/auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
 require 'includes/tags.php';
+require 'includes/listing-query.php';
 
-$search = trim($_GET['search'] ?? '');
-$category = trim($_GET['category'] ?? '');
-$sort = $_GET['sort'] ?? '';
-$limitParam = (int)($_GET['limit'] ?? 25);
-$limitOptions = [25, 50, 100];
-$limit = in_array($limitParam, $limitOptions) ? $limitParam : 25;
-$page = max(1, (int)($_GET['page'] ?? 1));
-$offset = ($page - 1) * $limit;
+$filters = sanitize_buy_filters($_GET);
+$search = $filters['search'];
+$category = $filters['category'];
+$subcategory = $filters['subcategory'];
+$condition = $filters['condition'];
+$sort = $filters['sort'];
+$limit = $filters['limit'];
+$page = $filters['page'];
+$tagFilters = $filters['tags'];
+$limitOptions = buy_limit_options();
 
-$tagFilters = [];
-$tagsParam = $_GET['tags'] ?? [];
-if (is_string($tagsParam)) {
-    $tagFilters = tags_from_input($tagsParam);
-} elseif (is_array($tagsParam)) {
-    foreach ($tagsParam as $tagCandidate) {
-        $normalized = normalize_tag($tagCandidate);
-        if ($normalized !== null) {
-            $tagFilters[$normalized] = true;
-        }
+$queryResult = run_buy_listing_query($conn, $filters);
+$listings = $queryResult['items'];
+$total = $queryResult['total'];
+$totalPages = $queryResult['total_pages'];
+$filters = $queryResult['filters'];
+$page = $filters['page'];
+$limit = $filters['limit'];
+
+$availableTags = load_available_tags($conn, $tagFilters);
+
+$categoryOptions = listing_filter_categories('buy');
+$subcategoryOptions = listing_filter_subcategories('buy', $category);
+$conditionOptions = listing_filter_conditions('buy', $category);
+$sortOptions = buy_sort_options();
+
+$baseQuery = [
+    'search' => $search !== '' ? $search : null,
+    'category' => $category !== '' ? $category : null,
+    'subcategory' => $subcategory !== '' ? $subcategory : null,
+    'condition' => $condition !== '' ? $condition : null,
+    'sort' => $sort !== '' ? $sort : null,
+    'limit' => $limit,
+    'tags' => !empty($tagFilters) ? $tagFilters : null,
+];
+
+$baseQuery = array_filter($baseQuery, static function ($value) {
+    if (is_array($value)) {
+        return !empty($value);
     }
-    $tagFilters = array_keys($tagFilters);
-}
 
-$where = "WHERE status='approved'";
-$params = [];
-$types = '';
-
-if ($search !== '') {
-    $where .= " AND (title LIKE ? OR description LIKE ? )";
-    $like = "%{$search}%";
-    $params[] = $like;
-    $params[] = $like;
-    $types .= 'ss';
-}
-
-if ($category !== '') {
-    $where .= " AND category = ?";
-    $params[] = $category;
-    $types .= 's';
-}
-
-if (!empty($tagFilters)) {
-    foreach ($tagFilters as $tag) {
-        $where .= " AND tags LIKE ?";
-        $params[] = tag_like_parameter($tag);
-        $types .= 's';
-    }
-}
-
-$countSql = "SELECT COUNT(*) FROM listings $where";
-$stmt = $conn->prepare($countSql);
-if ($types) {
-    $stmt->bind_param($types, ...$params);
-}
-$stmt->execute();
-$stmt->bind_result($total);
-$stmt->fetch();
-$stmt->close();
-$totalPages = (int)ceil($total / $limit);
-
-$orderBy = 'title ASC';
-if ($sort === 'price') {
-    $orderBy = 'price ASC';
-} elseif ($sort === 'latest') {
-    $orderBy = 'created_at DESC';
-}
-
-$sql = "SELECT id, title, description, price, sale_price, category, tags, image FROM listings $where ORDER BY $orderBy LIMIT ? OFFSET ?";
-$paramsLimit = $params;
-$typesLimit = $types . 'ii';
-$paramsLimit[] = $limit;
-$paramsLimit[] = $offset;
-$stmt = $conn->prepare($sql);
-$stmt->bind_param($typesLimit, ...$paramsLimit);
-$stmt->execute();
-$listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-$stmt->close();
-
-$availableTags = [];
-foreach (canonical_tags() as $canonicalTag) {
-    $availableTags[$canonicalTag] = true;
-}
-
-$tagQuery = $conn->query("SELECT tags FROM listings WHERE status='approved' AND tags IS NOT NULL AND tags <> ''");
-if ($tagQuery) {
-    while ($row = $tagQuery->fetch_assoc()) {
-        foreach (tags_from_storage($row['tags']) as $tag) {
-            $availableTags[$tag] = true;
-        }
-    }
-    $tagQuery->close();
-}
-
-if ($tagFilters) {
-    foreach ($tagFilters as $tag) {
-        $availableTags[$tag] = true;
-    }
-}
-
-$availableTags = array_keys($availableTags);
-sort($availableTags);
+    return $value !== null;
+});
 ?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
   <title>Buy from SkuzE</title>
   <link rel="stylesheet" href="assets/style.css">
+  <script src="assets/js/filters.js" defer></script>
   <script src="assets/buy.js" defer></script>
 </head>
 <body>
@@ -117,133 +61,88 @@ sort($availableTags);
   <?php include 'includes/header.php'; ?>
   <h2>Available Listings</h2>
   <div class="content">
-    <aside class="filters">
-      <form method="get" class="filter-form">
-        <input type="text" name="search" placeholder="Search" value="<?= htmlspecialchars($search) ?>">
-        <select name="category">
-          <option value="">All Categories</option>
-          <option value="phone" <?= $category==='phone'?'selected':'' ?>>Phone</option>
-          <option value="console" <?= $category==='console'?'selected':'' ?>>Game Console</option>
-          <option value="pc" <?= $category==='pc'?'selected':'' ?>>PC</option>
-          <option value="other" <?= $category==='other'?'selected':'' ?>>Other</option>
-        </select>
-        <?php if ($availableTags): ?>
-          <fieldset class="tag-filter" data-tag-filter>
-            <legend>Tags</legend>
-            <input type="search" class="tag-filter-search-input" placeholder="Search tags" aria-label="Search tags" autocomplete="off" data-tag-search list="tag-filter-datalist">
-            <datalist id="tag-filter-datalist">
-              <?php foreach ($availableTags as $tagOption): ?>
-                <option value="<?= htmlspecialchars($tagOption); ?>"></option>
-              <?php endforeach; ?>
-            </datalist>
-            <div class="tag-filter-options" data-tag-options>
-              <?php foreach ($availableTags as $tag): ?>
-                <label class="tag-filter-option" data-tag="<?= htmlspecialchars($tag); ?>">
-                  <input type="checkbox" name="tags[]" value="<?= htmlspecialchars($tag); ?>" <?= in_array($tag, $tagFilters, true) ? 'checked' : ''; ?>>
-                  <span><?= htmlspecialchars($tag); ?></span>
-                </label>
-              <?php endforeach; ?>
-            </div>
-            <p class="tag-filter-empty" hidden>No tags match your search.</p>
-          </fieldset>
-        <?php endif; ?>
-        <input type="hidden" name="sort" value="<?= htmlspecialchars($sort) ?>">
-        <input type="hidden" name="limit" value="<?= $limit ?>">
-        <button type="submit">Filter</button>
-      </form>
-    </aside>
-    <section class="listing-results">
-      <div class="listing-toolbar">
-        <div class="view-toggle">
-          <button type="button" class="view-grid active" aria-label="Grid view">▥</button>
-          <button type="button" class="view-list" aria-label="List view">≡</button>
-        </div>
-        <form method="get">
-          <input type="hidden" name="search" value="<?= htmlspecialchars($search) ?>">
-          <input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>">
-          <?php foreach ($tagFilters as $tag): ?>
-            <input type="hidden" name="tags[]" value="<?= htmlspecialchars($tag); ?>">
-          <?php endforeach; ?>
-          <label>Sort by:
-            <select name="sort" onchange="this.form.submit()">
-              <option value="" <?= $sort===''?'selected':'' ?>>Default</option>
-              <option value="price" <?= $sort==='price'?'selected':'' ?>>Price</option>
-              <option value="latest" <?= $sort==='latest'?'selected':'' ?>>Latest</option>
-            </select>
-          </label>
-          <label>Show:
-            <select name="limit" onchange="this.form.submit()">
-              <option value="25" <?= $limit===25?'selected':'' ?>>25</option>
-              <option value="50" <?= $limit===50?'selected':'' ?>>50</option>
-              <option value="100" <?= $limit===100?'selected':'' ?>>100</option>
-            </select>
-          </label>
-        </form>
+    <form method="get" class="filter-bar" data-filter-form data-filter-context="buy" data-filter-endpoint="api/listings.php" data-filter-results="#buy-results" data-filter-status="#buy-filters-status">
+      <div class="filter-bar__row">
+      <div class="filter-field">
+        <label for="buy-search">Search</label>
+        <input type="search" id="buy-search" name="search" value="<?= htmlspecialchars($search); ?>" placeholder="Search listings" autocomplete="off" data-filter-input>
       </div>
-      <?php if ($listings): ?>
-        <div class="product-grid" id="product-container">
-        <?php foreach ($listings as $l): ?>
-          <div class="product-card">
-            <?php $link = "listing.php?listing_id={$l['id']}"; ?>
-            <a href="<?= $link ?>" class="listing-link">
-              <?php if ($l['image']): ?>
-                <img class="thumb-square" src="uploads/<?= htmlspecialchars($l['image']) ?>" alt="">
-              <?php endif; ?>
-              <h3><?= htmlspecialchars($l['title']) ?></h3>
-            </a>
-            <?php
-              $features = array_slice(array_filter(array_map('trim', explode("\n", $l['description']))), 0, 3);
-              if ($features):
-            ?>
-              <ul class="product-features">
-                <?php foreach ($features as $f): ?>
-                  <li><?= htmlspecialchars($f) ?></li>
-                <?php endforeach; ?>
-              </ul>
-            <?php endif; ?>
-            <?php $cardTags = tags_from_storage($l['tags']); ?>
-            <?php if ($cardTags): ?>
-              <ul class="tag-badge-list">
-                <?php foreach ($cardTags as $tag): ?>
-                  <li class="tag-chip tag-chip-static">#<?= htmlspecialchars($tag) ?></li>
-                <?php endforeach; ?>
-              </ul>
-            <?php endif; ?>
-            <?php if ($l['sale_price'] !== null): ?>
-              <p class="price"><span class="original">
-                $<?= htmlspecialchars($l['price']) ?></span>
-                <span class="sale">$<?= htmlspecialchars($l['sale_price']) ?></span></p>
-            <?php else: ?>
-              <p class="price">$<?= htmlspecialchars($l['price']) ?></p>
-            <?php endif; ?>
-            <div class="rating">★★★★★</div>
-            <button class="add-to-cart" data-id="<?= $l['id'] ?>">Add to Cart</button>
-            <?php if (!empty($_SESSION['is_admin'])): ?>
-              <form method="post" action="listing-delete.php" onsubmit="return confirm('Delete listing?');">
-                <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-                <input type="hidden" name="id" value="<?= $l['id']; ?>">
-                <input type="hidden" name="redirect" value="<?= htmlspecialchars($_SERVER['REQUEST_URI']); ?>">
-                <button type="submit" class="btn">Delete</button>
-              </form>
-            <?php endif; ?>
-          </div>
-        <?php endforeach; ?>
+        <div class="filter-field">
+          <label for="buy-category">Category</label>
+          <select name="category" id="buy-category" data-filter-dimension="category">
+            <?php foreach ($categoryOptions as $value => $meta): ?>
+              <option value="<?= htmlspecialchars($value); ?>" <?= $category === $value ? 'selected' : ''; ?>><?= htmlspecialchars($meta['label']); ?></option>
+            <?php endforeach; ?>
+          </select>
         </div>
-      <?php else: ?>
-        <p>No listings found. <a href="buy-step.php">Request a device</a></p>
+        <div class="filter-field">
+          <label for="buy-subcategory">Subcategory</label>
+          <select name="subcategory" id="buy-subcategory" data-filter-dimension="subcategory" <?= ($category === '' || count($subcategoryOptions) <= 1) ? 'disabled' : ''; ?>>
+            <?php foreach ($subcategoryOptions ?: ['' => ['label' => 'Select a category first']] as $value => $meta): ?>
+              <option value="<?= htmlspecialchars($value); ?>" <?= $subcategory === $value ? 'selected' : ''; ?>><?= htmlspecialchars($meta['label'] ?? $meta); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="buy-condition">Condition</label>
+          <select name="condition" id="buy-condition" data-filter-dimension="condition">
+            <?php foreach ($conditionOptions as $value => $label): ?>
+              <option value="<?= htmlspecialchars($value); ?>" <?= $condition === $value ? 'selected' : ''; ?>><?= htmlspecialchars($label); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="buy-sort">Sort</label>
+          <select name="sort" id="buy-sort" data-filter-dimension="sort">
+            <?php foreach ($sortOptions as $value => $label): ?>
+              <option value="<?= htmlspecialchars($value); ?>" <?= $sort === $value ? 'selected' : ''; ?>><?= htmlspecialchars($label); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="buy-limit">Per page</label>
+          <select name="limit" id="buy-limit" data-filter-dimension="limit">
+            <?php foreach ($limitOptions as $option): ?>
+              <option value="<?= $option; ?>" <?= $limit === $option ? 'selected' : ''; ?>><?= $option; ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+      </div>
+      <?php if ($availableTags): ?>
+        <fieldset class="tag-filter" data-tag-filter>
+          <legend>Tags</legend>
+          <input type="search" class="tag-filter-search-input" placeholder="Search tags" aria-label="Search tags" autocomplete="off" data-tag-search list="buy-tag-datalist">
+          <datalist id="buy-tag-datalist">
+            <?php foreach ($availableTags as $tagOption): ?>
+              <option value="<?= htmlspecialchars($tagOption); ?>"></option>
+            <?php endforeach; ?>
+          </datalist>
+          <div class="tag-filter-options" data-tag-options>
+            <?php foreach ($availableTags as $tag): ?>
+              <label class="tag-filter-option" data-tag="<?= htmlspecialchars($tag); ?>">
+                <input type="checkbox" name="tags[]" value="<?= htmlspecialchars($tag); ?>" <?= in_array($tag, $tagFilters, true) ? 'checked' : ''; ?>>
+                <span><?= htmlspecialchars($tag); ?></span>
+              </label>
+            <?php endforeach; ?>
+          </div>
+          <p class="tag-filter-empty" hidden>No tags match your search.</p>
+        </fieldset>
       <?php endif; ?>
+      <div class="filter-actions">
+        <input type="hidden" name="context" value="buy" data-filter-context-value>
+        <input type="hidden" name="page" value="<?= $page; ?>" data-filter-page>
+        <button type="submit" class="btn">Apply filters</button>
+        <span class="filter-status" id="buy-filters-status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
+    <section class="listing-results" id="buy-results" data-filter-results>
+      <?php
+        $resultCount = count($listings);
+        $totalPages = $totalPages ?? 0;
+        include __DIR__ . '/includes/partials/buy-results.php';
+      ?>
     </section>
   </div>
-  <?php if ($totalPages > 1): ?>
-    <nav class="pagination">
-      <?php if ($page > 1): ?>
-        <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page - 1])) ?>">&laquo; Prev</a>
-      <?php endif; ?>
-      <?php if ($page < $totalPages): ?>
-        <a href="?<?= http_build_query(array_merge($_GET, ['page' => $page + 1])) ?>">Next &raquo;</a>
-      <?php endif; ?>
-    </nav>
-  <?php endif; ?>
   <div id="cart-toast" class="toast" role="status" aria-live="polite"></div>
   <?php include 'includes/footer.php'; ?>
 </body>

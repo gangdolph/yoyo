@@ -1,95 +1,130 @@
-document.addEventListener('DOMContentLoaded', () => {
-  const gridBtn = document.querySelector('.view-grid');
-  const listBtn = document.querySelector('.view-list');
-  const container = document.getElementById('product-container');
+const toggleView = (targetButton, resultsContainer) => {
+  const productContainer = resultsContainer ? resultsContainer.querySelector('#product-container') : document.getElementById('product-container');
+  if (!productContainer) {
+    return;
+  }
+  const buttons = (resultsContainer || document).querySelectorAll('.view-toggle button');
+  buttons.forEach((btn) => {
+    btn.classList.toggle('active', btn === targetButton);
+  });
+  if (targetButton.classList.contains('view-grid')) {
+    productContainer.classList.remove('list-view');
+  } else if (targetButton.classList.contains('view-list')) {
+    productContainer.classList.add('list-view');
+  }
+};
 
-  if (gridBtn && listBtn && container) {
-    gridBtn.addEventListener('click', () => {
-      container.classList.remove('list-view');
-      gridBtn.classList.add('active');
-      listBtn.classList.remove('active');
+const handleViewToggleClick = (event) => {
+  const button = event.target.closest('.view-toggle button');
+  if (!button) {
+    return;
+  }
+  const results = button.closest('.listing-results');
+  toggleView(button, results);
+};
+
+const handleAddToCartClick = (event) => {
+  const button = event.target.closest('.add-to-cart');
+  if (!button) {
+    return;
+  }
+  event.preventDefault();
+  const id = button.dataset.id;
+  if (!id) {
+    return;
+  }
+  fetch('/cart.php?action=add', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: `id=${encodeURIComponent(id)}`,
+    credentials: 'same-origin',
+  })
+    .then((res) => res.json())
+    .then((data) => {
+      const link = document.querySelector('.cart-link a');
+      let badge = document.querySelector('.cart-link .badge');
+      if (badge) {
+        badge.textContent = data.count;
+      } else if (link) {
+        badge = document.createElement('span');
+        badge.className = 'badge';
+        badge.textContent = data.count;
+        link.appendChild(badge);
+      }
+      const toast = document.getElementById('cart-toast');
+      if (toast) {
+        toast.textContent = 'Added to cart';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      }
+    })
+    .catch(() => {
+      const toast = document.getElementById('cart-toast');
+      if (toast) {
+        toast.textContent = 'Unable to add to cart. Try again.';
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      }
     });
-    listBtn.addEventListener('click', () => {
-      container.classList.add('list-view');
-      listBtn.classList.add('active');
-      gridBtn.classList.remove('active');
+};
+
+const setupTagFilter = () => {
+  const tagFilter = document.querySelector('[data-tag-filter]');
+  if (!tagFilter) {
+    return;
+  }
+  const searchInput = tagFilter.querySelector('[data-tag-search]');
+  const optionsContainer = tagFilter.querySelector('[data-tag-options]');
+  const emptyState = tagFilter.querySelector('.tag-filter-empty');
+
+  const applyFilter = () => {
+    if (!searchInput || !optionsContainer) {
+      return;
+    }
+    const rawTerm = searchInput.value.trim().toLowerCase();
+    const term = rawTerm.replace(/\s+/g, '-');
+    let matches = 0;
+
+    optionsContainer.querySelectorAll('.tag-filter-option').forEach((option) => {
+      const tag = option.dataset.tag || '';
+      const checkbox = option.querySelector('input[type="checkbox"]');
+      const isSelected = checkbox ? checkbox.checked : false;
+      const isMatch = term === '' || tag.includes(term) || tag.includes(rawTerm);
+      const shouldShow = isSelected || isMatch;
+      option.classList.toggle('is-hidden', !shouldShow);
+      if (shouldShow) {
+        matches += 1;
+      }
     });
+
+    if (emptyState) {
+      emptyState.hidden = matches !== 0;
+    }
+  };
+
+  if (searchInput) {
+    searchInput.addEventListener('input', applyFilter);
+    searchInput.addEventListener('search', applyFilter);
   }
 
-  document.querySelectorAll('.add-to-cart').forEach(btn => {
-    btn.addEventListener('click', e => {
-      e.preventDefault();
-      const id = btn.dataset.id;
-      fetch('/cart.php?action=add', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded'
-        },
-        body: `id=${encodeURIComponent(id)}`,
-        credentials: 'same-origin'
-      })
-        .then(res => res.json())
-        .then(data => {
-          const link = document.querySelector('.cart-link a');
-          let badge = document.querySelector('.cart-link .badge');
-          if (badge) {
-            badge.textContent = data.count;
-          } else {
-            badge = document.createElement('span');
-            badge.className = 'badge';
-            badge.textContent = data.count;
-            link.appendChild(badge);
-          }
-          const toast = document.getElementById('cart-toast');
-          if (toast) {
-            toast.textContent = 'Added to cart';
-            toast.classList.add('show');
-            setTimeout(() => toast.classList.remove('show'), 2000);
-          }
-        });
-    });
-  });
+  if (optionsContainer) {
+    optionsContainer.addEventListener('change', applyFilter);
+  }
 
-  const tagFilter = document.querySelector('[data-tag-filter]');
-  if (tagFilter) {
-    const searchInput = tagFilter.querySelector('[data-tag-search]');
-    const tagOptions = Array.from(tagFilter.querySelectorAll('.tag-filter-option'));
-    const emptyState = tagFilter.querySelector('.tag-filter-empty');
+  applyFilter();
+};
 
-    if (searchInput && tagOptions.length) {
-      const applyFilter = () => {
-        const rawTerm = searchInput.value.trim().toLowerCase();
-        const term = rawTerm.replace(/\s+/g, '-');
-        let matches = 0;
+document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('click', handleViewToggleClick);
+  document.addEventListener('click', handleAddToCartClick);
+  setupTagFilter();
+});
 
-        tagOptions.forEach(option => {
-          const tag = option.dataset.tag || '';
-          const checkbox = option.querySelector('input[type="checkbox"]');
-          const isSelected = checkbox ? checkbox.checked : false;
-          const isMatch = term === '' || tag.includes(term) || tag.includes(rawTerm);
-          const shouldShow = isSelected || isMatch;
-          option.classList.toggle('is-hidden', !shouldShow);
-          if (shouldShow) {
-            matches += 1;
-          }
-        });
-
-        if (emptyState) {
-          emptyState.hidden = matches !== 0;
-        }
-      };
-
-      searchInput.addEventListener('input', applyFilter);
-      searchInput.addEventListener('search', applyFilter);
-
-      tagOptions.forEach(option => {
-        const checkbox = option.querySelector('input[type="checkbox"]');
-        if (checkbox) {
-          checkbox.addEventListener('change', applyFilter);
-        }
-      });
-
-      applyFilter();
-    }
+document.addEventListener('buy:refresh', () => {
+  const searchInput = document.querySelector('[data-tag-filter] [data-tag-search]');
+  if (searchInput) {
+    searchInput.dispatchEvent(new Event('input'));
   }
 });
