@@ -48,17 +48,47 @@ if (!empty($_SESSION['cart'])) {
     $ids = array_map('intval', array_keys($_SESSION['cart']));
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $types = str_repeat('i', count($ids));
-    $stmt = $conn->prepare("SELECT * FROM products WHERE id IN ($placeholders)");
+    $query = "SELECT l.id, l.title, l.image, l.price, l.sale_price, l.product_sku, p.quantity AS stock_quantity
+        FROM listings l
+        LEFT JOIN products p ON l.product_sku = p.sku
+        WHERE l.id IN ($placeholders)";
+    $stmt = $conn->prepare($query);
     $stmt->bind_param($types, ...$ids);
     $stmt->execute();
     $result = $stmt->get_result();
+
+    $rowsById = [];
     while ($row = $result->fetch_assoc()) {
-        $row['quantity'] = $_SESSION['cart'][$row['id']];
-        $row['subtotal'] = $row['price'] * $row['quantity'];
+        $id = (int)$row['id'];
+        if (!isset($_SESSION['cart'][$id])) {
+            continue;
+        }
+
+        $quantity = (int)$_SESSION['cart'][$id];
+        $effectivePrice = $row['sale_price'] !== null && $row['sale_price'] !== ''
+            ? (float)$row['sale_price']
+            : (float)$row['price'];
+
+        $row['quantity'] = $quantity;
+        $row['effective_price'] = $effectivePrice;
+        $row['subtotal'] = $effectivePrice * $quantity;
         $total += $row['subtotal'];
-        $cart_items[] = $row;
+        $rowsById[$id] = $row;
     }
     $stmt->close();
+
+    $missingIds = array_diff($ids, array_keys($rowsById));
+    if (!empty($missingIds)) {
+        foreach ($missingIds as $missingId) {
+            unset($_SESSION['cart'][$missingId]);
+        }
+    }
+
+    foreach ($ids as $id) {
+        if (isset($rowsById[$id])) {
+            $cart_items[] = $rowsById[$id];
+        }
+    }
 }
 
 $tax = 0.0; // placeholder
@@ -81,17 +111,29 @@ $grand_total = $total + $tax + $shipping;
     <p>Your cart is empty.</p>
 <?php else: ?>
 <form method="post">
-    <table>
+    <table class="cart-table">
         <tr>
-            <th>Product</th>
+            <th>Listing</th>
             <th>Price</th>
             <th>Quantity</th>
             <th>Subtotal</th>
         </tr>
         <?php foreach ($cart_items as $item): ?>
         <tr>
-            <td><?= htmlspecialchars($item['name']) ?></td>
-            <td>$<?= number_format($item['price'], 2) ?></td>
+            <td class="cart-listing">
+                <?php if (!empty($item['image'])): ?>
+                    <img src="<?= htmlspecialchars($item['image']) ?>" alt="<?= htmlspecialchars($item['title']) ?>" class="cart-thumb">
+                <?php endif; ?>
+                <span class="cart-title"><?= htmlspecialchars($item['title']) ?></span>
+            </td>
+            <td class="cart-price">
+                <?php if ($item['sale_price'] !== null && $item['sale_price'] !== ''): ?>
+                    <span class="original-price">$<?= number_format((float)$item['price'], 2) ?></span>
+                    <span class="sale-price">$<?= number_format((float)$item['sale_price'], 2) ?></span>
+                <?php else: ?>
+                    $<?= number_format((float)$item['price'], 2) ?>
+                <?php endif; ?>
+            </td>
             <td><input type="number" name="qty[<?= $item['id'] ?>]" value="<?= $item['quantity'] ?>" min="0"></td>
             <td>$<?= number_format($item['subtotal'], 2) ?></td>
         </tr>

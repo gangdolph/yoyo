@@ -120,7 +120,7 @@ if ($q !== '') {
         $errorMessage = 'Search is currently unavailable.';
     }
 
-    $listSql = "SELECT l.id, l.title, l.description, l.category, l.tags
+    $listSql = "SELECT l.id, l.title, l.description, l.category, l.tags, l.price, l.sale_price, l.image
                 FROM listings l
                 WHERE (l.title LIKE ? OR l.description LIKE ? OR l.category LIKE ?)";
     $listParams = [$like, $like, $like];
@@ -263,16 +263,31 @@ $totalPages = max($totalUserPages, $totalListingPages, $totalTradePages);
         <ul class="listing-search-results">
           <?php foreach ($listingResults as $l): ?>
             <?php $resultTags = tags_from_storage($l['tags']); ?>
-            <li>
-              <a href="shipping.php?listing_id=<?= $l['id']; ?>"><?= htmlspecialchars($l['title']) ?></a>
-              <span class="result-meta"><?= htmlspecialchars($l['category']) ?></span>
-              <?php if ($resultTags): ?>
-                <span class="result-tags">
-                  <?php foreach ($resultTags as $tag): ?>
-                    <span class="tag-chip tag-chip-static">#<?= htmlspecialchars($tag); ?></span>
-                  <?php endforeach; ?>
-                </span>
-              <?php endif; ?>
+            <li class="listing-result">
+              <a class="listing-result-card" href="listing.php?listing_id=<?= $l['id']; ?>">
+                <?php if (!empty($l['image'])): ?>
+                  <img class="listing-result-thumb" src="uploads/<?= htmlspecialchars($l['image']); ?>" alt="<?= htmlspecialchars($l['title']); ?>">
+                <?php endif; ?>
+                <div class="listing-result-body">
+                  <span class="listing-result-title"><?= htmlspecialchars($l['title']) ?></span>
+                  <span class="result-meta"><?= htmlspecialchars($l['category']) ?></span>
+                  <span class="listing-result-price">
+                    <?php if ($l['sale_price'] !== null && $l['sale_price'] !== ''): ?>
+                      <span class="price-original">$<?= htmlspecialchars($l['price']); ?></span>
+                      <span class="price-sale">$<?= htmlspecialchars($l['sale_price']); ?></span>
+                    <?php else: ?>
+                      <span class="price-regular">$<?= htmlspecialchars($l['price']); ?></span>
+                    <?php endif; ?>
+                  </span>
+                  <?php if ($resultTags): ?>
+                    <span class="result-tags">
+                      <?php foreach ($resultTags as $tag): ?>
+                        <span class="tag-chip tag-chip-static">#<?= htmlspecialchars($tag); ?></span>
+                      <?php endforeach; ?>
+                    </span>
+                  <?php endif; ?>
+                </div>
+              </a>
             </li>
           <?php endforeach; ?>
         </ul>

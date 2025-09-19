@@ -227,3 +227,35 @@ function _orders_normalize_row(array $row): array {
         ],
     ];
 }
+
+/**
+ * Return the canonical set of fulfillment statuses administrators can apply.
+ *
+ * @return array<string, string>
+ */
+function order_fulfillment_status_options(): array {
+    return [
+        'pending' => 'Pending',
+        'processing' => 'Processing',
+        'shipped' => 'Shipped',
+        'delivered' => 'Delivered',
+        'cancelled' => 'Cancelled',
+    ];
+}
+
+/**
+ * Calculate the desired inventory delta for an admin order update.
+ *
+ * @param int    $manualDelta  Direct quantity adjustment requested by the admin.
+ * @param bool   $autoRestock  Whether auto restock was requested.
+ * @param string $status       The target fulfillment status.
+ * @param int    $restockUnits How many units should be returned when restocking automatically.
+ */
+function order_admin_compute_inventory_delta(int $manualDelta, bool $autoRestock, string $status, int $restockUnits = 1): int {
+    $delta = $manualDelta;
+    if ($autoRestock && $status === 'cancelled') {
+        $delta += $restockUnits;
+    }
+
+    return $delta;
+}

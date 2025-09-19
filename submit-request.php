@@ -4,6 +4,8 @@ require 'includes/db.php';
 require 'includes/csrf.php';
 require_once 'mail.php';
 
+$serviceTaxonomy = require __DIR__ . '/includes/service_taxonomy.php';
+
 $success = false;
 $error = '';
 $filename = null;
@@ -35,11 +37,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $build      = htmlspecialchars(trim($_POST['build'] ?? 'no'), ENT_QUOTES, 'UTF-8');
         $device_type= isset($_POST['device_type']) ? htmlspecialchars(trim($_POST['device_type']), ENT_QUOTES, 'UTF-8') : null;
 
-        if ($category === '' || $issue === '' || !$brand_id || !$model_id) {
-          $error = 'Category, brand and model are required.';
+        if ($category === '') {
+          $error = 'Category is required.';
         }
 
-        if (!$error) {
+        $serviceDefinition = $serviceTaxonomy[$category] ?? null;
+        if (!$error && !$serviceDefinition) {
+          $error = 'Invalid service category.';
+        }
+
+        $requirements = $serviceDefinition['requirements'] ?? [];
+        $requiresBrand = !empty($requirements['brand_id']);
+        $requiresModel = !empty($requirements['model_id']);
+        $requiresIssue = !empty($requirements['issue']);
+        $requiresDeviceType = !empty($requirements['device_type']);
+        $requiresBuild = !empty($requirements['build']);
+
+        if (!$error && $requiresIssue && $issue === '') {
+          $error = 'Please describe the issue so our technicians can help.';
+        }
+
+        if (!$error && $requiresDeviceType && ($device_type === null || $device_type === '')) {
+          $error = 'Device type is required for this request.';
+        }
+
+        if (!$error && $requiresBrand && !$brand_id) {
+          $error = 'Please choose a brand.';
+        }
+
+        if (!$error && $requiresModel && !$model_id) {
+          $error = 'Please choose a model.';
+        }
+
+        if (!$error && $requiresBuild && (!isset($_POST['build']) || !in_array($build, ['yes', 'no'], true))) {
+          $error = 'Please confirm if this is a full custom build.';
+        }
+
+        if (!$error && $requiresBrand && $brand_id) {
           if ($stmtB = $conn->prepare('SELECT id FROM service_brands WHERE id=?')) {
             $stmtB->bind_param('i', $brand_id);
             $stmtB->execute();
@@ -51,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           }
         }
 
-        if (!$error) {
+        if (!$error && $requiresModel && $model_id) {
           if ($stmtM = $conn->prepare('SELECT id FROM service_models WHERE id=? AND brand_id=?')) {
             $stmtM->bind_param('ii', $model_id, $brand_id);
             $stmtM->execute();
@@ -60,6 +94,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               $error = 'Invalid model.';
             }
             $stmtM->close();
+          }
+        }
+
+        if (!$error) {
+          $extraNotes = [];
+          if (!empty($_POST['symptoms']) && is_array($_POST['symptoms'])) {
+            $symptoms = array_map(static function ($value) {
+              return preg_replace('/[^a-z0-9 \-]/i', '', (string) $value);
+            }, $_POST['symptoms']);
+            $symptoms = array_filter($symptoms);
+            if ($symptoms) {
+              $extraNotes[] = 'Reported symptoms: ' . implode(', ', $symptoms);
+            }
+          }
+          if (!empty($_POST['contact_preference'])) {
+            $contactPreference = preg_replace('/[^a-z0-9 \-]/i', '', (string) $_POST['contact_preference']);
+            if ($contactPreference !== '') {
+              $extraNotes[] = 'Preferred contact: ' . $contactPreference;
+            }
+          }
+          if ($extraNotes) {
+            $issue = trim($issue . "\n\n" . implode("\n", $extraNotes));
           }
         }
 

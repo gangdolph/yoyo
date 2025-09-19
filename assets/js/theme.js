@@ -175,6 +175,11 @@
   ]);
 
   const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const themeCollection = parseThemeCollection(window.__THEME_COLLECTION__);
+  let activeThemeId = themeCollection?.defaultThemeId || null;
+  let activePairing = null;
+  let activePairMode = null;
+  let colorSchemeWatcher = null;
   let baseTheme = DEFAULT_THEME;
   let activeTheme = DEFAULT_THEME;
 
@@ -192,6 +197,103 @@
 
   function isPlainObject(value) {
     return Object.prototype.toString.call(value) === '[object Object]';
+  }
+
+  function extractThemePayload(raw) {
+    if (!isPlainObject(raw)) {
+      return {};
+    }
+
+    const hasCollectionShape = Array.isArray(raw.themes) && raw.themes.length > 0 && typeof raw.defaultThemeId === 'string';
+    if (!hasCollectionShape) {
+      return raw;
+    }
+
+    const match = raw.themes.find((entry) => entry && typeof entry === 'object' && entry.id === raw.defaultThemeId);
+    if (match && isPlainObject(match.theme)) {
+      return match.theme;
+    }
+
+    const fallback = raw.themes.find((entry) => entry && isPlainObject(entry.theme));
+    if (fallback && isPlainObject(fallback.theme)) {
+    return fallback.theme;
+  }
+
+  function parseThemeCollection(raw) {
+    if (!isPlainObject(raw)) {
+      return null;
+    }
+
+    const themes = [];
+    const map = new Map();
+    const rawThemes = Array.isArray(raw.themes) ? raw.themes : [];
+
+    for (const entry of rawThemes) {
+      if (!entry || typeof entry !== 'object') {
+        continue;
+      }
+
+      const id = typeof entry.id === 'string' ? entry.id.trim() : '';
+      if (!id || map.has(id)) {
+        continue;
+      }
+
+      const themeData = isPlainObject(entry.theme) ? structuredCloneIfPossible(entry.theme) : null;
+      if (!themeData) {
+        continue;
+      }
+
+      const label = typeof entry.label === 'string' ? entry.label : id;
+      const description = typeof entry.description === 'string' ? entry.description : '';
+
+      const normalised = { id, label, description, theme: themeData };
+      themes.push(normalised);
+      map.set(id, normalised);
+    }
+
+    const defaultId = typeof raw.defaultThemeId === 'string' && map.has(raw.defaultThemeId)
+      ? raw.defaultThemeId
+      : (themes[0]?.id ?? null);
+
+    const pairings = [];
+    const rawPairings = Array.isArray(raw.pairings) ? raw.pairings : [];
+    const pairedBases = new Set();
+
+    for (const entry of rawPairings) {
+      if (!entry || typeof entry !== 'object') {
+        continue;
+      }
+      const type = entry.type === 'negative' ? 'negative' : null;
+      const baseId = typeof entry.baseThemeId === 'string' ? entry.baseThemeId.trim() : '';
+      const variantId = typeof entry.variantThemeId === 'string' ? entry.variantThemeId.trim() : '';
+      if (!type || !baseId || !variantId) {
+        continue;
+      }
+      if (!map.has(baseId) || !map.has(variantId)) {
+        continue;
+      }
+      if (pairedBases.has(baseId)) {
+        continue;
+      }
+      pairings.push({
+        type,
+        baseThemeId: baseId,
+        variantThemeId: variantId,
+        label: typeof entry.label === 'string' ? entry.label : '',
+        generated: Boolean(entry.generated)
+      });
+      pairedBases.add(baseId);
+    }
+
+    return {
+      defaultThemeId: defaultId,
+      themes,
+      map,
+      pairings
+    };
+  }
+
+    return {};
   }
 
   function deepMerge(base, overrides) {
@@ -218,6 +320,84 @@
     }
 
     return output;
+  }
+
+  function teardownDayNightPairing() {
+    if (colorSchemeWatcher && colorSchemeWatcher.media) {
+      const { media, listener } = colorSchemeWatcher;
+      if (typeof media.removeEventListener === 'function') {
+        media.removeEventListener('change', listener);
+      } else if (typeof media.removeListener === 'function') {
+        media.removeListener(listener);
+      }
+    }
+    colorSchemeWatcher = null;
+    activePairing = null;
+    activePairMode = null;
+  }
+
+  function getThemeEntry(themeId) {
+    if (!themeCollection || !themeId) {
+      return null;
+    }
+    return themeCollection.map.get(themeId) || null;
+  }
+
+  function findPairingForTheme(themeId) {
+    if (!themeCollection || !themeId) {
+      return null;
+    }
+    return themeCollection.pairings.find((pair) => pair && (pair.baseThemeId === themeId || pair.variantThemeId === themeId)) || null;
+  }
+
+  function applyPairingMode(pair, mode, options = {}) {
+    if (!pair) {
+      return false;
+    }
+    const nextMode = mode === 'negative' ? 'negative' : 'base';
+    if (activePairing === pair && activePairMode === nextMode) {
+      return true;
+    }
+    const targetId = nextMode === 'negative' ? pair.variantThemeId : pair.baseThemeId;
+    const entry = getThemeEntry(targetId);
+    if (!entry) {
+      return false;
+    }
+    activePairing = pair;
+    activePairMode = nextMode;
+    const applyOptions = { ...options, themeId: targetId, fromPairing: true };
+    setBaseTheme(entry.theme, applyOptions);
+    activeThemeId = targetId;
+    return true;
+  }
+
+  function setupDayNightPairing(pair) {
+    if (!pair) {
+      return;
+    }
+    teardownDayNightPairing();
+    const media = window.matchMedia('(prefers-color-scheme: dark)');
+    const applyMode = (isDark) => {
+      applyPairingMode(pair, isDark ? 'negative' : 'base');
+    };
+    applyMode(media.matches);
+    const listener = (event) => applyMode(event.matches);
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', listener);
+    } else if (typeof media.addListener === 'function') {
+      media.addListener(listener);
+    }
+    colorSchemeWatcher = { media, listener };
+    activePairing = pair;
+  }
+
+  function applyThemeById(themeId, options = {}) {
+    const entry = getThemeEntry(themeId);
+    if (!entry) {
+      return false;
+    }
+    setBaseTheme(entry.theme, { ...options, themeId });
+    return true;
   }
 
   function getThemeValue(theme, path) {
@@ -368,9 +548,21 @@
   }
 
   function setBaseTheme(nextTheme, options = {}) {
-    const { persist = false } = options;
+    const { persist = false, themeId = null, fromPairing = false } = options;
+    if (!fromPairing && colorSchemeWatcher) {
+      teardownDayNightPairing();
+    }
     baseTheme = deepMerge(DEFAULT_THEME, nextTheme || {});
     activeTheme = structuredCloneIfPossible(baseTheme);
+    if (themeId) {
+      activeThemeId = themeId;
+    } else if (!activeThemeId && themeCollection?.defaultThemeId) {
+      activeThemeId = themeCollection.defaultThemeId;
+    }
+    if (!fromPairing) {
+      activePairing = null;
+      activePairMode = null;
+    }
     syncTheme({ persistBase: persist });
   }
 
@@ -384,9 +576,16 @@
   }
 
   function updateBaseTheme(overrides, options = {}) {
-    const { persist = false } = options;
+    const { persist = false, fromPairing = false } = options;
+    if (!fromPairing && colorSchemeWatcher) {
+      teardownDayNightPairing();
+    }
     baseTheme = deepMerge(baseTheme, overrides || {});
     activeTheme = structuredCloneIfPossible(baseTheme);
+    if (!fromPairing) {
+      activePairing = null;
+      activePairMode = null;
+    }
     syncTheme({ persistBase: persist });
   }
 
@@ -445,16 +644,32 @@
     }
   }
 
-  const initialPayload = isPlainObject(window.__THEME__) ? window.__THEME__ : {};
+  const initialPayload = extractThemePayload(window.__THEME__);
   baseTheme = deepMerge(DEFAULT_THEME, initialPayload);
 
   const storedTheme = readStoredTheme();
+  const hasStoredOverride = Boolean(storedTheme);
   if (storedTheme) {
     baseTheme = deepMerge(baseTheme, storedTheme);
+    activeThemeId = null;
+  } else if (!activeThemeId && themeCollection?.defaultThemeId) {
+    activeThemeId = themeCollection.defaultThemeId;
   }
 
   activeTheme = structuredCloneIfPossible(baseTheme);
   syncTheme();
+
+  if (!hasStoredOverride && themeCollection) {
+    const defaultId = themeCollection.defaultThemeId && themeCollection.map.has(themeCollection.defaultThemeId)
+      ? themeCollection.defaultThemeId
+      : (themeCollection.themes[0]?.id ?? null);
+    if (defaultId) {
+      const pairing = themeCollection.pairings.find((entry) => entry.type === 'negative' && entry.baseThemeId === defaultId);
+      if (pairing) {
+        setupDayNightPairing(pairing);
+      }
+    }
+  }
 
   if (typeof reduceMotionQuery.addEventListener === 'function') {
     reduceMotionQuery.addEventListener('change', (event) => {
@@ -504,6 +719,8 @@
   window.yoyoTheme = {
     getActiveTheme: () => structuredCloneIfPossible(activeTheme),
     getBaseTheme: () => structuredCloneIfPossible(baseTheme),
+    getActiveThemeId: () => activeThemeId,
+    getPairing: () => (activePairing ? { ...activePairing } : null),
     preview: (nextTheme) => {
       previewTheme(nextTheme);
     },
@@ -515,6 +732,25 @@
     },
     update: (overrides, options) => {
       updateBaseTheme(overrides, options);
+    },
+    applyThemeById: (themeId, options) => applyThemeById(themeId, options),
+    applyPairMode: (mode, options) => {
+      if (!activePairing) {
+        return false;
+      }
+      return applyPairingMode(activePairing, mode, options);
+    },
+    enablePairingForTheme: (themeId) => {
+      const pair = findPairingForTheme(themeId);
+      if (!pair || pair.baseThemeId !== themeId) {
+        return false;
+      }
+      setupDayNightPairing(pair);
+      return true;
+    },
+    disablePairing: () => {
+      teardownDayNightPairing();
+      return true;
     },
     resetPreview: () => {
       previewTheme(null);

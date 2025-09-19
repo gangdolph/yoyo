@@ -84,6 +84,44 @@ function tags_from_storage(?string $stored): array
 }
 
 /**
+ * Provide the canonical tag catalogue for discovery and navigation.
+ */
+function canonical_tags(): array
+{
+    static $catalogue;
+
+    if ($catalogue === null) {
+        $seed = [
+            'accessories',
+            'bundle',
+            'collectible',
+            'digital',
+            'hardware',
+            'limited edition',
+            'new arrival',
+            'preorder',
+            'refurbished',
+            'retro',
+            'signed',
+            'vintage',
+        ];
+
+        $normalized = [];
+        foreach ($seed as $candidate) {
+            $tag = normalize_tag($candidate);
+            if ($tag !== null) {
+                $normalized[$tag] = true;
+            }
+        }
+
+        $catalogue = array_keys($normalized);
+        sort($catalogue);
+    }
+
+    return $catalogue;
+}
+
+/**
  * Produce a comma-separated string suitable for re-populating an input control.
  */
 function tags_to_input_value(array $tags): string

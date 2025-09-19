@@ -1,6 +1,7 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
 require '../includes/orders.php';
+require '../includes/csrf.php';
 
 if (empty($_SESSION['is_admin'])) {
     header('Location: ../dashboard.php');
@@ -17,6 +18,11 @@ if ($filter === 'official') {
 
 $userId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
 $orders = fetch_orders_for_admin($conn, $officialOnly, $userId);
+$statusOptions = order_fulfillment_status_options();
+$flash = $_SESSION['order_admin_flash'] ?? null;
+if ($flash) {
+    unset($_SESSION['order_admin_flash']);
+}
 ?>
 <?php require '../includes/layout.php'; ?>
   <title>Admin - Orders</title>
@@ -26,6 +32,11 @@ $orders = fetch_orders_for_admin($conn, $officialOnly, $userId);
   <?php include '../includes/header.php'; ?>
   <div class="page-container">
     <h1>Orders</h1>
+    <?php if ($flash): ?>
+      <div class="alert <?= htmlspecialchars($flash['type'] ?? 'success', ENT_QUOTES, 'UTF-8') ?>">
+        <?= htmlspecialchars($flash['message'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+      </div>
+    <?php endif; ?>
     <form method="get" class="filter-form">
       <label for="official">Inventory:</label>
       <select id="official" name="official" onchange="this.form.submit()">
@@ -49,7 +60,7 @@ $orders = fetch_orders_for_admin($conn, $officialOnly, $userId);
           <th>Payment</th>
           <th>Shipping</th>
           <th>Placed</th>
-          <th></th>
+          <th>Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -62,6 +73,8 @@ $orders = fetch_orders_for_admin($conn, $officialOnly, $userId);
           $amountDisplay = $amount !== null ? '$' . number_format(((int) $amount) / 100, 2) : '—';
           $paymentStatus = $order['payment']['status'] ?? 'pending';
           $shippingStatus = $order['shipping_status'] ?? 'pending';
+          $statusLabel = $statusOptions[$shippingStatus] ?? ucfirst($shippingStatus);
+          $statusBadge = 'badge-status-' . preg_replace('/[^a-z0-9]+/', '-', strtolower($shippingStatus));
         ?>
         <tr>
           <td>#<?= (int) $order['id'] ?></td>
@@ -79,13 +92,45 @@ $orders = fetch_orders_for_admin($conn, $officialOnly, $userId);
             <small>Status: <?= htmlspecialchars(ucfirst($paymentStatus ?? 'pending'), ENT_QUOTES, 'UTF-8') ?></small>
           </td>
           <td>
-            <?= htmlspecialchars(ucfirst($shippingStatus), ENT_QUOTES, 'UTF-8') ?>
+            <span class="badge <?= htmlspecialchars($statusBadge, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($statusLabel, ENT_QUOTES, 'UTF-8') ?></span>
             <?php if (!empty($order['tracking_number'])): ?>
               <br><small>Tracking: <?= htmlspecialchars($order['tracking_number'], ENT_QUOTES, 'UTF-8') ?></small>
             <?php endif; ?>
           </td>
           <td><?= htmlspecialchars($order['placed_at'], ENT_QUOTES, 'UTF-8') ?></td>
-          <td><a href="order.php?id=<?= (int) $order['id'] ?>">Inspect</a></td>
+          <td class="order-actions">
+            <div class="quick-actions">
+              <?php if (!in_array($shippingStatus, ['shipped', 'delivered'], true)): ?>
+                <form method="post" action="order-update.php">
+                  <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+                  <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                  <input type="hidden" name="context" value="list">
+                  <input type="hidden" name="status" value="shipped">
+                  <button type="submit" class="btn btn-compact">Mark shipped</button>
+                </form>
+              <?php endif; ?>
+              <?php if ($shippingStatus !== 'delivered'): ?>
+                <form method="post" action="order-update.php">
+                  <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+                  <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                  <input type="hidden" name="context" value="list">
+                  <input type="hidden" name="status" value="delivered">
+                  <button type="submit" class="btn btn-compact">Mark delivered</button>
+                </form>
+              <?php endif; ?>
+              <?php if ($shippingStatus !== 'cancelled'): ?>
+                <form method="post" action="order-update.php" onsubmit="return confirm('Cancel this order and restock one unit?');">
+                  <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+                  <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
+                  <input type="hidden" name="context" value="list">
+                  <input type="hidden" name="status" value="cancelled">
+                  <input type="hidden" name="auto_restock" value="1">
+                  <button type="submit" class="btn btn-compact btn-secondary">Cancel &amp; restock</button>
+                </form>
+              <?php endif; ?>
+              <a class="btn btn-compact" href="order.php?id=<?= (int) $order['id'] ?>">Inspect</a>
+            </div>
+          </td>
         </tr>
       <?php endforeach; ?>
       </tbody>

@@ -1,0 +1,125 @@
+{
+  "defaultThemeId": "legacy-vaporwave",
+  "themes": [
+    {
+      "id": "legacy-vaporwave",
+      "label": "Legacy Vaporwave",
+      "description": "Signature glass gradient with neon vapors.",
+      "theme": {
+        "name": "legacy-vaporwave",
+        "colors": {
+          "background": "#2d1e59",
+          "surface": "rgba(20, 12, 65, 0.72)",
+          "surfaceAlt": "rgba(9, 0, 46, 0.68)",
+          "border": "rgba(255, 255, 255, 0.12)",
+          "borderStrong": "rgba(255, 255, 255, 0.24)",
+          "text": "#f8f9fa",
+          "textMuted": "rgba(248, 249, 250, 0.68)",
+          "accent": "#ff71ce",
+          "accentAlt": "#01cdfe",
+          "accentSoft": "rgba(255, 113, 206, 0.35)",
+          "highlight": "#05ffa1",
+          "cta": "#01cdfe",
+          "ctaText": "#041221",
+          "card": "rgba(10, 5, 40, 0.72)",
+          "cardBorder": "rgba(255, 255, 255, 0.18)",
+          "cardText": "#f8f9fa",
+          "bandText": "#f8f9fa",
+          "bandOverlay": "rgba(9, 0, 46, 0.78)",
+          "gradient": "linear-gradient(135deg, #ff71ce 0%, #01cdfe 100%)"
+        },
+        "typography": {
+          "fontBody": "'Share Tech Mono', 'IBM Plex Mono', monospace",
+          "fontDisplay": "'Orbitron', 'Share Tech Mono', monospace",
+          "fontMono": "'Share Tech Mono', monospace",
+          "fontParagraph": "'Share Tech Mono', 'IBM Plex Mono', monospace",
+          "baseSize": "0.9rem",
+          "scaleSm": "0.8rem",
+          "scaleLg": "1.2rem",
+          "weightNormal": "400",
+          "weightBold": "600",
+          "lineHeight": "1.6"
+        },
+        "radii": {
+          "xs": "4px",
+          "sm": "8px",
+          "md": "12px",
+          "lg": "18px",
+          "xl": "26px",
+          "pill": "999px"
+        },
+        "spacing": {
+          "xxs": "0.25rem",
+          "xs": "0.5rem",
+          "sm": "0.75rem",
+          "md": "1rem",
+          "lg": "1.5rem",
+          "xl": "2rem",
+          "xxl": "3rem"
+        },
+        "motion": {
+          "durationSm": "120ms",
+          "durationMd": "200ms",
+          "durationLg": "360ms",
+          "easing": "cubic-bezier(0.4, 0, 0.2, 1)",
+          "spring": "cubic-bezier(0.2, 0.8, 0.4, 1)"
+        },
+        "effects": {
+          "vapors": ["#ff71ce", "#01cdfe", "#05ffa1"],
+          "glassBlur": "24px",
+          "glassOpacity": "0.78",
+          "glassBorder": "1px solid rgba(255, 255, 255, 0.18)",
+          "bandGradient": "linear-gradient(120deg, rgba(255, 113, 206, 0.35), rgba(1, 205, 254, 0.35))",
+          "bandOverlay": "rgba(8, 0, 46, 0.65)",
+          "ctaGradient": "linear-gradient(45deg, #ff71ce, #01cdfe, #05ffa1)",
+          "patternHue": "310deg",
+          "patternSaturation": "100%",
+          "shadowSoft": "0 12px 32px -20px rgba(0, 0, 0, 0.85)",
+          "shadowMedium": "0 18px 45px -22px rgba(5, 0, 45, 0.55)",
+          "shadowStrong": "0 22px 65px -24px rgba(0, 0, 0, 0.9)",
+          "glassOverlayOpacity": "0.45",
+          "glassSheenOpacity": "0.3",
+          "glowStrength": "32px",
+          "noiseOpacity": "0.08",
+          "hoverLift": "3px"
+        },
+        "depth": {
+          "header": "10px",
+          "nav": "12px",
+          "footer": "10px",
+          "button": "6px",
+          "cta": "20px",
+          "siteBorder": "solid"
+        },
+        "ui": {
+          "density": "comfortable",
+          "hoverLift": "3px"
+        },
+        "meta": {
+          "tagline": "Trade under neon skies",
+          "density": "comfortable",
+          "patterns": ["scanlines"],
+          "controls": {
+            "style": "legacy-vaporwave",
+            "tagline": "Trade under neon skies",
+            "density": "comfortable",
+            "patterns": ["scanlines"],
+            "hue": 310,
+            "saturation": 100,
+            "lightness": 60,
+            "accentHueA": 310,
+            "accentHueB": 205,
+            "glassOpacity": 0.45,
+            "glassBlur": 24,
+            "glow": 36,
+            "hoverLift": 3,
+            "cornerRadius": 26,
+            "borderAlpha": 0.18,
+            "noise": 0.08
+          }
+        }
+      }
+    }
+  ],
+  "pairings": []
+}
