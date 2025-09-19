@@ -9,7 +9,11 @@ if (session_status() === PHP_SESSION_NONE) {
     session_start();
   }
 }
-require_once __DIR__ . '/auth.php';
+
+$headerRequiresAuth = !defined('HEADER_SKIP_AUTH') || HEADER_SKIP_AUTH !== true;
+if ($headerRequiresAuth) {
+  require_once __DIR__ . '/auth.php';
+}
 $db = require __DIR__ . '/db.php';
 require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/notifications.php';

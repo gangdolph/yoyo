@@ -4,6 +4,10 @@ require 'includes/db.php';
 // Mail helper lives in the project root
 require 'mail.php';
 
+if (!defined('HEADER_SKIP_AUTH')) {
+  define('HEADER_SKIP_AUTH', true);
+}
+
 $user = '';
 $email = '';
 $isBusiness = false;

@@ -3,6 +3,10 @@ require 'includes/csrf.php';
 require 'includes/db.php';
 require 'includes/totp.php';
 
+if (!defined('HEADER_SKIP_AUTH')) {
+  define('HEADER_SKIP_AUTH', true);
+}
+
 $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 $maxAttempts = 5;
 $lockout = 300; // seconds
