@@ -199,6 +199,102 @@ body.site-frame {
   margin: 0;
 }
 
+/* Promoted shops */
+.promoted-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: var(--space-lg);
+  margin: var(--space-lg) 0;
+  padding: 0;
+}
+
+.promoted-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  background: rgba(0, 0, 0, 0.45);
+  border-radius: 14px;
+  padding: var(--space-md);
+  height: 100%;
+  text-transform: none;
+}
+
+.promoted-card__media {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+  padding: var(--space-sm);
+  aspect-ratio: 3 / 2;
+}
+
+.promoted-card__logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.promoted-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.promoted-card__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.promoted-card__link {
+  color: inherit;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: calc(var(--space-xs) / 2) 0;
+  border-radius: 6px;
+  outline-offset: 4px;
+  word-break: break-word;
+}
+
+.promoted-card__link:focus-visible {
+  outline: 3px solid var(--accent);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.45);
+}
+
+.promoted-card__meta {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.promoted-card__divider {
+  opacity: 0.65;
+}
+
+.promoted-card__handle,
+.promoted-card__domain {
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 600px) {
+  .promoted-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .promoted-card {
+    gap: var(--space-sm);
+  }
+
+  .promoted-card__media {
+    aspect-ratio: 16 / 9;
+  }
+}
+
 .hero-content {
   display: flex;
   flex-direction: column;
@@ -208,195 +304,27 @@ body.site-frame {
 }
 
 .portal-links {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(14rem, 100%), 1fr));
   gap: var(--space-md);
   width: 100%;
-  max-width: 600px;
+  max-width: 640px;
   margin: var(--space-lg) auto 0;
-  justify-content: center;
+  justify-items: stretch;
 }
 
-.portal-links .btn {
-  flex: 1;
-  text-align: center;
-}
-
-.portal-links .cta3d {
-  flex: 1 1 clamp(180px, 28vw, 240px);
-  max-width: 260px;
+.portal-links .cta-glass {
+  width: 100%;
 }
 
 @media (max-width: 600px) {
   .portal-links {
-    flex-direction: column;
-  }
-
-  .portal-links .cta3d {
-    max-width: none;
-    width: 100%;
+    grid-template-columns: 1fr;
   }
 
   .hero {
     padding: 1.5rem 0.5rem;
   }
-}
-
-
-@keyframes ctaFlow {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-.cta3d {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 5.75rem;
-  padding: 0;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  background: radial-gradient(circle at 20% 20%, rgba(1, 205, 254, 0.28), transparent 55%),
-    radial-gradient(circle at 80% 80%, rgba(255, 113, 206, 0.35), transparent 60%),
-    linear-gradient(135deg, rgba(7, 23, 46, 0.8), rgba(3, 8, 18, 0.95));
-  box-shadow: 0 18px 30px rgba(4, 9, 24, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-  overflow: hidden;
-  isolation: isolate;
-  color: var(--fg);
-  text-decoration: none;
-  cursor: pointer;
-  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1),
-    box-shadow 0.45s cubic-bezier(0.16, 1, 0.3, 1);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-}
-
-.cta3d::after {
-  content: attr(data-label);
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: clamp(1rem, 2.4vw, 1.35rem);
-  letter-spacing: 0.32em;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #e9f6ff;
-  text-shadow: 0 0 16px rgba(1, 205, 254, 0.6), 0 0 32px rgba(255, 113, 206, 0.4);
-  pointer-events: none;
-  transition: opacity 0.35s ease;
-  z-index: 1;
-}
-
-.cta3d canvas {
-  position: absolute;
-  inset: 0;
-  display: block;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  filter: saturate(1.15) contrast(1.05);
-}
-
-.cta3d__label {
-  position: relative;
-  z-index: 2;
-  font-size: clamp(1rem, 2.4vw, 1.25rem);
-  letter-spacing: 0.32em;
-  font-weight: 600;
-  text-transform: uppercase;
-  color: #f6fbff;
-  text-shadow: 0 0 18px rgba(1, 205, 254, 0.75), 0 0 28px rgba(255, 113, 206, 0.5);
-  opacity: 0;
-  transform: translateY(8px);
-  transition: opacity 0.45s ease, transform 0.45s ease;
-  pointer-events: none;
-}
-
-.cta3d:hover,
-.cta3d:focus-visible {
-  transform: translateY(-6px);
-  box-shadow: 0 22px 40px rgba(3, 10, 29, 0.65), 0 0 28px rgba(1, 205, 254, 0.35);
-}
-
-.cta3d:focus {
-  outline: none;
-}
-
-.cta3d:focus-visible {
-  outline: 3px solid rgba(1, 205, 254, 0.8);
-  outline-offset: 4px;
-}
-
-.cta3d--ready::after {
-  opacity: 0;
-}
-
-.cta3d--ready .cta3d__label {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.cta3d--fallback::after {
-  opacity: 1;
-}
-
-.cta3d--fallback .cta3d-fallback-link {
-  font-size: clamp(1rem, 2.4vw, 1.35rem);
-  letter-spacing: 0.32em;
-  font-weight: 600;
-  text-transform: uppercase;
-}
-
-.cta3d--active {
-  box-shadow: 0 24px 48px rgba(2, 9, 26, 0.7), 0 0 36px rgba(255, 113, 206, 0.4);
-}
-
-.cta3d[aria-disabled='true'] {
-  opacity: 0.92;
-  box-shadow: 0 16px 28px rgba(4, 9, 24, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.1);
-}
-
-.cta3d[aria-disabled='true']:hover,
-.cta3d[aria-disabled='true']:focus-visible {
-  transform: none;
-  box-shadow: 0 18px 30px rgba(4, 9, 24, 0.55), inset 0 0 0 1px rgba(255, 255, 255, 0.12);
-}
-
-.cta3d--reduced-motion {
-  transition: box-shadow 0.3s ease;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .cta3d,
-  .cta3d__label {
-    transition: none;
-  }
-
-  .cta3d:hover,
-  .cta3d:focus-visible {
-    transform: none;
-  }
-}
-
-.cta3d-fallback-link {
-  position: relative;
-  z-index: 2;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  color: inherit;
-  text-decoration: none;
-}
-
-@keyframes ctaPulse {
-  0%, 100% { filter: brightness(1); }
-  50% { filter: brightness(1.2); }
 }
 
 @media (min-width: 768px) {

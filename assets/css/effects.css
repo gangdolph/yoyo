@@ -1,0 +1,281 @@
+/*
+ * Alien glass effect utilities
+ * ----------------------------
+ * Provides reusable presentation classes that rely on the shared theme tokens.
+ */
+
+.cta-glass,
+.card-neo,
+.band-strip {
+  position: relative;
+  isolation: isolate;
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+  color: var(--color-card-text);
+  background: color-mix(in srgb, var(--color-band-overlay) 45%, transparent);
+  border: var(--glass-border);
+  box-shadow: var(--shadow-medium),
+    0 0 var(--glow-strength) color-mix(in srgb, var(--color-accent) 32%, transparent);
+  backdrop-filter: blur(var(--glass-blur));
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+  transition: transform var(--motion-duration-md) var(--motion-ease-spring),
+    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
+    background-color var(--motion-duration-sm) var(--motion-ease-standard),
+    border-color var(--motion-duration-sm) var(--motion-ease-standard);
+}
+
+.cta-glass::before,
+.card-neo::before,
+.band-strip::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 35%, transparent) 0%, color-mix(in srgb, var(--color-accent-alt) 25%, transparent) 100%);
+  opacity: var(--glass-overlay-opacity, 0.45);
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.cta-glass {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+  min-width: 44px;
+  min-height: 44px;
+  padding: clamp(var(--space-xs), 1.4vw, var(--space-sm)) clamp(var(--space-lg), 4vw, var(--space-2xl, 2.5rem));
+  font-family: var(--font-display);
+  font-weight: var(--font-weight-bold);
+  font-size: clamp(0.95rem, 2.6vw, 1.1rem);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  line-height: 1.1;
+  text-decoration: none;
+  text-align: center;
+  color: var(--color-cta-text, #041221);
+  cursor: pointer;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 45%, transparent) 0%, color-mix(in srgb, var(--color-highlight) 35%, transparent) 100%);
+  box-shadow: var(--shadow-medium), 0 0 var(--glow-strength) color-mix(in srgb, var(--color-accent) 28%, transparent);
+  transition: transform var(--motion-duration-md) var(--motion-ease-spring),
+    box-shadow var(--motion-duration-md) var(--motion-ease-standard),
+    background-color var(--motion-duration-sm) var(--motion-ease-standard),
+    color var(--motion-duration-sm) var(--motion-ease-standard);
+}
+
+.cta-glass::after,
+.card-neo::after,
+.band-strip::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at top, color-mix(in srgb, white 55%, transparent) 0%, transparent 65%),
+    repeating-linear-gradient(135deg, rgba(255, 255, 255, var(--noise-opacity, 0.08)) 0, rgba(255, 255, 255, 0) 2px, rgba(0, 0, 0, 0) 4px);
+  background-size: 100% 100%, 3px 3px;
+  background-blend-mode: screen, soft-light;
+  opacity: 1;
+  transition: opacity var(--motion-duration-md) var(--motion-ease-standard),
+    transform var(--motion-duration-md) var(--motion-ease-standard);
+}
+
+.cta-glass::after {
+  border-radius: calc(var(--radius-xl) * 0.9);
+  inset: 6%;
+  opacity: var(--glass-sheen-opacity, 0.3);
+}
+
+@media (hover: hover) {
+  .cta-glass:hover::after {
+    opacity: min(0.55, calc(var(--glass-sheen-opacity, 0.3) + 0.2));
+    transform: translate3d(-4%, -6%, 0) scale(1.05);
+  }
+}
+
+.card-neo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  background: linear-gradient(160deg, color-mix(in srgb, var(--color-surface) 80%, transparent) 0%, color-mix(in srgb, var(--color-card-bg) 90%, transparent) 100%);
+}
+
+.card-neo > :where(h1, h2, h3, h4, h5, h6) {
+  color: var(--color-text);
+  margin: 0;
+}
+
+.card-neo > :where(p, ul, ol, small) {
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.band-strip {
+  display: block;
+  width: 100%;
+  padding: var(--space-sm) var(--space-xl);
+  background: var(--band-gradient);
+  color: var(--color-band-text);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: clamp(0.75rem, 1.6vw, 0.95rem);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-soft);
+}
+
+.band-strip span {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+@media (hover: hover) {
+  .cta-glass:hover,
+  .card-neo:hover,
+  .band-strip:hover {
+    transform: translateY(calc(-1 * var(--hover-lift, 3px)));
+    box-shadow: var(--shadow-strong),
+      0 0 calc(var(--glow-strength) * 1.15) color-mix(in srgb, var(--color-highlight) 35%, transparent);
+  }
+}
+
+.cta-glass:focus-visible,
+.card-neo:focus-visible,
+.band-strip:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  outline-offset: 5px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-focus-ring) 20%, transparent 80%);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .cta-glass,
+  .card-neo,
+  .band-strip {
+    background: color-mix(in srgb, var(--color-card-bg) 80%, transparent);
+  }
+
+  .cta-glass::before,
+  .card-neo::before,
+  .band-strip::before {
+    opacity: 0.2;
+  }
+}
+
+:root[data-motion='reduced'] .cta-glass,
+:root[data-motion='reduced'] .card-neo,
+:root[data-motion='reduced'] .band-strip {
+  transition-duration: 0.01ms !important;
+  transform: none !important;
+  box-shadow: var(--shadow-soft);
+}
+
+.motion-safe-transition {
+  transition: var(--motion-duration-md) var(--motion-ease-standard);
+}
+
+.motion-safe-transition:hover {
+  transition-duration: var(--motion-duration-md);
+}
+
+/*
+ * Promoted grid & cards
+ * ---------------------
+ * Provides responsive layout and media treatments for promoted shops.
+ */
+
+.promoted-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(22rem, 100%), 1fr));
+  gap: clamp(var(--space-lg), 5vw, var(--space-2xl, 3rem));
+  margin-block: clamp(var(--space-lg), 6vw, var(--space-2xl, 3rem));
+}
+
+.promoted-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  height: 100%;
+}
+
+.promoted-card__media {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: calc(var(--radius-xl) - var(--space-xs));
+  background: color-mix(in srgb, var(--color-card-bg) 55%, transparent);
+  padding: var(--space-sm);
+  aspect-ratio: 3 / 2;
+}
+
+.promoted-card__logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.35));
+}
+
+.promoted-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  flex: 1;
+}
+
+.promoted-card__title {
+  margin: 0;
+  font-size: clamp(1.05rem, 2.4vw, 1.25rem);
+  font-family: var(--font-display);
+}
+
+.promoted-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  padding-block: calc(var(--space-2xs, 0.25rem));
+  outline-offset: 4px;
+  word-break: break-word;
+}
+
+.promoted-card__link:focus-visible {
+  outline: 3px solid var(--color-focus-ring);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-focus-ring) 28%, transparent);
+}
+
+.promoted-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: clamp(0.85rem, 1.8vw, 0.95rem);
+  text-transform: none;
+}
+
+.promoted-card__handle,
+.promoted-card__domain {
+  overflow-wrap: anywhere;
+}
+
+.promoted-card__divider {
+  opacity: 0.65;
+}
+
+@media (max-width: 600px) {
+  .promoted-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .promoted-card {
+    gap: var(--space-sm);
+  }
+
+  .promoted-card__media {
+    aspect-ratio: 16 / 9;
+  }
+}
