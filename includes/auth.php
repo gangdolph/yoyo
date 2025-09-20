@@ -1,6 +1,73 @@
 <?php
 declare(strict_types=1);
 
+if (!function_exists('auth_refresh_session_roles')) {
+    /**
+     * Normalise the role set available to the current session.
+     *
+     * @param array<string, mixed> $context
+     *
+     * @return array<int, string>
+     */
+    function auth_refresh_session_roles(array $context = []): array
+    {
+        $role = strtolower((string) ($context['role'] ?? ($_SESSION['user_role'] ?? 'user')));
+        $status = strtolower((string) ($context['status'] ?? ($_SESSION['status'] ?? '')));
+        $vipStatus = $context['vip_status'] ?? ($_SESSION['vip_status'] ?? null);
+        $vipExpiresAt = $context['vip_expires_at'] ?? ($_SESSION['vip_expires_at'] ?? null);
+        $accountType = strtolower((string) ($context['account_type'] ?? ($_SESSION['account_type'] ?? '')));
+        $isAdminFlag = !empty($context['is_admin']) || !empty($_SESSION['is_admin']);
+
+        $roles = ['user'];
+
+        if ($role !== '') {
+            $roles[] = $role;
+        }
+
+        if ($isAdminFlag) {
+            $roles[] = 'admin';
+        }
+
+        if ($role === 'admin' || $isAdminFlag) {
+            $roles[] = 'skuze_official';
+            $roles[] = 'seller';
+        }
+
+        if ($role === 'skuze_official') {
+            $roles[] = 'skuze_official';
+            $roles[] = 'seller';
+        }
+
+        if ($accountType === 'business') {
+            $roles[] = 'seller';
+        }
+
+        $vipActive = false;
+        if ($vipStatus !== null) {
+            $vipActive = (int) $vipStatus === 1;
+            if ($vipActive && $vipExpiresAt) {
+                $expiresTs = strtotime((string) $vipExpiresAt);
+                if ($expiresTs !== false) {
+                    $vipActive = $expiresTs > time();
+                }
+            }
+        }
+
+        if ($vipActive) {
+            $roles[] = 'seller';
+        }
+
+        if (in_array($status, ['seller', 'vip', 'merchant', 'vendor'], true)) {
+            $roles[] = 'seller';
+        }
+
+        $roles = array_values(array_unique(array_map('strtolower', $roles)));
+        $_SESSION['auth_roles'] = $roles;
+
+        return $roles;
+    }
+}
+
 if (!defined('AUTH_BOOTSTRAPPED')) {
     define('AUTH_BOOTSTRAPPED', true);
 
@@ -161,73 +228,6 @@ if (!function_exists('is_skuze_official')) {
     function is_skuze_official(): bool
     {
         return in_array('skuze_official', auth_current_roles(), true);
-    }
-}
-
-if (!function_exists('auth_refresh_session_roles')) {
-    /**
-     * Normalise the role set available to the current session.
-     *
-     * @param array<string, mixed> $context
-     *
-     * @return array<int, string>
-     */
-    function auth_refresh_session_roles(array $context = []): array
-    {
-        $role = strtolower((string) ($context['role'] ?? ($_SESSION['user_role'] ?? 'user')));
-        $status = strtolower((string) ($context['status'] ?? ($_SESSION['status'] ?? '')));
-        $vipStatus = $context['vip_status'] ?? ($_SESSION['vip_status'] ?? null);
-        $vipExpiresAt = $context['vip_expires_at'] ?? ($_SESSION['vip_expires_at'] ?? null);
-        $accountType = strtolower((string) ($context['account_type'] ?? ($_SESSION['account_type'] ?? '')));
-        $isAdminFlag = !empty($context['is_admin']) || !empty($_SESSION['is_admin']);
-
-        $roles = ['user'];
-
-        if ($role !== '') {
-            $roles[] = $role;
-        }
-
-        if ($isAdminFlag) {
-            $roles[] = 'admin';
-        }
-
-        if ($role === 'admin' || $isAdminFlag) {
-            $roles[] = 'skuze_official';
-            $roles[] = 'seller';
-        }
-
-        if ($role === 'skuze_official') {
-            $roles[] = 'skuze_official';
-            $roles[] = 'seller';
-        }
-
-        if ($accountType === 'business') {
-            $roles[] = 'seller';
-        }
-
-        $vipActive = false;
-        if ($vipStatus !== null) {
-            $vipActive = (int) $vipStatus === 1;
-            if ($vipActive && $vipExpiresAt) {
-                $expiresTs = strtotime((string) $vipExpiresAt);
-                if ($expiresTs !== false) {
-                    $vipActive = $expiresTs > time();
-                }
-            }
-        }
-
-        if ($vipActive) {
-            $roles[] = 'seller';
-        }
-
-        if (in_array($status, ['seller', 'vip', 'merchant', 'vendor'], true)) {
-            $roles[] = 'seller';
-        }
-
-        $roles = array_values(array_unique(array_map('strtolower', $roles)));
-        $_SESSION['auth_roles'] = $roles;
-
-        return $roles;
     }
 }
 
