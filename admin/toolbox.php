@@ -2,7 +2,7 @@
 require_once __DIR__ . '/../includes/auth.php';
 require '../includes/csrf.php';
 
-if (!$_SESSION['is_admin']) {
+if (!is_admin()) {
   header('Location: ../dashboard.php');
   exit;
 }

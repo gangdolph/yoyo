@@ -60,8 +60,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
         $stmt->close();
         if (verify_totp($secret, $code) || hash_equals($recovery, $code)) {
           $_SESSION['user_id'] = $pendingId;
-          $_SESSION['is_admin'] = $_SESSION['pending_admin'] ?? 0;
-          unset($_SESSION['pending_2fa'], $_SESSION['pending_admin']);
+          $_SESSION['user_role'] = $_SESSION['pending_role'] ?? 'user';
+          $_SESSION['is_admin'] = ($_SESSION['user_role'] ?? 'user') === 'admin' ? 1 : 0;
+          unset($_SESSION['pending_2fa'], $_SESSION['pending_role']);
           $clear = $conn->prepare("DELETE FROM login_attempts WHERE ip = ?");
           if ($clear) {
             $clear->bind_param('s', $ip);
@@ -83,7 +84,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
     $user = trim($_POST['username']);
     $pass = $_POST['password'];
 
-    $stmt = $conn->prepare("SELECT id, password, is_verified, is_admin FROM users WHERE username = ?");
+    $stmt = $conn->prepare("SELECT id, password, is_verified, role, is_admin FROM users WHERE username = ?");
     if ($stmt === false) {
       error_log('Prepare failed: ' . $conn->error);
       $error = "Database error.";
@@ -96,7 +97,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
         $stmt->store_result();
 
         if ($stmt->num_rows === 1) {
-          $stmt->bind_result($id, $hash, $verified, $admin);
+          $stmt->bind_result($id, $hash, $verified, $role, $admin);
           $stmt->fetch();
 
           if (!password_verify($pass, $hash)) {
@@ -124,7 +125,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
               $stmt2->store_result();
               if ($stmt2->num_rows === 1) {
                 $_SESSION['pending_2fa'] = $id;
-                $_SESSION['pending_admin'] = $admin;
+                $_SESSION['pending_role'] = $role ?: 'user';
                 $twofaStage = true;
               } else {
                 $clear = $conn->prepare("DELETE FROM login_attempts WHERE ip = ?");
@@ -134,7 +135,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($error)) {
                   $clear->close();
                 }
                 $_SESSION['user_id'] = $id;
-                $_SESSION['is_admin'] = $admin;
+                $_SESSION['user_role'] = $role ?: 'user';
+                $_SESSION['is_admin'] = ($_SESSION['user_role'] ?? 'user') === 'admin' ? 1 : 0;
                 header("Location: dashboard.php");
                 exit;
               }

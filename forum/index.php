@@ -17,7 +17,7 @@ if ($stmt = $conn->prepare("SELECT ft.id, ft.title, u.id, u.username, ft.created
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!validate_token($_POST['csrf_token'] ?? '')) {
     $error = 'Invalid CSRF token.';
-  } elseif ($_SESSION['is_admin'] && isset($_POST['close'])) {
+  } elseif (is_admin() && isset($_POST['close'])) {
     $id = intval($_POST['id'] ?? 0);
     if ($id) {
       $stmt = $conn->prepare("UPDATE forum_threads SET status='closed' WHERE id=?");
@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     header('Location: index.php');
     exit;
-  } elseif ($_SESSION['is_admin'] && isset($_POST['delist'])) {
+  } elseif (is_admin() && isset($_POST['delist'])) {
     $id = intval($_POST['id'] ?? 0);
     if ($id) {
       $stmt = $conn->prepare("UPDATE forum_threads SET status='delisted' WHERE id=?");
@@ -37,7 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     header('Location: index.php');
     exit;
-  } elseif ($_SESSION['is_admin'] && isset($_POST['delete'])) {
+  } elseif (is_admin() && isset($_POST['delete'])) {
     $id = intval($_POST['id'] ?? 0);
     if ($id) {
       $stmt = $conn->prepare("DELETE FROM forum_threads WHERE id=?");
@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <li>
         <a href="thread.php?id=<?= $thread['id']; ?>"><?= htmlspecialchars($thread['title']); ?></a>
         by <?= username_with_avatar($conn, $thread['user_id'], $thread['username']); ?> on <?= htmlspecialchars($thread['created_at']); ?>
-        <?php if (!empty($_SESSION['is_admin'])): ?>
+        <?php if (is_admin()): ?>
           <form method="post" style="display:inline;" onsubmit="return confirm('Close thread?');">
             <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
             <input type="hidden" name="id" value="<?= $thread['id']; ?>">

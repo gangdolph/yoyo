@@ -26,14 +26,14 @@ $unread_messages = count_unread_messages($conn, $id);
 $unread_notifications = count_unread_notifications($conn, $id);
 
 $my_products = [];
-if ($stmt = $conn->prepare('SELECT sku, title, quantity, reorder_threshold FROM products WHERE owner_id = ?')) {
+if ($stmt = $conn->prepare('SELECT sku, title, stock, reorder_threshold FROM products WHERE owner_id = ?')) {
   $stmt->bind_param('i', $id);
   $stmt->execute();
   $my_products = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
   $stmt->close();
 }
 $low_stock = array_filter($my_products, function($p) {
-  return $p['reorder_threshold'] > 0 && $p['quantity'] <= $p['reorder_threshold'];
+  return $p['reorder_threshold'] > 0 && $p['stock'] <= $p['reorder_threshold'];
 });
 $orders = fetch_orders_for_user($conn, (int) $id);
 ?>
@@ -74,9 +74,12 @@ $orders = fetch_orders_for_user($conn, (int) $id);
       <div class="nav-section">
         <h3>Account</h3>
         <ul class="nav-links">
-          <?php if (!empty($_SESSION['is_admin'])): ?>
+          <?php if (is_admin()): ?>
             <li><a class="btn" role="button" href="/admin/index.php">Admin Panel</a></li>
+          <?php elseif (is_skuze_official()): ?>
+            <li><a class="btn" role="button" href="/admin/products.php">Official Inventory</a></li>
           <?php endif; ?>
+          <li><a class="btn" role="button" href="/account/store.php">Manage Store</a></li>
           <li><a class="btn" role="button" href="profile.php">Edit Profile</a></li>
           <li><a class="btn" role="button" href="logout.php">Logout</a></li>
         </ul>
@@ -89,12 +92,12 @@ $orders = fetch_orders_for_user($conn, (int) $id);
       <?php endif; ?>
       <?php if ($my_products): ?>
       <table>
-        <tr><th>SKU</th><th>Title</th><th>Qty</th><th>Threshold</th></tr>
+        <tr><th>SKU</th><th>Title</th><th>Stock</th><th>Threshold</th></tr>
         <?php foreach ($my_products as $p): ?>
         <tr>
           <td><?= htmlspecialchars($p['sku']) ?></td>
           <td><?= htmlspecialchars($p['title']) ?></td>
-          <td><?= (int)$p['quantity'] ?></td>
+          <td><?= (int)$p['stock'] ?></td>
           <td><?= (int)$p['reorder_threshold'] ?></td>
         </tr>
         <?php endforeach; ?>
@@ -113,7 +116,7 @@ $orders = fetch_orders_for_user($conn, (int) $id);
             <th>Direction</th>
             <th>Product</th>
             <th>Inventory</th>
-            <th>Official</th>
+            <th>Badges</th>
             <th>Payment</th>
             <th>Shipping</th>
             <th>Counterparty</th>
@@ -124,9 +127,16 @@ $orders = fetch_orders_for_user($conn, (int) $id);
         <tbody>
         <?php foreach ($orders as $order): ?>
           <?php
-            $isOfficial = $order['product']['is_official'];
-            $badgeClass = $isOfficial ? 'badge-official' : 'badge-community';
-            $badgeLabel = $isOfficial ? 'Official' : 'Community';
+            $badges = [];
+            if (!empty($order['listing']['is_official']) || !empty($order['product']['is_skuze_official']) || !empty($order['is_official_order'])) {
+                $badges[] = ['class' => 'badge-official', 'label' => 'SkuzE Official'];
+            }
+            if (!empty($order['product']['is_skuze_product'])) {
+                $badges[] = ['class' => 'badge-product', 'label' => 'SkuzE Product'];
+            }
+            if (!$badges) {
+                $badges[] = ['class' => 'badge-community', 'label' => 'Community Listing'];
+            }
             $counterparty = $order['direction'] === 'buy'
               ? ($order['listing']['owner_username'] ?? 'Seller')
               : ($order['buyer']['username'] ?? 'Buyer');
@@ -142,8 +152,12 @@ $orders = fetch_orders_for_user($conn, (int) $id);
               <strong><?= htmlspecialchars($order['product']['title'] ?: $order['listing']['title'], ENT_QUOTES, 'UTF-8') ?></strong><br>
               <small><?= htmlspecialchars($order['product']['sku'], ENT_QUOTES, 'UTF-8') ?></small>
             </td>
-            <td><?= (int) $order['product']['quantity'] ?></td>
-            <td><span class="badge <?= htmlspecialchars($badgeClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($badgeLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
+            <td><?= (int) ($order['product']['stock'] ?? 0) ?></td>
+            <td>
+              <?php foreach ($badges as $badge): ?>
+                <span class="badge <?= htmlspecialchars($badge['class'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($badge['label'], ENT_QUOTES, 'UTF-8') ?></span>
+              <?php endforeach; ?>
+            </td>
             <td>
               <?= htmlspecialchars($amountDisplay, ENT_QUOTES, 'UTF-8') ?><br>
               <small>Status: <?= htmlspecialchars(ucfirst($paymentStatus ?? 'pending'), ENT_QUOTES, 'UTF-8') ?></small>

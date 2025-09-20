@@ -13,7 +13,7 @@ if (!function_exists('inventory_fetch_owned_product')) {
      */
     function inventory_fetch_owned_product(mysqli $conn, int $ownerId, string $sku, bool $forUpdate = false): ?array
     {
-        $sql = 'SELECT sku, owner_id, quantity, reserved FROM products WHERE sku = ? AND owner_id = ?';
+        $sql = 'SELECT sku, owner_id, stock, quantity, reserved FROM products WHERE sku = ? AND owner_id = ?';
         if ($forUpdate) {
             $sql .= ' FOR UPDATE';
         }
@@ -40,7 +40,8 @@ if (!function_exists('inventory_reserve_owned_product')) {
             throw new RuntimeException('Selected item could not be found.');
         }
 
-        if ((int)$product['quantity'] <= 0) {
+        $available = isset($product['stock']) ? (int)$product['stock'] : (int)$product['quantity'];
+        if ($available <= 0) {
             throw new RuntimeException('Selected item is out of stock.');
         }
 
@@ -84,11 +85,12 @@ if (!function_exists('inventory_consume_reserved_product')) {
             throw new RuntimeException('Inventory record missing for the selected item.');
         }
 
-        if ((int)$product['quantity'] <= 0) {
+        $available = isset($product['stock']) ? (int)$product['stock'] : (int)$product['quantity'];
+        if ($available <= 0) {
             throw new RuntimeException('No remaining quantity for the selected item.');
         }
 
-        $stmt = $conn->prepare('UPDATE products SET quantity = quantity - 1, reserved = 0 WHERE sku = ? AND quantity > 0');
+        $stmt = $conn->prepare('UPDATE products SET stock = GREATEST(stock - 1, 0), quantity = CASE WHEN quantity IS NULL THEN NULL ELSE GREATEST(quantity - 1, 0) END, reserved = 0 WHERE sku = ? AND stock > 0');
         $stmt->bind_param('s', $sku);
         $stmt->execute();
         $affected = $stmt->affected_rows;

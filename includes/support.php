@@ -17,7 +17,7 @@ if (!function_exists('send_email')) {
  */
 function get_support_admins(mysqli $conn): array {
     $admins = [];
-    if ($stmt = $conn->prepare('SELECT id, username, email FROM users WHERE is_admin = 1 ORDER BY id ASC')) {
+    if ($stmt = $conn->prepare("SELECT id, username, email FROM users WHERE role = 'admin' ORDER BY id ASC")) {
         $stmt->execute();
         $result = $stmt->get_result();
         $admins = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
@@ -261,7 +261,7 @@ function update_support_ticket(mysqli $conn, int $ticket_id, string $status, ?in
     }
 
     if ($assigned_to !== null) {
-        $stmt = $conn->prepare('SELECT 1 FROM users WHERE id = ? AND is_admin = 1');
+        $stmt = $conn->prepare("SELECT 1 FROM users WHERE id = ? AND role = 'admin'");
         if ($stmt) {
             $stmt->bind_param('i', $assigned_to);
             $stmt->execute();

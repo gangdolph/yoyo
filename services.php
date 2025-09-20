@@ -16,6 +16,13 @@ require 'includes/db.php';
 
   <ul class="service-cta-grid" role="list">
     <li class="service-cta-item" role="listitem">
+      <a class="service-cta-card" href="service-wizard.php?path=build">
+        <h3 class="service-cta-card__title">Start a Custom Build</h3>
+        <p class="service-cta-card__description">Plan a bespoke PC or workstation build with component sourcing.</p>
+        <span class="service-cta-card__action" aria-hidden="true">Design my build →</span>
+      </a>
+    </li>
+    <li class="service-cta-item" role="listitem">
       <a class="service-cta-card" href="service-wizard.php?path=repair">
         <h3 class="service-cta-card__title">Request a Repair</h3>
         <p class="service-cta-card__description">Fix hardware, screen, and component issues with certified technicians.</p>
@@ -27,13 +34,6 @@ require 'includes/db.php';
         <h3 class="service-cta-card__title">Schedule a Cleaning</h3>
         <p class="service-cta-card__description">Improve performance with deep cleanings, malware removal, and tune-ups.</p>
         <span class="service-cta-card__action" aria-hidden="true">Plan a cleaning visit →</span>
-      </a>
-    </li>
-    <li class="service-cta-item" role="listitem">
-      <a class="service-cta-card" href="service-wizard.php?path=build">
-        <h3 class="service-cta-card__title">Start a Custom Build</h3>
-        <p class="service-cta-card__description">Plan a bespoke PC or workstation build with component sourcing.</p>
-        <span class="service-cta-card__action" aria-hidden="true">Design my build →</span>
       </a>
     </li>
   </ul>

@@ -28,9 +28,11 @@ $row = [
     'listing_status' => 'active',
     'product_sku' => null,
     'product_title' => null,
-    'product_quantity' => null,
+    'product_stock' => null,
     'product_reorder_threshold' => null,
-    'product_is_official' => null,
+    'product_is_skuze_official' => null,
+    'product_is_skuze_product' => null,
+    'listing_is_official' => null,
     'seller_username' => 'sellerUser',
     'buyer_username' => 'buyerUser',
     'direction' => 'buy',
@@ -43,11 +45,17 @@ if ($order['listing']['title'] !== 'Standalone Listing') {
 if ($order['product']['sku'] !== null) {
     throw new Exception('Product SKU should remain null when no product record is available.');
 }
-if ($order['product']['quantity'] !== null) {
-    throw new Exception('Product quantity should be null when inventory information is missing.');
+if ($order['product']['stock'] !== null) {
+    throw new Exception('Product stock should be null when inventory information is missing.');
 }
-if ($order['product']['is_official'] !== null) {
+if ($order['product']['is_skuze_official'] !== null) {
     throw new Exception('Official flag should be null when no product record exists.');
+}
+if ($order['product']['is_skuze_product'] !== null) {
+    throw new Exception('Product lineage flag should be null when no product record exists.');
+}
+if ($order['product']['is_official'] !== false) {
+    throw new Exception('Derived official badge should resolve false when metadata is absent.');
 }
 if ($order['payment']['amount'] !== 1299) {
     throw new Exception('Payment amount should be preserved during normalization.');

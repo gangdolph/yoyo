@@ -10,7 +10,7 @@ if (!$listing_id) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT l.id, l.product_sku, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.pickup_only FROM listings l WHERE l.id = ? LIMIT 1');
+$stmt = $conn->prepare('SELECT l.id, l.product_sku, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.pickup_only, l.is_official_listing, p.is_skuze_official, p.is_skuze_product FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
 $stmt->bind_param('i', $listing_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -38,7 +38,21 @@ if (!$listing) {
       <?php endif; ?>
     </div>
     <section class="listing-info">
-      <h2><?= htmlspecialchars($listing['title']); ?></h2>
+      <h2>
+        <?= htmlspecialchars($listing['title']); ?>
+        <?php
+          $listingBadges = [];
+          if (!empty($listing['is_official_listing']) || !empty($listing['is_skuze_official'])) {
+              $listingBadges[] = ['class' => 'badge-official', 'label' => 'SkuzE Official'];
+          }
+          if (!empty($listing['is_skuze_product'])) {
+              $listingBadges[] = ['class' => 'badge-product', 'label' => 'SkuzE Product'];
+          }
+          foreach ($listingBadges as $badge) {
+              echo ' <span class="badge ' . htmlspecialchars($badge['class'], ENT_QUOTES, 'UTF-8') . '">' . htmlspecialchars($badge['label'], ENT_QUOTES, 'UTF-8') . '</span>';
+          }
+        ?>
+      </h2>
       <p class="description">
         <?= nl2br(htmlspecialchars($listing['description'])); ?>
       </p>
@@ -67,7 +81,7 @@ if (!$listing) {
           <a href="search.php?category=<?= urlencode($listing['category']); ?>">More in this category</a>
         </p>
       </div>
-      <?php if (!empty($_SESSION['is_admin'])): ?>
+      <?php if (is_admin()): ?>
         <form method="post" action="listing-delete.php" onsubmit="return confirm('Delete listing?');">
           <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
           <input type="hidden" name="id" value="<?= $listing['id']; ?>">

@@ -4,7 +4,7 @@ require 'includes/db.php';
 require 'includes/csrf.php';
 
 $user_id = $_SESSION['user_id'] ?? null;
-$is_admin = !empty($_SESSION['is_admin']);
+$is_admin = is_admin();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && validate_token($_POST['csrf_token'] ?? '')) {
     $id = intval($_POST['id'] ?? 0);

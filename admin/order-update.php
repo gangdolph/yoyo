@@ -5,7 +5,7 @@ require '../includes/orders.php';
 require '../includes/csrf.php';
 require '../includes/notifications.php';
 
-if (empty($_SESSION['is_admin'])) {
+if (!is_admin()) {
     header('Location: ../dashboard.php');
     exit;
 }
@@ -103,11 +103,11 @@ try {
     if ($inventoryDelta !== 0) {
         $sku = $order['product']['sku'] ?? null;
         if ($sku) {
-            $stmt = $conn->prepare('UPDATE products SET quantity = CASE WHEN quantity IS NULL THEN NULL ELSE GREATEST(quantity + ?, 0) END WHERE sku = ?');
+            $stmt = $conn->prepare('UPDATE products SET stock = GREATEST(stock + ?, 0), quantity = CASE WHEN quantity IS NULL THEN NULL ELSE GREATEST(quantity + ?, 0) END WHERE sku = ?');
             if ($stmt === false) {
                 throw new RuntimeException('Failed to prepare inventory adjustment: ' . $conn->error);
             }
-            $stmt->bind_param('is', $inventoryDelta, $sku);
+            $stmt->bind_param('iis', $inventoryDelta, $inventoryDelta, $sku);
             if (!$stmt->execute()) {
                 throw new RuntimeException('Failed to adjust inventory: ' . $stmt->error);
             }

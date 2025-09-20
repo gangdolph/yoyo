@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require '../includes/orders.php';
 require '../includes/csrf.php';
 
-if (empty($_SESSION['is_admin'])) {
+if (!is_admin()) {
     header('Location: ../dashboard.php');
     exit;
 }
@@ -53,7 +53,7 @@ if ($flash) {
           <th>ID</th>
           <th>Direction</th>
           <th>Product</th>
-          <th>Official</th>
+          <th>Badges</th>
           <th>Inventory</th>
           <th>Buyer</th>
           <th>Seller</th>
@@ -66,9 +66,16 @@ if ($flash) {
       <tbody>
       <?php foreach ($orders as $order): ?>
         <?php
-          $isOfficial = $order['product']['is_official'];
-          $badgeClass = $isOfficial ? 'badge-official' : 'badge-community';
-          $badgeLabel = $isOfficial ? 'Official' : 'Community';
+          $badges = [];
+          if (!empty($order['listing']['is_official']) || !empty($order['product']['is_skuze_official']) || !empty($order['is_official_order'])) {
+              $badges[] = ['class' => 'badge-official', 'label' => 'SkuzE Official'];
+          }
+          if (!empty($order['product']['is_skuze_product'])) {
+              $badges[] = ['class' => 'badge-product', 'label' => 'SkuzE Product'];
+          }
+          if (!$badges) {
+              $badges[] = ['class' => 'badge-community', 'label' => 'Community'];
+          }
           $amount = $order['payment']['amount'];
           $amountDisplay = $amount !== null ? '$' . number_format(((int) $amount) / 100, 2) : '—';
           $paymentStatus = $order['payment']['status'] ?? 'pending';
@@ -83,8 +90,12 @@ if ($flash) {
             <strong><?= htmlspecialchars($order['product']['title'] ?: $order['listing']['title'], ENT_QUOTES, 'UTF-8') ?></strong><br>
             <small><?= htmlspecialchars($order['product']['sku'], ENT_QUOTES, 'UTF-8') ?></small>
           </td>
-          <td><span class="badge <?= htmlspecialchars($badgeClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($badgeLabel, ENT_QUOTES, 'UTF-8') ?></span></td>
-          <td><?= (int) $order['product']['quantity'] ?></td>
+          <td>
+            <?php foreach ($badges as $badge): ?>
+              <span class="badge <?= htmlspecialchars($badge['class'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($badge['label'], ENT_QUOTES, 'UTF-8') ?></span>
+            <?php endforeach; ?>
+          </td>
+          <td><?= (int) ($order['product']['stock'] ?? 0) ?></td>
           <td><?= htmlspecialchars($order['buyer']['username'] ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
           <td><?= htmlspecialchars($order['listing']['owner_username'] ?? '—', ENT_QUOTES, 'UTF-8') ?></td>
           <td>

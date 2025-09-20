@@ -5,7 +5,7 @@ require '../includes/csrf.php';
 require '../includes/user.php';
 require '../includes/notifications.php';
 
-if (!$_SESSION['is_admin']) {
+if (!is_admin()) {
   header("Location: ../dashboard.php");
   exit;
 }

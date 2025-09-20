@@ -41,6 +41,22 @@
           <h3><?= htmlspecialchars($l['title']); ?></h3>
         </a>
         <?php
+          $badges = [];
+          if (!empty($l['is_official_listing']) || !empty($l['is_skuze_official'])) {
+            $badges[] = ['class' => 'badge-official', 'label' => 'SkuzE Official'];
+          }
+          if (!empty($l['is_skuze_product'])) {
+            $badges[] = ['class' => 'badge-product', 'label' => 'SkuzE Product'];
+          }
+        ?>
+        <?php if ($badges): ?>
+          <div class="listing-badges">
+            <?php foreach ($badges as $badge): ?>
+              <span class="badge <?= htmlspecialchars($badge['class'], ENT_QUOTES, 'UTF-8'); ?>"><?= htmlspecialchars($badge['label'], ENT_QUOTES, 'UTF-8'); ?></span>
+            <?php endforeach; ?>
+          </div>
+        <?php endif; ?>
+        <?php
           $features = array_slice(array_filter(array_map('trim', explode("\n", $l['description']))), 0, 3);
           if ($features):
         ?>
@@ -68,7 +84,7 @@
         <?php endif; ?>
         <div class="rating">★★★★★</div>
         <button class="add-to-cart" data-id="<?= $l['id']; ?>">Add to Cart</button>
-        <?php if (!empty($_SESSION['is_admin'])): ?>
+        <?php if (is_admin()): ?>
           <form method="post" action="listing-delete.php" onsubmit="return confirm('Delete listing?');">
             <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
             <input type="hidden" name="id" value="<?= $l['id']; ?>">

@@ -4,7 +4,7 @@ require '../includes/db.php';
 require '../includes/user.php';
 require '../includes/csrf.php';
 
-if (!$_SESSION['is_admin']) {
+if (!is_admin()) {
   header("Location: ../dashboard.php");
   exit;
 }
@@ -62,7 +62,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 $users = [];
-if ($result = $conn->query('SELECT id, username, email, status, is_admin FROM users ORDER BY id ASC')) {
+if ($result = $conn->query("SELECT id, username, email, status, role FROM users ORDER BY id ASC")) {
   $users = $result->fetch_all(MYSQLI_ASSOC);
   $result->close();
 }
@@ -87,7 +87,7 @@ if ($result = $conn->query('SELECT id, username, email, status, is_admin FROM us
         <th>Username</th>
         <th>Email</th>
         <th>Status</th>
-        <th>Admin</th>
+        <th>Role</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -98,7 +98,7 @@ if ($result = $conn->query('SELECT id, username, email, status, is_admin FROM us
           <td><?= username_with_avatar($conn, $u['id'], $u['username']) ?></td>
           <td><?= htmlspecialchars($u['email']) ?></td>
           <td><?= htmlspecialchars($u['status']) ?></td>
-          <td><?= $u['is_admin'] ? 'Yes' : 'No' ?></td>
+          <td><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $u['role']))) ?></td>
           <td>
             <a href="../view-profile.php?id=<?= $u['id'] ?>">View</a>
             <a href="user-edit.php?id=<?= $u['id'] ?>">Edit</a>
