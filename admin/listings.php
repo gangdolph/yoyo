@@ -1,16 +1,19 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require '../includes/db.php';
 require '../includes/user.php';
 require '../includes/csrf.php';
+require_once __DIR__ . '/../includes/repositories/ChangeRequestsService.php';
+require_once __DIR__ . '/../includes/repositories/ListingsRepo.php';
 
-if (!is_admin()) {
-  header('Location: ../dashboard.php');
-  exit;
-}
+ensure_admin('../dashboard.php');
 
 // Handle approve/reject/close/delist actions
 $error = '';
+$changeRequests = new ChangeRequestsService($conn);
+$listingsRepo = new ListingsRepo($conn, $changeRequests);
+$adminId = (int) ($_SESSION['user_id'] ?? 0);
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!validate_token($_POST['csrf_token'] ?? '')) {
     $error = 'Invalid CSRF token.';
@@ -18,18 +21,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = intval($_POST['id'] ?? 0);
     if ($id) {
       if (isset($_POST['approve'])) {
-        $stmt = $conn->prepare("UPDATE listings SET status='approved' WHERE id=?");
+        $listingsRepo->updateStatus($id, $adminId, 'approved', true);
       } elseif (isset($_POST['reject'])) {
-        $stmt = $conn->prepare("UPDATE listings SET status='rejected' WHERE id=?");
+        $listingsRepo->updateStatus($id, $adminId, 'delisted', true);
+        $changeRequests->rejectOpenRequests($id, $adminId, 'Rejected by administrator');
       } elseif (isset($_POST['close'])) {
-        $stmt = $conn->prepare("UPDATE listings SET status='closed' WHERE id=?");
+        $listingsRepo->updateStatus($id, $adminId, 'closed', true);
       } elseif (isset($_POST['delist'])) {
-        $stmt = $conn->prepare("UPDATE listings SET status='delisted' WHERE id=?");
-      }
-      if (isset($stmt)) {
-        $stmt->bind_param('i', $id);
-        $stmt->execute();
-        $stmt->close();
+        $listingsRepo->updateStatus($id, $adminId, 'delisted', true);
       }
       header('Location: listings.php');
       exit;
@@ -70,7 +69,7 @@ $listings = $result ? $result->fetch_all(MYSQLI_ASSOC) : [];
               <input type="hidden" name="id" value="<?= $l['id'] ?>">
               <button type="submit" name="reject">Reject</button>
             </form>
-          <?php elseif ($l['status'] === 'approved'): ?>
+          <?php elseif (in_array($l['status'], ['approved', 'live'], true)): ?>
             <form method="post" style="display:inline;" onsubmit="return confirm('Close listing?');">
               <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
               <input type="hidden" name="id" value="<?= $l['id'] ?>">

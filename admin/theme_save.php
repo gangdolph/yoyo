@@ -2,11 +2,12 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/theme_store.php';
 
 header('Content-Type: application/json');
 
-if (!is_admin()) {
+if (!authz_has_role('admin')) {
     http_response_code(403);
     echo json_encode(['status' => 'error', 'message' => 'Admin access required.']);
     exit;

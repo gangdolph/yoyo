@@ -13,7 +13,7 @@
       <h4>Account</h4>
       <ul>
         <li><a href="/dashboard.php">Dashboard</a></li>
-        <li><a href="/my-listings.php">My Listings</a></li>
+        <li><a href="/shop-manager/index.php">Shop Manager</a></li>
         <li><a href="/messages.php">Messages</a></li>
         <li><a href="/support.php">Support</a></li>
         <li><a href="/logout.php">Logout</a></li>

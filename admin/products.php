@@ -1,12 +1,10 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require '../includes/db.php';
 require '../includes/csrf.php';
 
-if (!is_admin() && !is_skuze_official()) {
-    header('Location: /index.php');
-    exit;
-}
+ensure_admin_or_official('/index.php');
 
 $statusMessage = '';
 $statusType = 'success';

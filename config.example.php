@@ -23,4 +23,5 @@ return [
   'square_location_id' => 'LXXXXXXXXXXXX',
   'square_access_token' => 'EAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   'square_environment' => 'sandbox', // or 'production'
+  'SQUARE_CATALOG_SYNC' => false,
 ];

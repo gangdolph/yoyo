@@ -1,11 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require '../includes/csrf.php';
 
-if (!is_admin()) {
-  header('Location: ../dashboard.php');
-  exit;
-}
+ensure_admin('../dashboard.php');
 
 $toolsPath = __DIR__ . '/../assets/tools.json';
 $tools = [];

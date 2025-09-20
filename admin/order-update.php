@@ -1,14 +1,12 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require '../includes/db.php';
 require '../includes/orders.php';
 require '../includes/csrf.php';
 require '../includes/notifications.php';
 
-if (!is_admin()) {
-    header('Location: ../dashboard.php');
-    exit;
-}
+ensure_admin('../dashboard.php');
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     header('Location: orders.php');

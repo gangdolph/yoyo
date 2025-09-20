@@ -1,11 +1,9 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/theme_store.php';
 
-if (!is_admin()) {
-    header('Location: ../dashboard.php');
-    exit;
-}
+ensure_admin('../dashboard.php');
 
 $themePath = yoyo_theme_store_path();
 $dataDirectory = dirname($themePath);

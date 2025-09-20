@@ -7,6 +7,8 @@ if (!defined('YOYO_SKIP_DB_BOOTSTRAP')) {
 
 require_once __DIR__ . '/orders.php';
 require_once __DIR__ . '/csrf.php';
+require_once __DIR__ . '/repositories/InventoryService.php';
+require_once __DIR__ . '/repositories/OrdersService.php';
 
 const STORE_SCOPE_MINE = 'mine';
 const STORE_SCOPE_OFFICIAL = 'official';
@@ -17,6 +19,10 @@ const STORE_SCOPE_ALL = 'all';
  */
 function store_session_is_admin(): bool
 {
+    if (function_exists('authz_has_role')) {
+        return authz_has_role('admin');
+    }
+
     return function_exists('is_admin') ? is_admin() : !empty($_SESSION['is_admin']);
 }
 
@@ -80,6 +86,10 @@ function store_lookup_user_role(mysqli $conn, int $userId): string
  */
 function store_user_is_official(mysqli $conn, int $userId): bool
 {
+    if (function_exists('authz_has_role') && current_user_id() === $userId) {
+        return authz_has_role('skuze_official');
+    }
+
     if (function_exists('is_skuze_official') && current_user_id() === $userId) {
         return is_skuze_official();
     }
@@ -278,78 +288,9 @@ function store_apply_inventory_delta(
     bool $isAdmin,
     bool $isOfficial
 ): array {
-    if ($sku === '') {
-        throw new RuntimeException('A product SKU is required.');
-    }
+    $service = new InventoryService($conn);
 
-    $conn->begin_transaction();
-    try {
-        $stmt = $conn->prepare('SELECT owner_id, stock, quantity, reorder_threshold, is_skuze_official FROM products WHERE sku = ? FOR UPDATE');
-        if ($stmt === false) {
-            throw new RuntimeException('Unable to prepare inventory lookup.');
-        }
-        $stmt->bind_param('s', $sku);
-        if (!$stmt->execute()) {
-            $stmt->close();
-            throw new RuntimeException('Unable to load inventory record.');
-        }
-        $stmt->bind_result($ownerId, $stock, $quantity, $threshold, $isOfficialProduct);
-        if (!$stmt->fetch()) {
-            $stmt->close();
-            throw new RuntimeException('Inventory record not found.');
-        }
-        $stmt->close();
-
-        $ownerId = (int) $ownerId;
-        $currentStock = (int) $stock;
-        $currentQuantity = $quantity !== null ? (int) $quantity : null;
-        $currentThreshold = (int) $threshold;
-        $isOfficialProduct = (bool) $isOfficialProduct;
-
-        $canManage = $ownerId === $viewerId || $isAdmin || ($isOfficial && $isOfficialProduct);
-        if (!$canManage) {
-            throw new RuntimeException('You do not have permission to adjust this inventory item.');
-        }
-
-        $newStock = max(0, $currentStock + $delta);
-        $newQuantity = $currentQuantity !== null ? max(0, $currentQuantity + $delta) : null;
-        $nextThreshold = $reorderThreshold ?? $currentThreshold;
-        if ($nextThreshold < 0) {
-            $nextThreshold = 0;
-        }
-
-        if ($currentQuantity !== null) {
-            $stmt = $conn->prepare('UPDATE products SET stock = ?, quantity = ?, reorder_threshold = ? WHERE sku = ?');
-            if ($stmt === false) {
-                throw new RuntimeException('Unable to prepare inventory update.');
-            }
-            $stmt->bind_param('iiis', $newStock, $newQuantity, $nextThreshold, $sku);
-        } else {
-            $stmt = $conn->prepare('UPDATE products SET stock = ?, reorder_threshold = ? WHERE sku = ?');
-            if ($stmt === false) {
-                throw new RuntimeException('Unable to prepare inventory update.');
-            }
-            $stmt->bind_param('iis', $newStock, $nextThreshold, $sku);
-        }
-
-        if (!$stmt->execute()) {
-            $stmt->close();
-            throw new RuntimeException('Failed to update inventory.');
-        }
-        $stmt->close();
-
-        $conn->commit();
-
-        return [
-            'sku' => $sku,
-            'stock' => $newStock,
-            'quantity' => $newQuantity,
-            'reorder_threshold' => $nextThreshold,
-        ];
-    } catch (Throwable $e) {
-        $conn->rollback();
-        throw $e;
-    }
+    return $service->adjustProductStock($sku, $delta, $viewerId, $reorderThreshold, $isAdmin, $isOfficial);
 }
 
 /**
@@ -365,43 +306,9 @@ function store_update_order_status(
     bool $isAdmin,
     bool $isOfficial
 ): array {
-    $statusOptions = order_fulfillment_status_options();
-    if (!array_key_exists($status, $statusOptions)) {
-        throw new RuntimeException('Unsupported fulfillment status.');
-    }
+    $service = new OrdersService($conn);
 
-    $order = $isAdmin
-        ? fetch_order_detail_for_admin($conn, $orderId, $viewerId)
-        : fetch_order_detail_for_user($conn, $orderId, $viewerId);
-
-    if (!$order && $isOfficial) {
-        $order = fetch_order_detail_for_admin($conn, $orderId, $viewerId);
-    }
-
-    if (!$order) {
-        throw new RuntimeException('Order could not be found.');
-    }
-
-    if (!store_user_can_manage_order($order, $viewerId, $isAdmin, $isOfficial)) {
-        throw new RuntimeException('You do not have permission to update this order.');
-    }
-
-    $stmt = $conn->prepare('UPDATE order_fulfillments SET status = ? WHERE id = ?');
-    if ($stmt === false) {
-        throw new RuntimeException('Unable to prepare order update.');
-    }
-    $stmt->bind_param('si', $status, $orderId);
-    if (!$stmt->execute()) {
-        $stmt->close();
-        throw new RuntimeException('Failed to update the order status.');
-    }
-    $stmt->close();
-
-    return [
-        'order_id' => $orderId,
-        'status' => $status,
-        'status_label' => $statusOptions[$status],
-    ];
+    return $service->updateStatus($orderId, $status, $viewerId, $isAdmin, $isOfficial);
 }
 
 /**
@@ -417,55 +324,7 @@ function store_update_order_tracking(
     bool $isAdmin,
     bool $isOfficial
 ): array {
-    $tracking = $tracking !== null ? trim($tracking) : null;
-    if ($tracking === '') {
-        $tracking = null;
-    }
+    $service = new OrdersService($conn);
 
-    if ($tracking !== null && strlen($tracking) > 100) {
-        throw new RuntimeException('Tracking numbers must be 100 characters or fewer.');
-    }
-
-    $order = $isAdmin
-        ? fetch_order_detail_for_admin($conn, $orderId, $viewerId)
-        : fetch_order_detail_for_user($conn, $orderId, $viewerId);
-
-    if (!$order && $isOfficial) {
-        $order = fetch_order_detail_for_admin($conn, $orderId, $viewerId);
-    }
-
-    if (!$order) {
-        throw new RuntimeException('Order could not be found.');
-    }
-
-    if (!store_user_can_manage_order($order, $viewerId, $isAdmin, $isOfficial)) {
-        throw new RuntimeException('You do not have permission to update tracking for this order.');
-    }
-
-    if ($tracking !== null) {
-        $stmt = $conn->prepare('UPDATE order_fulfillments SET tracking_number = ? WHERE id = ?');
-    } else {
-        $stmt = $conn->prepare('UPDATE order_fulfillments SET tracking_number = NULL WHERE id = ?');
-    }
-
-    if ($stmt === false) {
-        throw new RuntimeException('Unable to prepare tracking update.');
-    }
-
-    if ($tracking !== null) {
-        $stmt->bind_param('si', $tracking, $orderId);
-    } else {
-        $stmt->bind_param('i', $orderId);
-    }
-
-    if (!$stmt->execute()) {
-        $stmt->close();
-        throw new RuntimeException('Failed to update tracking details.');
-    }
-    $stmt->close();
-
-    return [
-        'order_id' => $orderId,
-        'tracking_number' => $tracking,
-    ];
+    return $service->updateTracking($orderId, $tracking, $viewerId, $isAdmin, $isOfficial);
 }

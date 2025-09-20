@@ -1,8 +1,13 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/authz.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
 require 'includes/tags.php';
+require_once __DIR__ . '/includes/repositories/ChangeRequestsService.php';
+require_once __DIR__ . '/includes/repositories/ListingsRepo.php';
+
+ensure_seller();
 
 $user_id = $_SESSION['user_id'];
 $is_vip = false;
@@ -14,11 +19,6 @@ if ($stmt = $conn->prepare('SELECT vip_status, vip_expires_at FROM users WHERE i
         $is_vip = $vip && (!$vip_expires || strtotime($vip_expires) > time());
     }
     $stmt->close();
-}
-
-if (!$is_vip) {
-    header('Location: vip.php?upgrade=1');
-    exit;
 }
 
 $error = '';
@@ -78,16 +78,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if (!$error) {
-            $status = $is_vip ? 'approved' : 'pending';
-            $stmt = $conn->prepare("INSERT INTO listings (owner_id, title, description, `condition`, price, category, tags, image, status, pickup_only) VALUES (?,?,?,?,?,?,?,?,?,?)");
-            if ($stmt) {
-                $stmt->bind_param('issssssssi', $user_id, $title, $description, $condition, $price, $category, $tags_storage, $imageName, $status, $pickup_only);
-                $stmt->execute();
-                $stmt->close();
-                header('Location: my-listings.php');
-                exit;
+            $changeRequests = new ChangeRequestsService($conn);
+            $repo = new ListingsRepo($conn, $changeRequests);
+            $data = [
+                'title' => $title,
+                'description' => $description,
+                'condition' => $condition,
+                'price' => $price,
+                'category' => $category !== '' ? $category : null,
+                'tags' => $tags_storage,
+                'image' => $imageName,
+                'pickup_only' => $pickup_only,
+                'quantity' => 1,
+            ];
+
+            $result = $repo->create($user_id, $data, $is_vip);
+            if (!$result['success']) {
+                $error = $result['error'] ?? 'Unable to create listing.';
             } else {
-                $error = 'Database error.';
+                header('Location: /shop-manager/index.php?tab=listings');
+                exit;
             }
         }
     }

@@ -1,7 +1,10 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/store.php';
 require_once __DIR__ . '/../includes/csrf.php';
+
+ensure_seller();
 
 $userId = (int) ($_SESSION['user_id'] ?? 0);
 $isAdmin = store_session_is_admin();

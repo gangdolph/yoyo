@@ -60,7 +60,7 @@ $orders = fetch_orders_for_user($conn, (int) $id);
         <ul class="nav-links">
           <li><a class="btn" role="button" href="services.php">Start a Service Request</a></li>
           <li><a class="btn" role="button" href="my-requests.php">View My Service Requests</a></li>
-          <li><a class="btn" role="button" href="my-listings.php">Manage My Listings</a></li>
+          <li><a class="btn" role="button" href="shop-manager/index.php">Manage My Shop</a></li>
         </ul>
       </div>
       <div class="nav-section">
