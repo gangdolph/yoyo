@@ -14,6 +14,8 @@ require __DIR__ . '/_debug_bootstrap.php';
 require_once __DIR__ . '/includes/auth.php';
 $maybeDb = require __DIR__ . '/includes/db.php';  // may return mysqli OR set $conn/$mysqli
 $config  = require __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/repositories/InventoryService.php';
+require_once __DIR__ . '/includes/repositories/OrdersService.php';
 
 try {
   /* --------------------------- Resolve mysqli handle --------------------------- */
@@ -46,6 +48,11 @@ try {
   }
 
   /* ------------------------------ Config/inputs -------------------------------- */
+  $inventoryService = new InventoryService($db);
+  $ordersService = new OrdersService($db, $inventoryService);
+  $buyerId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
+  $reservationQty = 0;
+
   $env         = strtolower(trim($config['square_environment'] ?? 'sandbox'));
   $accessToken = trim((string)($config['square_access_token'] ?? ''));
   $locationId  = trim((string)($config['square_location_id'] ?? ''));
@@ -62,7 +69,15 @@ try {
   $coupon_code = isset($_POST['coupon_code']) && is_string($_POST['coupon_code']) ? trim($_POST['coupon_code']) : '';
 
   // Helper: redirect to cancel with short reason + log
-  $fail = function (string $reason, string $logDetail = '') {
+  $fail = function (string $reason, string $logDetail = '') use (&$reservationQty, $inventoryService, $listing_id, $buyerId) {
+    if ($reservationQty > 0) {
+      try {
+        $inventoryService->releaseListing($listing_id, $reservationQty, $buyerId);
+      } catch (Throwable $releaseError) {
+        error_log('[checkout_process] release_failed listing_id=' . $listing_id . ' :: ' . $releaseError->getMessage());
+      }
+      $reservationQty = 0;
+    }
     if ($logDetail !== '') error_log('[checkout_process] ' . $reason . ' :: ' . $logDetail);
     header('Location: /cancel.php?reason=' . urlencode($reason));
     exit;
@@ -86,10 +101,13 @@ try {
     $productOfficial = 0;
     $productLine = 0;
     $listingOfficial = 0;
-    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.stock, p.is_skuze_official, p.is_skuze_product, l.is_official_listing FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+    $listingQuantity = 1;
+    $listingReserved = 0;
+    $listingStatus = 'draft';
+    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.stock, p.is_skuze_official, p.is_skuze_product, l.is_official_listing, l.quantity, l.reserved_qty, l.status FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
     $stmt->bind_param('i', $listing_id);
     $stmt->execute();
-    $stmt->bind_result($basePrice, $salePrice, $sku, $stock, $productOfficial, $productLine, $listingOfficial);
+    $stmt->bind_result($basePrice, $salePrice, $sku, $stock, $productOfficial, $productLine, $listingOfficial, $listingQuantityRow, $listingReservedRow, $listingStatus);
     if (!$stmt->fetch()) {
       $stmt->close();
       $fail('listing_not_found', 'listing_id=' . $listing_id);
@@ -106,6 +124,9 @@ try {
     $productOfficial = (int) $productOfficial;
     $productLine = (int) $productLine;
     $listingOfficial = (int) $listingOfficial;
+    $listingQuantity = $listingQuantityRow !== null ? (int) $listingQuantityRow : 1;
+    $listingReserved = $listingReservedRow !== null ? (int) $listingReservedRow : 0;
+    $listingStatus = (string) $listingStatus;
 
     $price = $salePrice !== null ? $salePrice : $basePrice;
     $discount = 0.0;
@@ -132,6 +153,21 @@ try {
     }
     if ($stock !== null && $stock <= 0) {
       $fail('out_of_stock', 'sku=' . (string)$sku);
+    }
+
+    if (!in_array($listingStatus, ['approved', 'live'], true)) {
+      $fail('listing_not_available', 'listing_status=' . $listingStatus);
+    }
+
+    if ($listingQuantity - $listingReserved <= 0) {
+      $fail('out_of_stock', 'listing_reservations');
+    }
+
+    try {
+      $inventoryService->reserveListing($listing_id, 1, $buyerId);
+      $reservationQty = 1;
+    } catch (Throwable $reservationError) {
+      $fail('out_of_stock', 'reservation_failed listing_id=' . $listing_id);
     }
 
   $amount = (int)round(((float)$price) * 100); // cents
@@ -201,37 +237,53 @@ try {
         $paymentDbId = $db->insert_id;
         $stmt->close();
       }
-      if (isset($_SESSION['shipping'][$listing_id])) {
-        $ship = $_SESSION['shipping'][$listing_id];
-        $tracking = null;
-        $orderStatus = 'pending';
-        $isOfficialOrder = ($productOfficial === 1 || $productLine === 1 || $listingOfficial === 1) ? 1 : 0;
-        $shippingProfileId = isset($ship['profile_id']) ? (int)$ship['profile_id'] : 0;
-        $shipAddress = (string)($ship['address'] ?? '');
-        $shipMethod = (string)($ship['method'] ?? '');
-        $shipNotes = (string)($ship['notes'] ?? '');
-        $shippingSnapshot = json_encode([
-          'address' => $shipAddress,
-          'delivery_method' => $shipMethod,
-          'notes' => $shipNotes,
-        ], JSON_UNESCAPED_UNICODE);
-        if ($shippingSnapshot === false) {
-          $shippingSnapshot = null;
-        }
-          if ($stmt = $db->prepare('INSERT INTO order_fulfillments (payment_id, user_id, listing_id, sku, shipping_address, delivery_method, notes, tracking_number, status, shipping_profile_id, shipping_snapshot, is_official_order) VALUES (?,?,?,?,?,?,?,?,?, NULLIF(?, 0), ?, ?)')) {
-            $stmt->bind_param('iiissssssisi', $paymentDbId, $user_id, $listing_id, $sku, $shipAddress, $shipMethod, $shipNotes, $tracking, $orderStatus, $shippingProfileId, $shippingSnapshot, $isOfficialOrder);
-            $stmt->execute();
-            $stmt->close();
-          }
-          if ($sku !== null && $sku !== '' && $stock !== null) {
-            if ($stmt = $db->prepare('UPDATE products SET stock = GREATEST(stock - 1, 0), quantity = CASE WHEN quantity IS NULL THEN NULL ELSE GREATEST(quantity - 1, 0) END WHERE sku = ? AND stock > 0')) {
-              $stmt->bind_param('s', $sku);
-              $stmt->execute();
-              $stmt->close();
-            }
-          }
-        unset($_SESSION['shipping'][$listing_id]);
+      $ship = $_SESSION['shipping'][$listing_id] ?? [];
+      $isOfficialOrder = ($productOfficial === 1 || $productLine === 1 || $listingOfficial === 1) ? 1 : 0;
+      $shippingProfileId = isset($ship['profile_id']) ? (int) $ship['profile_id'] : 0;
+      $shipAddress = (string) ($ship['address'] ?? '');
+      $shipMethod = (string) ($ship['method'] ?? '');
+      $shipNotes = (string) ($ship['notes'] ?? '');
+      $shippingSnapshot = json_encode([
+        'address' => $shipAddress,
+        'delivery_method' => $shipMethod,
+        'notes' => $shipNotes,
+      ], JSON_UNESCAPED_UNICODE);
+      if ($shippingSnapshot === false) {
+        $shippingSnapshot = null;
       }
+
+      try {
+        $ordersService->createFulfillment(
+          $paymentDbId,
+          $user_id,
+          $listing_id,
+          [
+            'address' => $shipAddress,
+            'delivery_method' => $shipMethod,
+            'notes' => $shipNotes,
+            'snapshot' => $shippingSnapshot,
+          ],
+          [
+            'sku' => $sku,
+            'is_official_order' => $isOfficialOrder,
+            'shipping_profile_id' => $shippingProfileId,
+            'quantity' => $reservationQty > 0 ? $reservationQty : 1,
+          ]
+        );
+        $reservationQty = 0;
+      } catch (Throwable $orderError) {
+        if ($reservationQty > 0) {
+          try {
+            $inventoryService->releaseListing($listing_id, $reservationQty, $buyerId);
+          } catch (Throwable $releaseError) {
+            error_log('[checkout_process] release_failed listing_id=' . $listing_id . ' :: ' . $releaseError->getMessage());
+          }
+          $reservationQty = 0;
+        }
+        throw $orderError;
+      }
+
+      unset($_SESSION['shipping'][$listing_id]);
     } catch (\Throwable $e) {
       error_log('Payment log insert failed: ' . $e->getMessage());
     }
@@ -253,6 +305,13 @@ try {
   $fail($short, 'detail=' . $errDetail);
 
 } catch (Throwable $e) {
+  if (isset($reservationQty) && $reservationQty > 0 && isset($inventoryService, $listing_id, $buyerId)) {
+    try {
+      $inventoryService->releaseListing($listing_id, $reservationQty, $buyerId);
+    } catch (Throwable $releaseError) {
+      error_log('[checkout_process] release_failed listing_id=' . $listing_id . ' :: ' . $releaseError->getMessage());
+    }
+  }
   error_log('[checkout_process] ' . $e->getMessage() . ' in ' . $e->getFile() . ':' . $e->getLine());
   if (!headers_sent()) header('HTTP/1.1 500 Internal Server Error');
   echo 'Payment processing error.';

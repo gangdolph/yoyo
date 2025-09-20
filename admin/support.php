@@ -1,14 +1,12 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require '../includes/db.php';
 require '../includes/csrf.php';
 require '../includes/support.php';
 require '../includes/user.php';
 
-if (!is_admin()) {
-    header('Location: ../dashboard.php');
-    exit;
-}
+ensure_admin('../dashboard.php');
 
 $statusFilter = $_GET['status'] ?? null;
 $allowedStatuses = ['open', 'pending', 'closed'];

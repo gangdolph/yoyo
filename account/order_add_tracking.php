@@ -1,16 +1,22 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/store.php';
 require_once __DIR__ . '/../includes/csrf.php';
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    header('Content-Type: application/json');
-    echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
+header('Content-Type: application/json');
+
+if (!authz_has_role('seller')) {
+    http_response_code(403);
+    echo json_encode(['success' => false, 'message' => 'Seller access required.']);
     exit;
 }
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['success' => false, 'message' => 'Method not allowed.']);
+    exit;
+}
 
 if (!validate_token($_POST['csrf_token'] ?? '')) {
     echo json_encode(['success' => false, 'message' => 'Invalid request token.']);

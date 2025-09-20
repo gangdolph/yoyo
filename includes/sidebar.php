@@ -10,6 +10,7 @@
       <li><a href="trade-listings.php">Trade Listings</a></li>
       <li><a href="trade-listing.php">Create Listing</a></li>
       <li><a href="promoted.php">Promoted Shops</a></li>
+      <li><a href="shop-manager/index.php">Shop Manager</a></li>
       <li><a href="vip.php">VIP Plans</a></li>
     </ul>
   </div>

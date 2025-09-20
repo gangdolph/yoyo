@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/authz.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
 
 $user_id = $_SESSION['user_id'] ?? null;
-$is_admin = is_admin();
+$is_admin = authz_has_role('admin');
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && validate_token($_POST['csrf_token'] ?? '')) {
     $id = intval($_POST['id'] ?? 0);

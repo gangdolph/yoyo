@@ -1,12 +1,10 @@
 <?php
 require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/authz.php';
 require '../includes/db.php';
 require '../includes/user.php';
 
-if (!is_admin()) {
-  header("Location: ../dashboard.php");
-  exit;
-}
+ensure_admin('../dashboard.php');
 
 $stmt = $conn->query("SELECT r.id, u.id AS user_id, u.username, r.category, r.issue, r.created_at, r.status
                       FROM service_requests r
