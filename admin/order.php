@@ -3,7 +3,7 @@ require_once __DIR__ . '/../includes/auth.php';
 require '../includes/orders.php';
 require '../includes/csrf.php';
 
-if (empty($_SESSION['is_admin'])) {
+if (!is_admin()) {
     header('Location: ../dashboard.php');
     exit;
 }
@@ -22,8 +22,7 @@ if ($orderId <= 0) {
 $amountDisplay = '—';
 $paymentStatus = 'pending';
 $shippingStatus = 'pending';
-$badgeClass = 'badge-community';
-$badgeLabel = 'Community Listing';
+$badges = [];
 $statusOptions = order_fulfillment_status_options();
 $statusLabel = $statusOptions[$shippingStatus] ?? ucfirst($shippingStatus);
 $flash = $_SESSION['order_admin_flash'] ?? null;
@@ -38,9 +37,15 @@ if ($order) {
     $paymentStatus = $order['payment']['status'] ?? 'pending';
     $shippingStatus = $order['shipping_status'] ?? 'pending';
     $statusLabel = $statusOptions[$shippingStatus] ?? ucfirst($shippingStatus);
-    $isOfficial = $order['product']['is_official'] ?? false;
-    $badgeClass = $isOfficial ? 'badge-official' : 'badge-community';
-    $badgeLabel = $isOfficial ? 'Official SkuzE' : 'Community Listing';
+    if (!empty($order['listing']['is_official']) || !empty($order['product']['is_skuze_official']) || !empty($order['is_official_order'])) {
+        $badges[] = ['class' => 'badge-official', 'label' => 'SkuzE Official'];
+    }
+    if (!empty($order['product']['is_skuze_product'])) {
+        $badges[] = ['class' => 'badge-product', 'label' => 'SkuzE Product'];
+    }
+    if (!$badges) {
+        $badges[] = ['class' => 'badge-community', 'label' => 'Community Listing'];
+    }
 }
 ?>
 <?php require '../includes/layout.php'; ?>
@@ -68,14 +73,18 @@ if ($order) {
           <li><strong>Direction:</strong> <?= htmlspecialchars(ucfirst($order['direction']), ENT_QUOTES, 'UTF-8') ?></li>
           <li><strong>Buyer:</strong> <?= htmlspecialchars($order['buyer']['username'] ?? '—', ENT_QUOTES, 'UTF-8') ?></li>
           <li><strong>Seller:</strong> <?= htmlspecialchars($order['listing']['owner_username'] ?? '—', ENT_QUOTES, 'UTF-8') ?></li>
-          <li><strong>Listing:</strong> <a href="../listing.php?id=<?= (int) $order['listing']['id'] ?>"><?= htmlspecialchars($order['listing']['title'], ENT_QUOTES, 'UTF-8') ?></a></li>
-          <li><strong>Inventory Remaining:</strong> <?= (int) $order['product']['quantity'] ?></li>
+          <li><strong>Listing:</strong> <a href="../listing.php?listing_id=<?= (int) $order['listing']['id'] ?>"><?= htmlspecialchars($order['listing']['title'], ENT_QUOTES, 'UTF-8') ?></a></li>
+          <li><strong>Inventory Remaining:</strong> <?= (int) ($order['product']['stock'] ?? 0) ?></li>
           <li><strong>Reorder Threshold:</strong> <?= (int) $order['product']['reorder_threshold'] ?></li>
         </ul>
       </section>
       <section class="order-product">
         <h3>Product</h3>
-        <p><span class="badge <?= htmlspecialchars($badgeClass, ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($badgeLabel, ENT_QUOTES, 'UTF-8') ?></span></p>
+        <p>
+          <?php foreach ($badges as $badge): ?>
+            <span class="badge <?= htmlspecialchars($badge['class'], ENT_QUOTES, 'UTF-8') ?>"><?= htmlspecialchars($badge['label'], ENT_QUOTES, 'UTF-8') ?></span>
+          <?php endforeach; ?>
+        </p>
         <ul>
           <li><strong>Title:</strong> <?= htmlspecialchars($order['product']['title'] ?: $order['listing']['title'], ENT_QUOTES, 'UTF-8') ?></li>
           <li><strong>SKU:</strong> <?= htmlspecialchars($order['product']['sku'], ENT_QUOTES, 'UTF-8') ?></li>

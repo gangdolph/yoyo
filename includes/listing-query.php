@@ -91,12 +91,12 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
     $page = max(1, $filters['page']);
     $tagFilters = $filters['tags'];
 
-    $where = "WHERE status='approved'";
+    $where = "WHERE l.status='approved'";
     $params = [];
     $types = '';
 
     if ($search !== '') {
-        $where .= " AND (title LIKE ? OR description LIKE ?)";
+        $where .= " AND (l.title LIKE ? OR l.description LIKE ?)";
         $like = "%{$search}%";
         $params[] = $like;
         $params[] = $like;
@@ -104,13 +104,13 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
     }
 
     if ($category !== '') {
-        $where .= " AND category = ?";
+        $where .= " AND l.category = ?";
         $params[] = $category;
         $types .= 's';
     }
 
     if ($condition !== '') {
-        $where .= " AND `condition` = ?";
+        $where .= " AND l.`condition` = ?";
         $params[] = $condition;
         $types .= 's';
     }
@@ -120,7 +120,7 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
         if ($tagMatchers) {
             $clauses = [];
             foreach ($tagMatchers as $tag) {
-                $clauses[] = 'tags LIKE ?';
+                $clauses[] = 'l.tags LIKE ?';
                 $params[] = tag_like_parameter($tag);
                 $types .= 's';
             }
@@ -132,13 +132,13 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
 
     if (!empty($tagFilters)) {
         foreach ($tagFilters as $tag) {
-            $where .= " AND tags LIKE ?";
+            $where .= " AND l.tags LIKE ?";
             $params[] = tag_like_parameter($tag);
             $types .= 's';
         }
     }
 
-    $countSql = "SELECT COUNT(*) FROM listings $where";
+    $countSql = "SELECT COUNT(*) FROM listings l $where";
     $stmt = $conn->prepare($countSql);
     if ($types !== '') {
         $stmt->bind_param($types, ...$params);
@@ -162,7 +162,7 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
         $orderBy = 'created_at DESC';
     }
 
-    $sql = "SELECT id, title, description, price, sale_price, category, tags, image, `condition` FROM listings $where ORDER BY $orderBy LIMIT ? OFFSET ?";
+    $sql = "SELECT l.id, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.`condition`, l.product_sku, l.is_official_listing, p.is_skuze_official, p.is_skuze_product FROM listings l LEFT JOIN products p ON l.product_sku = p.sku $where ORDER BY $orderBy LIMIT ? OFFSET ?";
     $paramsLimit = $params;
     $typesLimit = $types . 'ii';
     $paramsLimit[] = $limit;

@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $insert->bind_param('iis', $user_id, $recipient_id, $body);
         $insert->execute();
         $insert->close();
-        if (!empty($_SESSION['is_admin'])) {
+        if (is_admin()) {
           $msg = notification_message('admin_message');
           create_notification($conn, $recipient_id, 'admin_message', $msg);
         }

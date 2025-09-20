@@ -4,7 +4,7 @@ require '../includes/db.php';
 require '../includes/user.php';
 require '../includes/csrf.php';
 
-if (!$_SESSION['is_admin']) {
+if (!is_admin()) {
   header('Location: ../dashboard.php');
   exit;
 }
@@ -22,16 +22,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   } else {
     $email = trim($_POST['email'] ?? '');
     $status = $_POST['status'] ?? 'offline';
-    $is_admin = isset($_POST['is_admin']) ? 1 : 0;
+    $role = $_POST['role'] ?? 'user';
 
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
       $error = 'Please enter a valid email.';
     } elseif (!in_array($status, $statuses, true)) {
       $error = 'Invalid status.';
+    } elseif (!in_array($role, ['user', 'skuze_official', 'admin'], true)) {
+      $error = 'Invalid role selection.';
     } else {
-      $stmt = $conn->prepare('UPDATE users SET email = ?, status = ?, is_admin = ? WHERE id = ?');
+      $is_admin = $role === 'admin' ? 1 : 0;
+      $stmt = $conn->prepare('UPDATE users SET email = ?, status = ?, role = ?, is_admin = ? WHERE id = ?');
       if ($stmt) {
-        $stmt->bind_param('ssii', $email, $status, $is_admin, $id);
+        $stmt->bind_param('sssii', $email, $status, $role, $is_admin, $id);
         if ($stmt->execute()) {
           $success = 'User updated successfully.';
         } else {
@@ -47,17 +50,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 }
 
-$stmt = $conn->prepare('SELECT username, email, status, is_admin FROM users WHERE id = ?');
+$stmt = $conn->prepare('SELECT username, email, status, role FROM users WHERE id = ?');
 if ($stmt) {
   $stmt->bind_param('i', $id);
   $stmt->execute();
-  $stmt->bind_result($username, $email, $status, $is_admin);
-  if (!$stmt->fetch()) {
-    $stmt->close();
-    header('Location: users.php');
-    exit;
-  }
-  $stmt->close();
+  $stmt->bind_result($username, $email, $status, $role);
+ if (!$stmt->fetch()) {
+   $stmt->close();
+   header('Location: users.php');
+   exit;
+ }
+ $stmt->close();
+  $role = $role ?: 'user';
 } else {
   error_log('Prepare failed fetching user: ' . $conn->error);
   header('Location: users.php');
@@ -86,8 +90,12 @@ if ($stmt) {
       </select>
     </label><br>
     <p class="notice">Status controls the animated border shown with the user's name.</p>
-    <label>
-      <input type="checkbox" name="is_admin" value="1" <?= $is_admin ? 'checked' : '' ?>> Admin
+    <label>Role:
+      <select name="role">
+        <option value="user" <?= $role === 'user' ? 'selected' : '' ?>>Standard</option>
+        <option value="skuze_official" <?= $role === 'skuze_official' ? 'selected' : '' ?>>SkuzE Official</option>
+        <option value="admin" <?= $role === 'admin' ? 'selected' : '' ?>>Admin</option>
+      </select>
     </label><br>
     <button type="submit">Save</button>
   </form>

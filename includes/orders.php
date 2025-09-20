@@ -60,9 +60,9 @@ function fetch_orders_for_admin(mysqli $conn, ?bool $officialOnly = null, ?int $
     );
     $sql .= ' WHERE 1=1';
     if ($officialOnly === true) {
-        $sql .= ' AND prod.is_official = 1';
+        $sql .= ' AND (prod.is_skuze_official = 1 OR prod.is_skuze_product = 1 OR l.is_official_listing = 1 OR of.is_official_order = 1)';
     } elseif ($officialOnly === false) {
-        $sql .= ' AND prod.is_official = 0';
+        $sql .= ' AND (COALESCE(prod.is_skuze_official, 0) = 0 AND COALESCE(prod.is_skuze_product, 0) = 0 AND COALESCE(l.is_official_listing, 0) = 0 AND COALESCE(of.is_official_order, 0) = 0)';
     }
     $sql .= ' ORDER BY of.created_at DESC';
 
@@ -157,6 +157,8 @@ function _orders_build_select_sql(string $directionExpression): string {
         . ' of.tracking_number,'
         . ' of.delivery_method,'
         . ' of.notes,'
+        . ' of.is_official_order,'
+        . ' of.shipping_snapshot,'
         . ' of.created_at AS placed_at,'
         . ' of.user_id AS fulfillment_user_id,'
         . ' pay.id AS payment_id,'
@@ -170,11 +172,13 @@ function _orders_build_select_sql(string $directionExpression): string {
         . ' l.owner_id AS listing_owner_id,'
         . ' l.price AS listing_price,'
         . ' l.status AS listing_status,'
+        . ' l.is_official_listing AS listing_is_official,'
         . ' prod.sku AS product_sku,'
         . ' prod.title AS product_title,'
-        . ' prod.quantity AS product_quantity,'
+        . ' prod.stock AS product_stock,'
         . ' prod.reorder_threshold AS product_reorder_threshold,'
-        . ' prod.is_official AS product_is_official,'
+        . ' prod.is_skuze_official AS product_is_skuze_official,'
+        . ' prod.is_skuze_product AS product_is_skuze_product,'
         . ' seller.username AS seller_username,'
         . ' buyer.username AS buyer_username,'
         . ' ' . $directionExpression . ' AS direction'
@@ -197,6 +201,8 @@ function _orders_normalize_row(array $row): array {
         'tracking_number' => $row['tracking_number'],
         'delivery_method' => $row['delivery_method'],
         'notes' => $row['notes'],
+        'is_official_order' => !empty($row['is_official_order']),
+        'shipping_snapshot' => $row['shipping_snapshot'],
         'placed_at' => $row['placed_at'],
         'fulfillment_user_id' => (int) $row['fulfillment_user_id'],
         'listing' => [
@@ -206,13 +212,16 @@ function _orders_normalize_row(array $row): array {
             'status' => $row['listing_status'],
             'owner_id' => (int) $row['listing_owner_id'],
             'owner_username' => $row['seller_username'],
+            'is_official' => !empty($row['listing_is_official']),
         ],
         'product' => [
             'sku' => $row['product_sku'],
             'title' => $row['product_title'],
-            'quantity' => $row['product_quantity'] !== null ? (int) $row['product_quantity'] : null,
+            'stock' => $row['product_stock'] !== null ? (int) $row['product_stock'] : null,
             'reorder_threshold' => $row['product_reorder_threshold'] !== null ? (int) $row['product_reorder_threshold'] : null,
-            'is_official' => $row['product_is_official'] !== null ? (bool) $row['product_is_official'] : null,
+            'is_skuze_official' => $row['product_is_skuze_official'] !== null ? (bool) $row['product_is_skuze_official'] : null,
+            'is_skuze_product' => $row['product_is_skuze_product'] !== null ? (bool) $row['product_is_skuze_product'] : null,
+            'is_official' => (!empty($row['product_is_skuze_official']) || !empty($row['listing_is_official'])),
         ],
         'payment' => [
             'id' => $row['payment_id'] !== null ? (int) $row['payment_id'] : null,

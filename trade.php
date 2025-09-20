@@ -128,7 +128,7 @@ if ($listing_filter) {
                 <?php if ($o['use_escrow']): ?>
                   <a href="escrow.php?offer=<?= $o['id'] ?>">Escrow</a>
                 <?php endif; ?>
-                <?php if (!empty($_SESSION['is_admin'])): ?>
+                <?php if (is_admin()): ?>
                   <form method="post" action="trade-offer-delete.php" style="display:inline" onsubmit="return confirm('Delete offer?');">
                     <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
                     <input type="hidden" name="id" value="<?= $o['id']; ?>">
@@ -161,7 +161,7 @@ if ($listing_filter) {
                 <?php if ($o['use_escrow']): ?>
                   <a href="escrow.php?offer=<?= $o['id'] ?>">Escrow</a>
                 <?php endif; ?>
-                <?php if (!empty($_SESSION['is_admin'])): ?>
+                <?php if (is_admin()): ?>
                   <form method="post" action="trade-offer-delete.php" style="display:inline" onsubmit="return confirm('Delete offer?');">
                     <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
                     <input type="hidden" name="id" value="<?= $o['id']; ?>">

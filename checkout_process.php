@@ -83,10 +83,13 @@ try {
     $salePrice = null;
     $sku = null;
     $stock = null;
-    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.quantity FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+    $productOfficial = 0;
+    $productLine = 0;
+    $listingOfficial = 0;
+    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.stock, p.is_skuze_official, p.is_skuze_product, l.is_official_listing FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
     $stmt->bind_param('i', $listing_id);
     $stmt->execute();
-    $stmt->bind_result($basePrice, $salePrice, $sku, $stock);
+    $stmt->bind_result($basePrice, $salePrice, $sku, $stock, $productOfficial, $productLine, $listingOfficial);
     if (!$stmt->fetch()) {
       $stmt->close();
       $fail('listing_not_found', 'listing_id=' . $listing_id);
@@ -100,6 +103,9 @@ try {
     $basePrice = (float)$basePrice;
     $salePrice = ($salePrice !== null && $salePrice !== '') ? (float)$salePrice : null;
     $stock = ($stock !== null) ? (int)$stock : null;
+    $productOfficial = (int) $productOfficial;
+    $productLine = (int) $productLine;
+    $listingOfficial = (int) $listingOfficial;
 
     $price = $salePrice !== null ? $salePrice : $basePrice;
     $discount = 0.0;
@@ -199,13 +205,26 @@ try {
         $ship = $_SESSION['shipping'][$listing_id];
         $tracking = null;
         $orderStatus = 'pending';
-          if ($stmt = $db->prepare('INSERT INTO order_fulfillments (payment_id, user_id, listing_id, sku, shipping_address, delivery_method, notes, tracking_number, status) VALUES (?,?,?,?,?,?,?,?,?)')) {
-            $stmt->bind_param('iiissssss', $paymentDbId, $user_id, $listing_id, $sku, $ship['address'], $ship['method'], $ship['notes'], $tracking, $orderStatus);
+        $isOfficialOrder = ($productOfficial === 1 || $productLine === 1 || $listingOfficial === 1) ? 1 : 0;
+        $shippingProfileId = isset($ship['profile_id']) ? (int)$ship['profile_id'] : 0;
+        $shipAddress = (string)($ship['address'] ?? '');
+        $shipMethod = (string)($ship['method'] ?? '');
+        $shipNotes = (string)($ship['notes'] ?? '');
+        $shippingSnapshot = json_encode([
+          'address' => $shipAddress,
+          'delivery_method' => $shipMethod,
+          'notes' => $shipNotes,
+        ], JSON_UNESCAPED_UNICODE);
+        if ($shippingSnapshot === false) {
+          $shippingSnapshot = null;
+        }
+          if ($stmt = $db->prepare('INSERT INTO order_fulfillments (payment_id, user_id, listing_id, sku, shipping_address, delivery_method, notes, tracking_number, status, shipping_profile_id, shipping_snapshot, is_official_order) VALUES (?,?,?,?,?,?,?,?,?, NULLIF(?, 0), ?, ?)')) {
+            $stmt->bind_param('iiissssssisi', $paymentDbId, $user_id, $listing_id, $sku, $shipAddress, $shipMethod, $shipNotes, $tracking, $orderStatus, $shippingProfileId, $shippingSnapshot, $isOfficialOrder);
             $stmt->execute();
             $stmt->close();
           }
           if ($sku !== null && $sku !== '' && $stock !== null) {
-            if ($stmt = $db->prepare('UPDATE products SET quantity = quantity - 1 WHERE sku = ? AND quantity > 0')) {
+            if ($stmt = $db->prepare('UPDATE products SET stock = GREATEST(stock - 1, 0), quantity = CASE WHEN quantity IS NULL THEN NULL ELSE GREATEST(quantity - 1, 0) END WHERE sku = ? AND stock > 0')) {
               $stmt->bind_param('s', $sku);
               $stmt->execute();
               $stmt->close();

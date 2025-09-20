@@ -144,13 +144,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <button type="submit" name="action" value="fund">Fund Escrow</button>
       </form>
     <?php endif; ?>
-    <?php if (!empty($_SESSION['is_admin']) && $offer['escrow_status'] === 'funded'): ?>
+    <?php if (is_admin() && $offer['escrow_status'] === 'funded'): ?>
       <form method="post" action="escrow.php?offer=<?= $offer_id ?>">
         <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
         <button type="submit" name="action" value="verify">Verify Item</button>
       </form>
     <?php endif; ?>
-    <?php if (!empty($_SESSION['is_admin']) && $offer['escrow_status'] === 'verified'): ?>
+    <?php if (is_admin() && $offer['escrow_status'] === 'verified'): ?>
       <form method="post" action="escrow.php?offer=<?= $offer_id ?>">
         <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
         <button type="submit" name="action" value="release">Release Escrow</button>

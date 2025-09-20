@@ -44,6 +44,16 @@
   wizardRoot.classList.remove('no-js');
   wizardRoot.classList.add('js-enabled');
 
+  const STORAGE_KEY = 'serviceWizardState';
+  const STORAGE_VERSION = '1.0.0';
+  const storage = (() => {
+    try {
+      return window.sessionStorage;
+    } catch (error) {
+      return null;
+    }
+  })();
+
   const state = {
     serviceId: null,
     flow: null,
@@ -51,6 +61,223 @@
     currentIndex: -1,
     stepOrder: [],
   };
+  let suppressPersist = false;
+
+  function buildTaxonomySignature() {
+    const signature = [];
+    flows.forEach((flow, serviceId) => {
+      const stepIds = Array.from(flow.querySelectorAll('[data-step-id]'))
+        .map((step) => step.dataset.stepId || '')
+        .join('|');
+      signature.push(`${serviceId}:${stepIds}`);
+    });
+    signature.sort();
+    return signature.join(';');
+  }
+
+  const taxonomySignature = buildTaxonomySignature();
+
+  function collectActiveFieldValues() {
+    if (!state.flow) {
+      return {};
+    }
+
+    const collected = {};
+    const seen = new Set();
+    state.flow.querySelectorAll('[data-field-name]').forEach((field) => {
+      const fieldName = field.dataset.fieldName;
+      if (!fieldName || seen.has(fieldName)) {
+        return;
+      }
+      seen.add(fieldName);
+
+      if (field instanceof HTMLInputElement && field.type === 'file') {
+        return;
+      }
+
+      collected[fieldName] = getFieldValue(fieldName);
+    });
+
+    return collected;
+  }
+
+  function persistState() {
+    if (!storage) {
+      return;
+    }
+
+    if (!state.serviceId) {
+      try {
+        storage.removeItem(STORAGE_KEY);
+      } catch (error) {
+        // Ignore persistence errors.
+      }
+      return;
+    }
+
+    const payload = {
+      version: STORAGE_VERSION,
+      signature: taxonomySignature,
+      serviceId: state.serviceId,
+      currentStep: state.history[state.currentIndex] || null,
+      history: state.history.slice(),
+      fields: collectActiveFieldValues(),
+    };
+
+    try {
+      storage.setItem(STORAGE_KEY, JSON.stringify(payload));
+    } catch (error) {
+      // Ignore persistence errors.
+    }
+  }
+
+  function clearPersistedState() {
+    if (!storage) {
+      return;
+    }
+
+    try {
+      storage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      // Ignore persistence errors.
+    }
+  }
+
+  function readPersistedState() {
+    if (!storage) {
+      return null;
+    }
+
+    let raw;
+    try {
+      raw = storage.getItem(STORAGE_KEY);
+    } catch (error) {
+      return null;
+    }
+
+    if (!raw) {
+      return null;
+    }
+
+    try {
+      const parsed = JSON.parse(raw);
+      if (!parsed || parsed.version !== STORAGE_VERSION || parsed.signature !== taxonomySignature) {
+        return null;
+      }
+
+      const serviceId = typeof parsed.serviceId === 'string' ? parsed.serviceId : '';
+      if (!serviceId || !flows.has(serviceId)) {
+        return null;
+      }
+
+      const map = stepElements.get(serviceId);
+      if (!map) {
+        return null;
+      }
+
+      const persistedFields = {};
+      if (parsed.fields && typeof parsed.fields === 'object') {
+        Object.keys(parsed.fields).forEach((key) => {
+          persistedFields[key] = parsed.fields[key];
+        });
+      }
+
+      const rawHistory = Array.isArray(parsed.history)
+        ? parsed.history.filter((stepId) => typeof stepId === 'string' && map.has(stepId))
+        : [];
+
+      let currentStep = typeof parsed.currentStep === 'string' && map.has(parsed.currentStep)
+        ? parsed.currentStep
+        : null;
+
+      if (currentStep && rawHistory.indexOf(currentStep) === -1) {
+        rawHistory.push(currentStep);
+      }
+
+      if (!currentStep && rawHistory.length > 0) {
+        currentStep = rawHistory[rawHistory.length - 1];
+      }
+
+      return {
+        serviceId,
+        currentStep,
+        history: rawHistory,
+        fields: persistedFields,
+      };
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function restoreFieldValues(serviceId, fieldValues) {
+    const flow = flows.get(serviceId);
+    if (!flow || !fieldValues || typeof fieldValues !== 'object') {
+      return;
+    }
+
+    Object.keys(fieldValues).forEach((fieldName) => {
+      const fields = Array.from(flow.querySelectorAll(`[data-field-name="${fieldName}"]`));
+      if (fields.length === 0) {
+        return;
+      }
+
+      const value = fieldValues[fieldName];
+      const first = fields[0];
+
+      if (first instanceof HTMLInputElement && first.type === 'checkbox') {
+        const values = Array.isArray(value) ? value.map((item) => String(item)) : [];
+        fields.forEach((field) => {
+          if (field instanceof HTMLInputElement) {
+            field.checked = values.includes(field.value);
+          }
+        });
+        return;
+      }
+
+      if (first instanceof HTMLInputElement && first.type === 'radio') {
+        const selected = value != null ? String(value) : '';
+        fields.forEach((field) => {
+          if (field instanceof HTMLInputElement) {
+            field.checked = field.value === selected;
+          }
+        });
+        return;
+      }
+
+      if (first instanceof HTMLInputElement && first.type === 'file') {
+        return;
+      }
+
+      if (first instanceof HTMLSelectElement) {
+        const selectedValue = Array.isArray(value) ? (value[0] != null ? String(value[0]) : '') : value;
+        fields.forEach((field) => {
+          if (field instanceof HTMLSelectElement) {
+            field.value = selectedValue != null ? String(selectedValue) : '';
+          }
+        });
+        return;
+      }
+
+      if (first instanceof HTMLTextAreaElement) {
+        const resolved = value != null ? String(value) : '';
+        fields.forEach((field) => {
+          if (field instanceof HTMLTextAreaElement) {
+            field.value = resolved;
+          }
+        });
+        return;
+      }
+
+      const resolvedValue = value != null ? String(value) : '';
+      fields.forEach((field) => {
+        if (field instanceof HTMLInputElement) {
+          field.value = resolvedValue;
+        }
+      });
+    });
+  }
+
+  const persistedState = readPersistedState();
 
   function markActiveService(serviceId) {
     serviceOptions.forEach((option) => {
@@ -385,6 +612,7 @@
     state.currentIndex = state.history.length - 1;
     prepareStep(nextStepId);
     showStep(nextStepId);
+    persistState();
   }
 
   function handleBack() {
@@ -393,9 +621,11 @@
     }
     const previousStepId = state.history[state.currentIndex - 1];
     showStep(previousStepId);
+    persistState();
   }
 
-  function startService(serviceId) {
+  function startService(serviceId, options = {}) {
+    const { skipPersist = false } = options;
     if (!flows.has(serviceId)) {
       return;
     }
@@ -451,6 +681,10 @@
     filterModelSelects();
     markActiveService(serviceId);
     updateFooter();
+
+    if (!skipPersist) {
+      persistState();
+    }
   }
 
   picker.addEventListener('change', (event) => {
@@ -463,23 +697,108 @@
     }
   });
 
-  form.addEventListener('change', (event) => {
+  function handleFieldMutation(event) {
     const target = event.target;
     if (!(target instanceof HTMLElement)) {
       return;
     }
-    if (target.dataset.fieldName === 'brand_id') {
+    if (suppressPersist) {
+      return;
+    }
+    const fieldName = target.dataset.fieldName;
+    if (!fieldName) {
+      return;
+    }
+
+    if (fieldName === 'brand_id') {
       filterModelSelects();
+    }
+
+    persistState();
+  }
+
+  form.addEventListener('change', handleFieldMutation);
+  form.addEventListener('input', (event) => {
+    const target = event.target;
+    if (
+      target instanceof HTMLInputElement
+      || target instanceof HTMLTextAreaElement
+      || target instanceof HTMLSelectElement
+    ) {
+      handleFieldMutation(event);
     }
   });
 
   nextButton.addEventListener('click', handleNext);
   backButton.addEventListener('click', handleBack);
 
-  const defaultService = wizardRoot.dataset.defaultService;
-  const initialService = (defaultService && flows.has(defaultService))
-    ? defaultService
-    : (serviceOptions.find((option) => option.checked)?.value || serviceOptions[0].value);
+  form.addEventListener('submit', () => {
+    clearPersistedState();
+  });
 
-  startService(initialService);
+  form.addEventListener('reset', () => {
+    suppressPersist = true;
+    clearPersistedState();
+    window.setTimeout(() => {
+      suppressPersist = false;
+    }, 0);
+  });
+
+  wizardRoot.addEventListener('click', (event) => {
+    const target = event.target;
+    if (target instanceof HTMLElement && target.dataset.action === 'reset') {
+      suppressPersist = true;
+      clearPersistedState();
+      window.setTimeout(() => {
+        suppressPersist = false;
+      }, 0);
+    }
+  });
+
+  const defaultService = wizardRoot.dataset.defaultService;
+  const initialServiceCandidate = persistedState && persistedState.serviceId && flows.has(persistedState.serviceId)
+    ? persistedState.serviceId
+    : null;
+
+  const initialService = initialServiceCandidate
+    || ((defaultService && flows.has(defaultService))
+      ? defaultService
+      : (serviceOptions.find((option) => option.checked)?.value || serviceOptions[0].value));
+
+  startService(initialService, { skipPersist: true });
+
+  if (persistedState && persistedState.serviceId === initialService) {
+    restoreFieldValues(initialService, persistedState.fields);
+    filterModelSelects();
+
+    const map = stepElements.get(initialService);
+    if (map) {
+      if (Array.isArray(persistedState.history) && persistedState.history.length > 0) {
+        state.history = persistedState.history.slice();
+        let currentStepId = persistedState.currentStep && map.has(persistedState.currentStep)
+          ? persistedState.currentStep
+          : state.history[state.history.length - 1];
+        if (currentStepId && state.history.indexOf(currentStepId) === -1) {
+          state.history.push(currentStepId);
+        }
+        if (currentStepId) {
+          state.currentIndex = state.history.indexOf(currentStepId);
+          prepareStep(currentStepId);
+          showStep(currentStepId);
+        }
+      } else if (persistedState.currentStep && map.has(persistedState.currentStep)) {
+        const currentStepId = persistedState.currentStep;
+        if (state.history.indexOf(currentStepId) === -1) {
+          state.history.push(currentStepId);
+        }
+        state.currentIndex = state.history.indexOf(currentStepId);
+        prepareStep(currentStepId);
+        showStep(currentStepId);
+      }
+    }
+
+    persistState();
+  } else {
+    persistState();
+  }
 })();

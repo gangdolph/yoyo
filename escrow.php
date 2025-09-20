@@ -46,7 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $stmt->close();
                 $escrow['status'] = 'funded';
             }
-        } elseif ($action === 'verify' && !empty($_SESSION['is_admin']) && $escrow['status'] === 'funded') {
+        } elseif ($action === 'verify' && is_admin() && $escrow['status'] === 'funded') {
             if ($stmt = $conn->prepare("UPDATE escrow_transactions SET status='verified', verified_by=? WHERE id=?")) {
                 $stmt->bind_param('ii', $user_id, $escrow['escrow_id']);
                 $stmt->execute();
@@ -54,7 +54,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $escrow['status'] = 'verified';
                 $escrow['verified_by'] = $user_id;
             }
-        } elseif ($action === 'release' && !empty($_SESSION['is_admin']) && $escrow['status'] === 'verified') {
+        } elseif ($action === 'release' && is_admin() && $escrow['status'] === 'verified') {
             if ($stmt = $conn->prepare("UPDATE escrow_transactions SET status='released' WHERE id=?")) {
                 $stmt->bind_param('i', $escrow['escrow_id']);
                 $stmt->execute();
@@ -82,13 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <button type="submit" name="action" value="fund">Fund Escrow</button>
     </form>
   <?php endif; ?>
-  <?php if (!empty($_SESSION['is_admin']) && $escrow['status'] === 'funded'): ?>
+  <?php if (is_admin() && $escrow['status'] === 'funded'): ?>
     <form method="post">
       <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
       <button type="submit" name="action" value="verify">Verify Item</button>
     </form>
   <?php endif; ?>
-  <?php if (!empty($_SESSION['is_admin']) && $escrow['status'] === 'verified'): ?>
+  <?php if (is_admin() && $escrow['status'] === 'verified'): ?>
     <form method="post">
       <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
       <button type="submit" name="action" value="release">Release Escrow</button>

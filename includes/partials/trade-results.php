@@ -65,7 +65,7 @@
               <?php endif; ?>
             </td>
             <td>
-              <?php if ((int)$l['owner_id'] === (int)$user_id || !empty($_SESSION['is_admin'])): ?>
+              <?php if ((int)$l['owner_id'] === (int)$user_id || is_admin()): ?>
                 <a href="trade-listing.php?edit=<?= $l['id']; ?>">Edit</a>
                 <form method="post" action="trade-listing-delete.php" class="inline-form" onsubmit="return confirm('Delete listing?');">
                   <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">

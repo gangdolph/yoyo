@@ -26,10 +26,14 @@ require_once __DIR__ . '/includes/auth.php';
       <div class="hero-content">
         <p class="tagline">Fix, buy, sell, or trade your electronics in one place.</p>
         <div class="portal-links">
-          <a class="cta-glass" href="/services.php">Services</a>
-          <a class="cta-glass" href="/buy.php">Buy</a>
-          <a class="cta-glass" href="/sell.php">Sell</a>
-          <a class="cta-glass" href="/trade.php">Trade</a>
+          <div class="portal-services">
+            <a class="cta-glass portal-services__cta" href="/services.php">Services</a>
+          </div>
+          <div class="portal-actions">
+            <a class="cta-glass" href="/buy.php">Buy</a>
+            <a class="cta-glass" href="/sell.php">Sell</a>
+            <a class="cta-glass" href="/trade.php">Trade</a>
+          </div>
         </div>
       </div>
     </div>

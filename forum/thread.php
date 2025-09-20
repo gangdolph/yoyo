@@ -27,21 +27,21 @@ if (!$thread) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if (!validate_token($_POST['csrf_token'] ?? '')) {
     $error = 'Invalid CSRF token.';
-  } elseif (!empty($_SESSION['is_admin']) && isset($_POST['close'])) {
+  } elseif (is_admin() && isset($_POST['close'])) {
     $stmt = $conn->prepare("UPDATE forum_threads SET status='closed' WHERE id=?");
     $stmt->bind_param('i', $thread_id);
     $stmt->execute();
     $stmt->close();
     header("Location: thread.php?id=" . $thread_id);
     exit;
-  } elseif (!empty($_SESSION['is_admin']) && isset($_POST['delist'])) {
+  } elseif (is_admin() && isset($_POST['delist'])) {
     $stmt = $conn->prepare("UPDATE forum_threads SET status='delisted' WHERE id=?");
     $stmt->bind_param('i', $thread_id);
     $stmt->execute();
     $stmt->close();
     header('Location: index.php');
     exit;
-  } elseif (!empty($_SESSION['is_admin']) && isset($_POST['delete'])) {
+  } elseif (is_admin() && isset($_POST['delete'])) {
     $stmt = $conn->prepare("DELETE FROM forum_threads WHERE id=?");
     $stmt->bind_param('i', $thread_id);
     $stmt->execute();
@@ -116,7 +116,7 @@ function render_posts($parent_id = 0, $depth = 0) {
 <main>
   <h2><?= htmlspecialchars($thread['title']); ?></h2>
   <p>Started by <?= username_with_avatar($conn, $thread['user_id'], $thread['username']); ?></p>
-  <?php if (!empty($_SESSION['is_admin'])): ?>
+  <?php if (is_admin()): ?>
     <form method="post" style="display:inline;" onsubmit="return confirm('Close thread?');">
       <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
       <button type="submit" name="close">Close</button>
