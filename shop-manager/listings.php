@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Listings tab listed status and tags but lacked inline controls for pricing or quantity updates.
+ * Change: Added detail edit form with moderation hooks and surfaced pending approval cues for live listings.
+ */
 $listingsActive = $activeTab === 'listings';
 $listingsPanelId = 'shop-manager-panel-listings';
 $listingsTabId = 'shop-manager-tab-listings';
@@ -89,10 +93,14 @@ $paginationQuery = [
           <tr data-listing-id="<?= $listingId; ?>">
             <th scope="row">
               <strong><?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8'); ?></strong><br>
+              <?php if (!empty($item['is_official_listing'])): ?>
+                <span class="badge badge-official">SkuzE Official</span>
+              <?php endif; ?>
               <small>
                 <?= htmlspecialchars($item['category'] ?: 'Uncategorised', ENT_QUOTES, 'UTF-8'); ?>
                 <?php if ($item['pickup_only']): ?> · Pickup only<?php endif; ?>
               </small><br>
+              <small>Price: $<?= htmlspecialchars(number_format((float) $item['price'], 2), ENT_QUOTES, 'UTF-8'); ?></small><br>
               <small>Created <?= htmlspecialchars((string) $item['created_at'], ENT_QUOTES, 'UTF-8'); ?></small>
             </th>
             <td>
@@ -112,6 +120,12 @@ $paginationQuery = [
                 </select>
                 <button type="submit" class="btn btn-small">Update</button>
               </form>
+              <?php if (!empty($item['pending_change'])): ?>
+                <span class="badge badge-warning">Pending approval</span>
+                <?php if (!empty($item['pending_change_summary'])): ?>
+                  <br><small><?= htmlspecialchars($item['pending_change_summary'], ENT_QUOTES, 'UTF-8'); ?></small>
+                <?php endif; ?>
+              <?php endif; ?>
             </td>
             <td data-field="quantity"><?= $item['quantity'] !== null ? (int) $item['quantity'] : '—'; ?></td>
             <td data-field="reserved"><?= $item['reserved_qty'] !== null ? (int) $item['reserved_qty'] : '—'; ?></td>
@@ -145,6 +159,24 @@ $paginationQuery = [
             </td>
             <td><?= htmlspecialchars((string) ($item['updated_at'] ?? '—'), ENT_QUOTES, 'UTF-8'); ?></td>
             <td class="store-table__actions">
+              <form method="post" class="manager-details-form" data-manager-action="details">
+                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
+                <input type="hidden" name="tab" value="listings">
+                <input type="hidden" name="manager_action" value="update_listing_details">
+                <input type="hidden" name="listing_id" value="<?= $listingId; ?>">
+                <?php foreach ($filtersState as $key => $value): ?>
+                  <input type="hidden" name="filters[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>]" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>">
+                <?php endforeach; ?>
+                <div class="manager-details-grid">
+                  <label class="sr-only" for="listing-title-<?= $listingId; ?>">Title</label>
+                  <input id="listing-title-<?= $listingId; ?>" type="text" name="title" value="<?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8'); ?>" placeholder="Title">
+                  <label class="sr-only" for="listing-price-<?= $listingId; ?>">Price</label>
+                  <input id="listing-price-<?= $listingId; ?>" type="text" name="price" value="<?= htmlspecialchars(number_format((float) $item['price'], 2, '.', ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="Price">
+                  <label class="sr-only" for="listing-quantity-<?= $listingId; ?>">Quantity</label>
+                  <input id="listing-quantity-<?= $listingId; ?>" type="number" name="quantity" min="0" value="<?= $item['quantity'] !== null ? (int) $item['quantity'] : ''; ?>" placeholder="Quantity">
+                </div>
+                <button type="submit" class="btn btn-small">Save details</button>
+              </form>
               <?php if (!empty($squareSyncAvailable)): ?>
               <form method="post" class="manager-sync-form" data-manager-action="sync">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">

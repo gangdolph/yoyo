@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Shop manager tabs previously omitted a dedicated sync panel for catalog ops.
+ * Change: Added a Sync tab definition to surface manual Square reconciliations.
+ */
 
 declare(strict_types=1);
 
@@ -26,6 +30,10 @@ const SHOP_MANAGER_TABS = [
     'settings' => [
         'label' => 'Settings',
         'description' => 'Configure default preferences for your shop.',
+    ],
+    'sync' => [
+        'label' => 'Sync',
+        'description' => 'Manage catalog synchronisation with Square.',
     ],
 ];
 

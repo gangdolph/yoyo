@@ -1,10 +1,17 @@
 <?php
+/*
+ * Discovery note: Admin dashboard organizes listings, trades, and system utilities but lacked status visibility.
+ * Change: Extended navigation so the experimental manager workspace only appears when the rollout flag is enabled.
+ */
 require_once __DIR__ . '/../includes/require-auth.php';
 require_once __DIR__ . '/../includes/authz.php';
 require '../includes/db.php';
 require '../includes/user.php';
+$config = require __DIR__ . '/../config.php';
 
 ensure_admin('../dashboard.php');
+
+$managerEnabled = !empty($config['SHOP_MANAGER_V1_ENABLED']);
 
 $stmt = $conn->query("SELECT r.id, u.id AS user_id, u.username, r.category, r.issue, r.created_at, r.status
                       FROM service_requests r
@@ -25,6 +32,9 @@ $requests = $stmt->fetch_all(MYSQLI_ASSOC);
       <h3>Listings</h3>
       <ul class="nav-links">
         <li><a class="btn" href="listings.php">Review Listings</a></li>
+        <?php if ($managerEnabled): ?>
+          <li><a class="btn" href="manager.php">Shop Manager V1</a></li>
+        <?php endif; ?>
       </ul>
     </div>
     <div class="nav-section">
@@ -41,6 +51,7 @@ $requests = $stmt->fetch_all(MYSQLI_ASSOC);
         <li><a class="btn" href="theme.php">Vaporwave Theme Settings</a></li>
         <li><a class="btn" href="toolbox.php">Manage Toolbox</a></li>
         <li><a class="btn" href="support.php">Support Tickets</a></li>
+        <li><a class="btn" href="health.php">Square Health</a></li>
       </ul>
     </div>
   </div>

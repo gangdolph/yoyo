@@ -1,4 +1,9 @@
 <?php
+/*
+ * Discovery note: Seller manager supported tags and status edits but lacked controlled updates for pricing or quantity.
+ * Change: Added moderated detail edits with change request escalation, surfaced pending review indicators, and now expose
+ *         a Square sync action for administrators.
+ */
 
 declare(strict_types=1);
 
@@ -10,6 +15,7 @@ require_once __DIR__ . '/../includes/tags.php';
 require_once __DIR__ . '/../includes/repositories/ChangeRequestsService.php';
 require_once __DIR__ . '/../includes/repositories/ListingsRepo.php';
 require_once __DIR__ . '/../includes/repositories/SquareCatalogSync.php';
+require_once __DIR__ . '/../includes/SyncService.php';
 
 $config = require __DIR__ . '/../config.php';
 
@@ -28,6 +34,7 @@ $listingsRepository = new ListingsRepo($db, $changeRequests);
 $squareSync = new SquareCatalogSync($db, $config);
 $squareSyncEnabled = $squareSync->isEnabled();
 $isAdmin = authz_has_role('admin');
+$isOfficialRole = authz_has_role('skuze_official');
 
 $requestedTab = $_SERVER['REQUEST_METHOD'] === 'POST'
     ? ($_POST['tab'] ?? SHOP_MANAGER_DEFAULT_TAB)
@@ -81,6 +88,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     shop_manager_flash($redirectTab, 'success', $message);
                 }
                 break;
+            case 'update_listing_details':
+                $listingId = (int) ($_POST['listing_id'] ?? 0);
+                $title = trim((string) ($_POST['title'] ?? ''));
+                $priceInput = trim((string) ($_POST['price'] ?? ''));
+                $quantityInput = trim((string) ($_POST['quantity'] ?? ''));
+
+                if ($listingId <= 0) {
+                    shop_manager_flash($redirectTab, 'error', 'Invalid listing selected.');
+                    break;
+                }
+
+                if ($priceInput !== '' && !preg_match('/^\d+(?:\.\d{1,2})?$/', $priceInput)) {
+                    shop_manager_flash($redirectTab, 'error', 'Prices must be numeric with up to two decimals.');
+                    break;
+                }
+
+                if ($quantityInput !== '' && !preg_match('/^\d+$/', $quantityInput)) {
+                    shop_manager_flash($redirectTab, 'error', 'Quantity adjustments must be whole numbers.');
+                    break;
+                }
+
+                $payload = [
+                    'title' => $title,
+                    'price' => $priceInput,
+                    'quantity' => $quantityInput,
+                ];
+
+                try {
+                    $result = $listingsRepository->updateDetails(
+                        $listingId,
+                        $viewerId,
+                        $payload,
+                        $isAdmin,
+                        $isOfficialRole
+                    );
+
+                    if (!empty($result['requires_review'])) {
+                        shop_manager_flash($redirectTab, 'success', 'Change request submitted for approval.');
+                    } elseif (!empty($result['changed'])) {
+                        shop_manager_flash($redirectTab, 'success', 'Listing details updated.');
+                    } else {
+                        shop_manager_flash($redirectTab, 'info', 'No changes detected for this listing.');
+                    }
+                } catch (Throwable $e) {
+                    shop_manager_flash($redirectTab, 'error', 'Unable to update listing details: ' . $e->getMessage());
+                }
+                break;
+
             case 'sync_listing':
                 $listingId = (int) ($_POST['listing_id'] ?? 0);
                 if (!$squareSyncEnabled) {
@@ -99,6 +154,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     shop_manager_flash($redirectTab, 'success', 'Listing queued for Square sync.');
                 } catch (Throwable $e) {
                     shop_manager_flash($redirectTab, 'error', 'Unable to queue Square sync.');
+                }
+                break;
+            case 'square_sync_now':
+                $redirectTab = 'sync';
+                if (!$squareSyncEnabled) {
+                    shop_manager_flash($redirectTab, 'error', 'Square sync is disabled.');
+                    break;
+                }
+
+                if (!$isAdmin && !$isOfficialRole) {
+                    shop_manager_flash($redirectTab, 'error', 'Only admins or SkuzE Official staff can run manual syncs.');
+                    break;
+                }
+
+                try {
+                    $syncService = new SyncService($db, $config);
+                    if (!$syncService->isEnabled()) {
+                        shop_manager_flash($redirectTab, 'error', 'Square sync service is not fully configured.');
+                        break;
+                    }
+
+                    $catalogResult = $syncService->pullCatalog();
+                    $variationIds = $catalogResult['variation_ids'] ?? [];
+                    $inventoryResult = $variationIds ? $syncService->pullInventory($variationIds) : ['status' => 'no_variations'];
+
+                    $syncedListings = (int) ($catalogResult['synced_listings'] ?? 0);
+                    $inventoryApplied = (int) ($inventoryResult['applied'] ?? 0);
+
+                    $summaryParts = [];
+                    $summaryParts[] = $syncedListings . ' listing' . ($syncedListings === 1 ? '' : 's') . ' refreshed';
+                    if ($inventoryApplied > 0) {
+                        $summaryParts[] = $inventoryApplied . ' inventory row' . ($inventoryApplied === 1 ? '' : 's') . ' updated';
+                    } else {
+                        $summaryParts[] = 'inventory unchanged';
+                    }
+
+                    shop_manager_flash(
+                        $redirectTab,
+                        'success',
+                        'Square sync complete: ' . implode(', ', $summaryParts) . '.'
+                    );
+                } catch (Throwable $e) {
+                    shop_manager_flash($redirectTab, 'error', 'Square sync failed: ' . $e->getMessage());
                 }
                 break;
             default:
@@ -139,6 +237,7 @@ $isOfficial = store_user_is_official($db, $viewerId);
 $ordersList = store_fetch_orders($db, $viewerId, STORE_SCOPE_MINE, $isAdmin, $isOfficial);
 $shippingList = store_manageable_shipping_orders($ordersList, $viewerId, $isAdmin, $isOfficial);
 $fulfillmentStatusOptions = order_fulfillment_status_options();
+$syncDirection = strtolower((string) ($config['SQUARE_SYNC_DIRECTION'] ?? 'pull'));
 
 $csrfToken = generate_token();
 $flash = shop_manager_consume_flash($activeTab);
@@ -198,11 +297,13 @@ $flash = shop_manager_consume_flash($activeTab);
       $orders = $ordersList;
       $shipping = $shippingList;
       $squareSyncAvailable = $squareSyncEnabled;
+      $squareSyncDirection = $syncDirection;
       include __DIR__ . '/listings.php';
       include __DIR__ . '/inventory.php';
       include __DIR__ . '/orders.php';
       include __DIR__ . '/shipping.php';
       include __DIR__ . '/settings.php';
+      include __DIR__ . '/sync.php';
     ?>
   </div>
   <?php include __DIR__ . '/../includes/footer.php'; ?>

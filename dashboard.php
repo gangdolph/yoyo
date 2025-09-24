@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Dashboard already surfaced admin panel access but offered no direct route to system diagnostics.
+ * Change: Added Square Health link for admins alongside documenting the new Square observability entry point.
+ */
 require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/notifications.php';
@@ -76,6 +80,7 @@ $orders = fetch_orders_for_user($conn, (int) $id);
         <ul class="nav-links">
           <?php if (is_admin()): ?>
             <li><a class="btn" role="button" href="/admin/index.php">Admin Panel</a></li>
+            <li><a class="btn" role="button" href="/admin/health.php">Square Health</a></li>
           <?php elseif (is_skuze_official()): ?>
             <li><a class="btn" role="button" href="/admin/products.php">Official Inventory</a></li>
           <?php endif; ?>

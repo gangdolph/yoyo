@@ -1,4 +1,9 @@
 <?php
+/*
+ * Discovery note: Config already combines database, SMTP, and Square keys.
+ * Change: Added Square feature toggles earlier, introduced a manager UI flag for phased rollout,
+ *         and now expose the webhook signature key for securing inbound events.
+ */
 // Copy this file to config.php and fill in real credentials.
 // Never commit your actual config.php to version control.
 return [
@@ -25,4 +30,11 @@ return [
   'square_location_id' => 'LTXYAJY9GR996',
   'square_access_token' => 'EAAAly0J7zt7XMl2qEIGK_WmWB_i4v-KYU9tDWKPxPO0VcpwNNqIu89DDjMddFO_',
   'square_environment' => 'sandbox', // or 'production'
+  'square_webhook_signature_key' => '',
+
+  // Square feature flags
+  'USE_SQUARE_ORDERS' => false,
+  'SQUARE_SYNC_ENABLED' => false,
+  'SQUARE_SYNC_DIRECTION' => 'pull', // 'pull'|'push'|'two_way'
+  'SHOP_MANAGER_V1_ENABLED' => false,
 ];

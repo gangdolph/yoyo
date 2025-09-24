@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Admin orders view offered fixed shipped/delivered actions inconsistent with the new fulfillment flow.
+ * Change: Updated quick actions to follow the staged lifecycle and reflect pending change requests.
+ */
 require_once __DIR__ . '/../includes/require-auth.php';
 require_once __DIR__ . '/../includes/authz.php';
 require '../includes/orders.php';
@@ -77,9 +81,20 @@ if ($flash) {
           $amount = $order['payment']['amount'];
           $amountDisplay = $amount !== null ? '$' . number_format(((int) $amount) / 100, 2) : '—';
           $paymentStatus = $order['payment']['status'] ?? 'pending';
-          $shippingStatus = $order['shipping_status'] ?? 'pending';
-          $statusLabel = $statusOptions[$shippingStatus] ?? ucfirst($shippingStatus);
-          $statusBadge = 'badge-status-' . preg_replace('/[^a-z0-9]+/', '-', strtolower($shippingStatus));
+          $shippingStatus = strtolower((string) ($order['shipping_status'] ?? 'pending'));
+          $canonicalStatus = $shippingStatus === 'pending' ? 'new' : ($shippingStatus === 'processing' ? 'packing' : $shippingStatus);
+          $labelKey = array_key_exists($shippingStatus, $statusOptions) ? $shippingStatus : $canonicalStatus;
+          $statusLabel = $statusOptions[$labelKey] ?? ucfirst($canonicalStatus);
+          $statusBadge = 'badge-status-' . preg_replace('/[^a-z0-9]+/', '-', $canonicalStatus);
+          $advanceMap = [
+              'new' => ['label' => 'Mark paid', 'status' => 'paid'],
+              'paid' => ['label' => 'Start packing', 'status' => 'packing'],
+              'packing' => ['label' => 'Mark shipped', 'status' => 'shipped'],
+              'shipped' => ['label' => 'Mark delivered', 'status' => 'delivered'],
+              'delivered' => ['label' => 'Complete order', 'status' => 'completed'],
+          ];
+          $advanceAction = $advanceMap[$canonicalStatus] ?? null;
+          $cancelAllowed = in_array($canonicalStatus, ['new', 'paid', 'packing'], true);
         ?>
         <tr>
           <td>#<?= (int) $order['id'] ?></td>
@@ -109,25 +124,16 @@ if ($flash) {
           <td><?= htmlspecialchars($order['placed_at'], ENT_QUOTES, 'UTF-8') ?></td>
           <td class="order-actions">
             <div class="quick-actions">
-              <?php if (!in_array($shippingStatus, ['shipped', 'delivered'], true)): ?>
+              <?php if ($advanceAction): ?>
                 <form method="post" action="order-update.php">
                   <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
                   <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
                   <input type="hidden" name="context" value="list">
-                  <input type="hidden" name="status" value="shipped">
-                  <button type="submit" class="btn btn-compact">Mark shipped</button>
+                  <input type="hidden" name="status" value="<?= htmlspecialchars($advanceAction['status'], ENT_QUOTES, 'UTF-8'); ?>">
+                  <button type="submit" class="btn btn-compact"><?= htmlspecialchars($advanceAction['label'], ENT_QUOTES, 'UTF-8'); ?></button>
                 </form>
               <?php endif; ?>
-              <?php if ($shippingStatus !== 'delivered'): ?>
-                <form method="post" action="order-update.php">
-                  <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
-                  <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">
-                  <input type="hidden" name="context" value="list">
-                  <input type="hidden" name="status" value="delivered">
-                  <button type="submit" class="btn btn-compact">Mark delivered</button>
-                </form>
-              <?php endif; ?>
-              <?php if ($shippingStatus !== 'cancelled'): ?>
+              <?php if ($shippingStatus !== 'cancelled' && $cancelAllowed): ?>
                 <form method="post" action="order-update.php" onsubmit="return confirm('Cancel this order and restock one unit?');">
                   <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
                   <input type="hidden" name="order_id" value="<?= (int) $order['id'] ?>">

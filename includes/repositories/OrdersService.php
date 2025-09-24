@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Orders service allowed arbitrary status jumps in the legacy pending/processing flow.
+ * Change: Normalised to the New→Completed pipeline with sequential enforcement and cancellation guardrails.
+ */
 declare(strict_types=1);
 
 require_once __DIR__ . '/ShopLogger.php';
@@ -9,6 +13,19 @@ final class OrdersService
 {
     private mysqli $conn;
     private InventoryService $inventory;
+    /**
+     * @var array<string, array<int, string>>
+     */
+    private array $statusTransitions = [
+        'pending' => ['new', 'cancelled'],
+        'new' => ['paid', 'cancelled'],
+        'paid' => ['packing', 'cancelled'],
+        'packing' => ['shipped', 'cancelled'],
+        'shipped' => ['delivered'],
+        'delivered' => ['completed'],
+        'completed' => [],
+        'cancelled' => [],
+    ];
 
     public function __construct(mysqli $conn, ?InventoryService $inventory = null)
     {
@@ -42,7 +59,7 @@ final class OrdersService
         $stmt = $this->conn->prepare(
             'INSERT INTO order_fulfillments '
             . '(payment_id, user_id, listing_id, sku, shipping_address, delivery_method, notes, tracking_number, status, shipping_profile_id, shipping_snapshot, is_official_order) '
-            . 'VALUES (?, ?, ?, ?, ?, ?, ?, NULL, "pending", NULLIF(?, 0), ?, ?)'
+            . 'VALUES (?, ?, ?, ?, ?, ?, ?, NULL, "new", NULLIF(?, 0), ?, ?)'
         );
         if ($stmt === false) {
             throw new RuntimeException('Unable to prepare order creation.');
@@ -90,6 +107,7 @@ final class OrdersService
     public function updateStatus(int $orderId, string $status, int $viewerId, bool $isAdmin, bool $isOfficial): array
     {
         $statusOptions = order_fulfillment_status_options();
+        $status = $this->normaliseStatus($status);
         if (!array_key_exists($status, $statusOptions)) {
             throw new RuntimeException('Unsupported fulfillment status.');
         }
@@ -108,6 +126,20 @@ final class OrdersService
 
         if (!$this->canManageOrder($order, $viewerId, $isAdmin, $isOfficial)) {
             throw new RuntimeException('You do not have permission to update this order.');
+        }
+
+        $currentStatus = $this->normaliseStatus((string) ($order['shipping_status'] ?? 'new'));
+        if ($currentStatus === $status) {
+            return [
+                'order_id' => $orderId,
+                'status' => $status,
+                'status_label' => $statusOptions[$status],
+            ];
+        }
+
+        $allowed = $this->statusTransitions[$currentStatus] ?? [];
+        if (!in_array($status, $allowed, true)) {
+            throw new RuntimeException('The order cannot transition from ' . $currentStatus . ' to ' . $status . '.');
         }
 
         $stmt = $this->conn->prepare('UPDATE order_fulfillments SET status = ? WHERE id = ?');
@@ -199,6 +231,20 @@ final class OrdersService
             'order_id' => $orderId,
             'tracking_number' => $tracking,
         ];
+    }
+
+    private function normaliseStatus(string $status): string
+    {
+        $status = strtolower(trim($status));
+
+        switch ($status) {
+            case 'pending':
+                return 'new';
+            case 'processing':
+                return 'packing';
+            default:
+                return $status;
+        }
     }
 
     /**
