@@ -57,7 +57,7 @@ function ensure_admin_or_official(?string $redirect = '/dashboard.php'): void
     require_role(['admin', 'skuze_official'], $redirect);
 }
 
-function ensure_seller(?string $redirect = '/vip.php?upgrade=1'): void
+function ensure_seller(?string $redirect = '/member.php?upgrade=1'): void
 {
     require_role(['seller'], $redirect);
 }

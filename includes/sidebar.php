@@ -21,7 +21,7 @@ $walletEnabled = !empty($config['SHOW_WALLET']);
       <?php if ($walletEnabled): ?>
         <li><a href="wallet.php">Wallet (Store Credit)</a></li>
       <?php endif; ?>
-      <li><a href="vip.php">VIP Plans</a></li>
+      <li><a href="member.php">Member Plans</a></li>
     </ul>
   </div>
   <div class="side-nav-group" aria-labelledby="side-nav-resources">

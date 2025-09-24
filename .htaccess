@@ -12,6 +12,11 @@ RedirectMatch 404 ^/composer\.(json|lock)$
     Require all denied
 </FilesMatch>
 
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^offers/(create|counter|accept|decline|cancel)$ offers/$1/index.php [L]
+</IfModule>
+
 <IfModule mod_headers.c>
     Header set X-Content-Type-Options "nosniff"
     Header set X-Frame-Options "SAMEORIGIN"

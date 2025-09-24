@@ -23,6 +23,16 @@ const handleViewToggleClick = (event) => {
   toggleView(button, results);
 };
 
+const showCartToast = (message) => {
+  const toast = document.getElementById('cart-toast');
+  if (!toast) {
+    return;
+  }
+  toast.textContent = message;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+};
+
 const handleAddToCartClick = (event) => {
   const button = event.target.closest('.add-to-cart');
   if (!button) {
@@ -31,6 +41,11 @@ const handleAddToCartClick = (event) => {
   event.preventDefault();
   const id = button.dataset.id;
   if (!id) {
+    return;
+  }
+  const availableAttr = parseInt(button.dataset.available || '', 10);
+  if (!Number.isNaN(availableAttr) && availableAttr <= 0) {
+    showCartToast('Out of stock');
     return;
   }
   fetch('/cart.php?action=add', {
@@ -43,30 +58,32 @@ const handleAddToCartClick = (event) => {
   })
     .then((res) => res.json())
     .then((data) => {
-      const link = document.querySelector('.cart-link a');
-      let badge = document.querySelector('.cart-link .badge');
-      if (badge) {
-        badge.textContent = data.count;
-      } else if (link) {
-        badge = document.createElement('span');
-        badge.className = 'badge';
-        badge.textContent = data.count;
-        link.appendChild(badge);
+      if (typeof data.available === 'number') {
+        button.dataset.available = String(data.available);
+        button.disabled = data.available <= 0;
       }
-      const toast = document.getElementById('cart-toast');
-      if (toast) {
-        toast.textContent = 'Added to cart';
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2000);
+      if (data.success) {
+        const link = document.querySelector('.cart-link a');
+        let badge = document.querySelector('.cart-link .badge');
+        if (badge) {
+          badge.textContent = data.count;
+        } else if (link) {
+          badge = document.createElement('span');
+          badge.className = 'badge';
+          badge.textContent = data.count;
+          link.appendChild(badge);
+        }
+      }
+      if (data.message) {
+        showCartToast(data.message);
+      } else if (data.success) {
+        showCartToast('Added to cart');
+      } else {
+        showCartToast('Unable to add to cart. Try again.');
       }
     })
     .catch(() => {
-      const toast = document.getElementById('cart-toast');
-      if (toast) {
-        toast.textContent = 'Unable to add to cart. Try again.';
-        toast.classList.add('show');
-        setTimeout(() => toast.classList.remove('show'), 2000);
-      }
+      showCartToast('Unable to add to cart. Try again.');
     });
 };
 

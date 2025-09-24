@@ -62,6 +62,7 @@ try {
   $ordersService = new OrdersService($db, $inventoryService, $walletService);
   $buyerId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
   $reservationQty = 0;
+  $orderQuantity = 1;
 
   $squareClient = new SquareHttpClient($config);
   $squareOrderService = new OrderService($squareClient);
@@ -78,6 +79,13 @@ try {
     $sourceId = trim($_POST['source_id']);
   }
   $listing_id = isset($_POST['listing_id']) ? (int)$_POST['listing_id'] : 0;
+  $postedQuantity = isset($_POST['quantity']) ? (int) $_POST['quantity'] : 1;
+  if ($postedQuantity <= 0) {
+    $postedQuantity = 1;
+  }
+  $reservationToken = isset($_POST['reservation_token']) && is_string($_POST['reservation_token'])
+    ? trim($_POST['reservation_token'])
+    : '';
   $coupon_code = isset($_POST['coupon_code']) && is_string($_POST['coupon_code']) ? trim($_POST['coupon_code']) : '';
   $walletAllowed = !empty($config['SHOW_WALLET']) && !empty($_POST['wallet_allowed']);
   $paymentMethod = isset($_POST['payment_method']) && is_string($_POST['payment_method'])
@@ -86,12 +94,15 @@ try {
   $useWallet = $walletAllowed && $paymentMethod === 'wallet';
 
   // Helper: redirect to cancel with short reason + log
-  $fail = function (string $reason, string $logDetail = '') use (&$reservationQty, $inventoryService, $listing_id, $buyerId) {
+  $fail = function (string $reason, string $logDetail = '') use (&$reservationQty, $inventoryService, $listing_id, $buyerId, $reservationToken) {
     if ($reservationQty > 0) {
       try {
         $inventoryService->releaseListing($listing_id, $reservationQty, $buyerId);
       } catch (Throwable $releaseError) {
         error_log('[checkout_process] release_failed listing_id=' . $listing_id . ' :: ' . $releaseError->getMessage());
+      }
+      if ($reservationToken !== '' && isset($_SESSION['reservation_tokens'][$reservationToken])) {
+        $_SESSION['reservation_tokens'][$reservationToken]['reserved'] = false;
       }
       $reservationQty = 0;
     }
@@ -143,29 +154,23 @@ try {
     $listingStatus = (string) $listingStatus;
     $sellerId = (int) $sellerId;
 
-    $price = $salePrice !== null ? $salePrice : $basePrice;
-    $discount = 0.0;
-    if ($coupon_code !== '') {
-      $stmt = $db->prepare('SELECT discount_type, discount_value FROM coupons WHERE listing_id = ? AND code = ? AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1');
-      $stmt->bind_param('is', $listing_id, $coupon_code);
-      $stmt->execute();
-      $res = $stmt->get_result();
-      if ($c = $res->fetch_assoc()) {
-        if ($c['discount_type'] === 'percentage') {
-          $discount = $price * ((float)$c['discount_value'] / 100);
-        } else {
-          $discount = (float)$c['discount_value'];
-        }
-        if ($discount > $price) {
-          $discount = $price;
-        }
+    $available = max(0, $listingQuantity - $listingReserved);
+    $orderQuantity = max(1, $postedQuantity);
+    if (isset($_SESSION['checkout_quantities'][$listing_id])) {
+      $orderQuantity = max(1, (int) $_SESSION['checkout_quantities'][$listing_id]);
+    }
+
+    $reservationState = null;
+    if ($reservationToken !== '' && isset($_SESSION['reservation_tokens'][$reservationToken])
+        && is_array($_SESSION['reservation_tokens'][$reservationToken])
+        && (int) ($_SESSION['reservation_tokens'][$reservationToken]['listing_id'] ?? 0) === $listing_id) {
+      $reservationState = $_SESSION['reservation_tokens'][$reservationToken];
+      $tokenQuantity = (int) ($reservationState['quantity'] ?? 0);
+      if ($tokenQuantity > 0) {
+        $orderQuantity = $tokenQuantity;
       }
-      $stmt->close();
     }
-    $price -= $discount;
-    if ($price < 0) {
-      $price = 0;
-    }
+
     if ($stock !== null && $stock <= 0) {
       $fail('out_of_stock', 'sku=' . (string)$sku);
     }
@@ -174,20 +179,70 @@ try {
       $fail('listing_not_available', 'listing_status=' . $listingStatus);
     }
 
-    if ($listingQuantity - $listingReserved <= 0) {
+    if ($available <= 0) {
       $fail('out_of_stock', 'listing_reservations');
     }
 
-    try {
-      $inventoryService->reserveListing($listing_id, 1, $buyerId);
-      $reservationQty = 1;
-    } catch (Throwable $reservationError) {
-      $fail('out_of_stock', 'reservation_failed listing_id=' . $listing_id);
+    $_SESSION['checkout_notices'][$listing_id] = '';
+    if ($orderQuantity > $available) {
+      $orderQuantity = $available;
+      $_SESSION['checkout_notices'][$listing_id] = 'Only ' . $available . ' available. Quantity adjusted.';
     }
 
-  $amount = (int)round(((float)$price) * 100); // cents
+    if ($orderQuantity <= 0) {
+      $fail('out_of_stock', 'quantity_zero');
+    }
+
+    $_SESSION['checkout_quantities'][$listing_id] = $orderQuantity;
+    if ($reservationToken !== '' && isset($_SESSION['reservation_tokens'][$reservationToken])) {
+      $_SESSION['reservation_tokens'][$reservationToken]['quantity'] = $orderQuantity;
+    }
+
+    $unitPrice = $salePrice !== null ? $salePrice : $basePrice;
+    $unitDiscount = 0.0;
+    if ($coupon_code !== '') {
+      $stmt = $db->prepare('SELECT discount_type, discount_value FROM coupons WHERE listing_id = ? AND code = ? AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1');
+      $stmt->bind_param('is', $listing_id, $coupon_code);
+      $stmt->execute();
+      $res = $stmt->get_result();
+      if ($c = $res->fetch_assoc()) {
+        if ($c['discount_type'] === 'percentage') {
+          $unitDiscount = $unitPrice * ((float)$c['discount_value'] / 100);
+        } else {
+          $unitDiscount = (float)$c['discount_value'];
+        }
+        if ($unitDiscount > $unitPrice) {
+          $unitDiscount = $unitPrice;
+        }
+      }
+      $stmt->close();
+    }
+    $unitNetPrice = $unitPrice - $unitDiscount;
+    if ($unitNetPrice < 0) {
+      $unitNetPrice = 0;
+    }
+
+    $alreadyReserved = $reservationState
+      && !empty($reservationState['reserved'])
+      && (int) ($reservationState['quantity'] ?? 0) === $orderQuantity;
+
+    if (!$alreadyReserved) {
+      try {
+        $inventoryService->reserveListing($listing_id, $orderQuantity, $buyerId);
+      } catch (Throwable $reservationError) {
+        $fail('out_of_stock', 'reservation_failed listing_id=' . $listing_id);
+      }
+    }
+
+    if ($reservationToken !== '' && isset($_SESSION['reservation_tokens'][$reservationToken])) {
+      $_SESSION['reservation_tokens'][$reservationToken]['reserved'] = true;
+      $_SESSION['reservation_tokens'][$reservationToken]['quantity'] = $orderQuantity;
+    }
+    $reservationQty = $orderQuantity;
+
+  $amount = (int)round(((float)$unitNetPrice) * $orderQuantity * 100); // cents
   if ($amount <= 0) {
-    $fail('invalid_amount', 'price=' . var_export($price, true));
+    $fail('invalid_amount', 'price=' . var_export($unitNetPrice * $orderQuantity, true));
   }
 
   // Reconfirm wallet usage after computing amounts (balance checks may disable it below)
@@ -250,7 +305,7 @@ try {
             'sku' => $sku,
             'is_official_order' => $isOfficialOrder,
             'shipping_profile_id' => $shippingProfileId,
-            'quantity' => $reservationQty > 0 ? $reservationQty : 1,
+            'quantity' => $orderQuantity,
           ]
         );
         $reservationQty = 0;
@@ -261,6 +316,10 @@ try {
       $walletService->holdForOrder($orderResult['order_id'], $buyerId, $sellerId, $amount, 'wallet-hold-' . $orderResult['order_id']);
 
       unset($_SESSION['shipping'][$listing_id]);
+      unset($_SESSION['checkout_quantities'][$listing_id], $_SESSION['checkout_notices'][$listing_id]);
+      if ($reservationToken !== '') {
+        unset($_SESSION['reservation_tokens'][$reservationToken]);
+      }
       header('Location: /success.php?id=' . urlencode($paymentReference) . '&wallet=1');
       exit;
     } catch (Throwable $walletFlowError) {
@@ -379,7 +438,7 @@ try {
             'sku' => $sku,
             'is_official_order' => $isOfficialOrder,
             'shipping_profile_id' => $shippingProfileId,
-            'quantity' => $reservationQty > 0 ? $reservationQty : 1,
+            'quantity' => $orderQuantity,
           ]
         );
         $reservationQty = 0;
@@ -396,6 +455,10 @@ try {
       }
 
       unset($_SESSION['shipping'][$listing_id]);
+      unset($_SESSION['checkout_quantities'][$listing_id], $_SESSION['checkout_notices'][$listing_id]);
+      if ($reservationToken !== '') {
+        unset($_SESSION['reservation_tokens'][$reservationToken]);
+      }
     } catch (\Throwable $e) {
       error_log('Payment log insert failed: ' . $e->getMessage());
     }

@@ -5,6 +5,7 @@
 const services = (window.ShopManagerServices = window.ShopManagerServices || {});
 
 const managerRoot = document.querySelector('[data-shop-manager]');
+const PRICE_CEILING_TOLERANCE = 0.00001;
 
 const getAlertBox = (root) => (root ? root.querySelector('[data-manager-alert]') : null);
 
@@ -275,6 +276,124 @@ services.inventory.handleAction = (action, form, context) => {
       showAlert(container, message, true);
     }
   })();
+
+  return true;
+};
+
+const applyPriceCeilingState = (input, errorElement) => {
+  if (!(input instanceof HTMLInputElement)) {
+    return false;
+  }
+
+  const originalRaw = input.dataset.originalPrice || '';
+  const original = Number.parseFloat(originalRaw);
+  if (!Number.isFinite(original)) {
+    if (errorElement) {
+      errorElement.hidden = true;
+    }
+    return false;
+  }
+
+  const displayValue = input.dataset.originalPriceDisplay || original.toFixed(2);
+  const label = input.dataset.originalPriceLabel || 'Price';
+  const rawValue = input.value.trim();
+
+  if (rawValue === '') {
+    if (errorElement) {
+      errorElement.textContent = `${label} cannot exceed $${displayValue}.`;
+      errorElement.hidden = true;
+    }
+    return false;
+  }
+
+  const nextValue = Number.parseFloat(rawValue);
+  const exceeded = Number.isFinite(nextValue)
+    ? nextValue - original > PRICE_CEILING_TOLERANCE
+    : false;
+
+  if (errorElement) {
+    errorElement.textContent = `${label} cannot exceed $${displayValue}.`;
+    errorElement.hidden = !exceeded;
+  }
+
+  return exceeded;
+};
+
+if (!services.listings) {
+  services.listings = {};
+}
+
+services.listings.mount = (panel) => {
+  if (!panel) {
+    return;
+  }
+
+  const forms = panel.querySelectorAll('.manager-details-form');
+  forms.forEach((form) => {
+    const inputs = form.querySelectorAll('[data-original-price]');
+    inputs.forEach((input) => {
+      const errorElement = input.parentElement
+        ? input.parentElement.querySelector('[data-price-ceiling-error]')
+        : null;
+
+      const updateState = () => {
+        applyPriceCeilingState(input, errorElement);
+      };
+
+      input.addEventListener('input', updateState);
+      input.addEventListener('change', updateState);
+      updateState();
+    });
+  });
+};
+
+services.listings.handleAction = (action, form, context) => {
+  if (action !== 'details') {
+    return false;
+  }
+
+  const inputs = Array.from(form.querySelectorAll('[data-original-price]'));
+  if (inputs.length === 0) {
+    return false;
+  }
+
+  const violations = inputs
+    .map((input) => {
+      const errorElement = input.parentElement
+        ? input.parentElement.querySelector('[data-price-ceiling-error]')
+        : null;
+      return {
+        input,
+        exceeded: applyPriceCeilingState(input, errorElement),
+        errorElement,
+      };
+    })
+    .filter((entry) => entry.exceeded);
+
+  if (violations.length === 0) {
+    return false;
+  }
+
+  const { event, container } = context;
+  if (event) {
+    event.preventDefault();
+  }
+
+  const { input, errorElement } = violations[0];
+  const displayValue = input.dataset.originalPriceDisplay
+    || Number.parseFloat(input.dataset.originalPrice || '0').toFixed(2);
+  const label = input.dataset.originalPriceLabel || 'Price';
+
+  if (errorElement) {
+    errorElement.hidden = false;
+  }
+
+  if (container) {
+    showAlert(container, `${label} cannot exceed $${displayValue}.`, true);
+  }
+
+  input.focus();
+  input.select();
 
   return true;
 };

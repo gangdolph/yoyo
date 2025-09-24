@@ -14,8 +14,8 @@ $walletEnabled = !empty($config['SHOW_WALLET']);
 
 $id = $_SESSION['user_id'];
 $username = '';
-$vip = 0;
-$vip_expires = null;
+$memberStatus = 0;
+$memberExpires = null;
 $stmt = $conn->prepare("SELECT username, vip_status, vip_expires_at FROM users WHERE id = ?");
 if ($stmt === false) {
   error_log('Prepare failed: ' . $conn->error);
@@ -24,12 +24,12 @@ if ($stmt === false) {
   if (!$stmt->execute()) {
     error_log('Execute failed: ' . $stmt->error);
   } else {
-    $stmt->bind_result($username, $vip, $vip_expires);
+    $stmt->bind_result($username, $memberStatus, $memberExpires);
     $stmt->fetch();
     $stmt->close();
   }
 }
-$vip_active = $vip && (!$vip_expires || strtotime($vip_expires) > time());
+$memberActive = $memberStatus && (!$memberExpires || strtotime($memberExpires) > time());
 $unread_messages = count_unread_messages($conn, $id);
 $unread_notifications = count_unread_notifications($conn, $id);
 
@@ -54,13 +54,13 @@ $orders = fetch_orders_for_user($conn, (int) $id);
   <?php include 'includes/header.php'; ?>
   <div class="page-container">
     <h2>Welcome, <?= htmlspecialchars($username) ?></h2>
-    <?php if ($vip_active): ?>
-      <?php $expiresTs = strtotime($vip_expires); $days = floor(($expiresTs - time())/86400); ?>
+    <?php if ($memberActive): ?>
+      <?php $expiresTs = strtotime($memberExpires); $days = floor(($expiresTs - time())/86400); ?>
       <?php if ($days <= 7): ?>
-        <p class="notice">Your VIP membership expires on <?= htmlspecialchars($vip_expires) ?>. <a href="vip.php">Manage VIP</a>.</p>
+        <p class="notice">Your membership expires on <?= htmlspecialchars($memberExpires) ?>. <a href="member.php">Manage membership</a>.</p>
       <?php endif; ?>
-    <?php elseif ($vip): ?>
-      <p class="notice">Your VIP membership expired on <?= htmlspecialchars($vip_expires) ?>. <a href="vip.php">Manage VIP</a>.</p>
+    <?php elseif ($memberStatus): ?>
+      <p class="notice">Your membership expired on <?= htmlspecialchars($memberExpires) ?>. <a href="member.php">Renew membership</a>.</p>
     <?php endif; ?>
     <div class="nav-sections">
       <div class="nav-section">
@@ -85,6 +85,7 @@ $orders = fetch_orders_for_user($conn, (int) $id);
           <?php if (is_admin()): ?>
             <li><a class="btn" role="button" href="/admin/index.php">Admin Panel</a></li>
             <li><a class="btn" role="button" href="/admin/health.php">Square Health</a></li>
+            <li><a class="btn" role="button" href="/admin/square-connection.php">Square Connection</a></li>
           <?php elseif (is_skuze_official()): ?>
             <li><a class="btn" role="button" href="/admin/products.php">Official Inventory</a></li>
           <?php endif; ?>

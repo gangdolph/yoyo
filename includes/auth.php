@@ -3,6 +3,31 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/security.php';
 
+if (!function_exists('auth_member_role_name')) {
+    function auth_member_role_name(): string
+    {
+        static $roleName = null;
+
+        if ($roleName !== null) {
+            return $roleName;
+        }
+
+        global $config;
+        if (!isset($config) || !is_array($config)) {
+            $config = require __DIR__ . '/../config.php';
+        }
+
+        $resolved = strtolower((string) ($config['MEMBER_ROLE_NAME'] ?? 'member'));
+        if ($resolved === '') {
+            $resolved = 'member';
+        }
+
+        $roleName = $resolved;
+
+        return $roleName;
+    }
+}
+
 function auth_bootstrap(bool $refreshUserContext = true): void
 {
     static $sessionReady = false;
@@ -92,6 +117,10 @@ if (!function_exists('auth_refresh_session_roles')) {
     {
         $role = strtolower((string) ($context['role'] ?? ($_SESSION['user_role'] ?? 'user')));
         $status = strtolower((string) ($context['status'] ?? ($_SESSION['status'] ?? '')));
+        $memberStatus = $context['member_status']
+            ?? ($_SESSION['member_status'] ?? ($_SESSION['vip_status'] ?? null));
+        $memberExpiresAt = $context['member_expires_at']
+            ?? ($_SESSION['member_expires_at'] ?? ($_SESSION['vip_expires_at'] ?? null));
         $vipStatus = $context['vip_status'] ?? ($_SESSION['vip_status'] ?? null);
         $vipExpiresAt = $context['vip_expires_at'] ?? ($_SESSION['vip_expires_at'] ?? null);
         $accountType = strtolower((string) ($context['account_type'] ?? ($_SESSION['account_type'] ?? '')));
@@ -121,22 +150,28 @@ if (!function_exists('auth_refresh_session_roles')) {
             $roles[] = 'seller';
         }
 
-        $vipActive = false;
-        if ($vipStatus !== null) {
-            $vipActive = (int) $vipStatus === 1;
-            if ($vipActive && $vipExpiresAt) {
-                $expiresTs = strtotime((string) $vipExpiresAt);
+        $memberActive = false;
+        if ($memberStatus !== null) {
+            $memberActive = (int) $memberStatus === 1;
+            if ($memberActive && $memberExpiresAt) {
+                $expiresTs = strtotime((string) $memberExpiresAt);
                 if ($expiresTs !== false) {
-                    $vipActive = $expiresTs > time();
+                    $memberActive = $expiresTs > time();
                 }
             }
         }
 
-        if ($vipActive) {
+        if ($memberActive) {
             $roles[] = 'seller';
+            $roles[] = 'member';
+            $memberRoleName = auth_member_role_name();
+            if ($memberRoleName !== 'member') {
+                $roles[] = $memberRoleName;
+            }
+            $roles[] = 'vip';
         }
 
-        if (in_array($status, ['seller', 'vip', 'merchant', 'vendor'], true)) {
+        if (in_array($status, ['seller', 'vip', 'member', 'merchant', 'vendor', auth_member_role_name()], true)) {
             $roles[] = 'seller';
         }
 
@@ -200,6 +235,8 @@ function auth_sync_user_context(mysqli $conn, int $userId): void
     $status = $_SESSION['status'] ?? null;
     $vipStatus = $_SESSION['vip_status'] ?? null;
     $vipExpiresAt = $_SESSION['vip_expires_at'] ?? null;
+    $memberStatus = $_SESSION['member_status'] ?? null;
+    $memberExpiresAt = $_SESSION['member_expires_at'] ?? null;
     $accountType = $_SESSION['account_type'] ?? null;
 
     $columns = ['role', 'status'];
@@ -230,10 +267,12 @@ function auth_sync_user_context(mysqli $conn, int $userId): void
                     if (array_key_exists('vip_status', $row)) {
                         $vipStatus = $row['vip_status'];
                         $_SESSION['vip_status'] = $vipStatus;
+                        $_SESSION['member_status'] = $vipStatus;
                     }
                     if (array_key_exists('vip_expires_at', $row)) {
                         $vipExpiresAt = $row['vip_expires_at'];
                         $_SESSION['vip_expires_at'] = $vipExpiresAt;
+                        $_SESSION['member_expires_at'] = $vipExpiresAt;
                     }
                     if (array_key_exists('account_type', $row)) {
                         $accountType = $row['account_type'];
@@ -258,6 +297,8 @@ function auth_sync_user_context(mysqli $conn, int $userId): void
         'status' => $status,
         'vip_status' => $vipStatus,
         'vip_expires_at' => $vipExpiresAt,
+        'member_status' => $memberStatus ?? $vipStatus,
+        'member_expires_at' => $memberExpiresAt ?? $vipExpiresAt,
         'account_type' => $accountType,
         'is_admin' => $_SESSION['is_admin'] ?? 0,
     ]);

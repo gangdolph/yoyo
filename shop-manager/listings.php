@@ -92,6 +92,15 @@ $currentScope = $managerScope ?? STORE_SCOPE_MINE;
               'page' => $listingsPage,
               'per_page' => $listingsPerPage,
             ];
+            $originalCeiling = $item['original_price'] ?? $item['price'];
+            $originalCeilingNumeric = is_numeric($originalCeiling) ? (float) $originalCeiling : null;
+            $originalCeilingDisplay = $originalCeilingNumeric !== null
+              ? number_format($originalCeilingNumeric, 2)
+              : null;
+            $originalCeilingValue = $originalCeilingNumeric !== null
+              ? number_format($originalCeilingNumeric, 2, '.', '')
+              : '';
+            $currentPriceDisplay = number_format((float) $item['price'], 2);
           ?>
           <tr data-listing-id="<?= $listingId; ?>">
             <th scope="row">
@@ -103,7 +112,13 @@ $currentScope = $managerScope ?? STORE_SCOPE_MINE;
                 <?= htmlspecialchars($item['category'] ?: 'Uncategorised', ENT_QUOTES, 'UTF-8'); ?>
                 <?php if ($item['pickup_only']): ?> · Pickup only<?php endif; ?>
               </small><br>
-              <small>Price: $<?= htmlspecialchars(number_format((float) $item['price'], 2), ENT_QUOTES, 'UTF-8'); ?></small><br>
+              <small>Price: $<?= htmlspecialchars($currentPriceDisplay, ENT_QUOTES, 'UTF-8'); ?></small><br>
+              <?php if (!empty($item['sale_price'])): ?>
+                <small>Sale price: $<?= htmlspecialchars(number_format((float) $item['sale_price'], 2), ENT_QUOTES, 'UTF-8'); ?></small><br>
+              <?php endif; ?>
+              <?php if ($originalCeilingDisplay !== null): ?>
+                <small>Original price ceiling: $<?= htmlspecialchars($originalCeilingDisplay, ENT_QUOTES, 'UTF-8'); ?></small><br>
+              <?php endif; ?>
               <small>Created <?= htmlspecialchars((string) $item['created_at'], ENT_QUOTES, 'UTF-8'); ?></small>
             </th>
             <td>
@@ -177,7 +192,22 @@ $currentScope = $managerScope ?? STORE_SCOPE_MINE;
                   <label class="sr-only" for="listing-title-<?= $listingId; ?>">Title</label>
                   <input id="listing-title-<?= $listingId; ?>" type="text" name="title" value="<?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8'); ?>" placeholder="Title">
                   <label class="sr-only" for="listing-price-<?= $listingId; ?>">Price</label>
-                  <input id="listing-price-<?= $listingId; ?>" type="text" name="price" value="<?= htmlspecialchars(number_format((float) $item['price'], 2, '.', ''), ENT_QUOTES, 'UTF-8'); ?>" placeholder="Price">
+                  <input
+                    id="listing-price-<?= $listingId; ?>"
+                    type="text"
+                    name="price"
+                    value="<?= htmlspecialchars(number_format((float) $item['price'], 2, '.', ''), ENT_QUOTES, 'UTF-8'); ?>"
+                    placeholder="Price"
+                    <?php if ($originalCeilingDisplay !== null): ?>
+                      data-original-price="<?= htmlspecialchars($originalCeilingValue, ENT_QUOTES, 'UTF-8'); ?>"
+                      data-original-price-display="<?= htmlspecialchars($originalCeilingDisplay, ENT_QUOTES, 'UTF-8'); ?>"
+                      data-original-price-label="Price"
+                    <?php endif; ?>
+                  >
+                  <?php if ($originalCeilingDisplay !== null): ?>
+                    <small class="field-hint">You may lower the price, but it cannot exceed $<?= htmlspecialchars($originalCeilingDisplay, ENT_QUOTES, 'UTF-8'); ?>.</small>
+                    <small class="field-hint field-hint--error" data-price-ceiling-error hidden>Price cannot exceed $<?= htmlspecialchars($originalCeilingDisplay, ENT_QUOTES, 'UTF-8'); ?>.</small>
+                  <?php endif; ?>
                   <label class="sr-only" for="listing-quantity-<?= $listingId; ?>">Quantity</label>
                   <input id="listing-quantity-<?= $listingId; ?>" type="number" name="quantity" min="0" value="<?= $item['quantity'] !== null ? (int) $item['quantity'] : ''; ?>" placeholder="Quantity">
                 </div>

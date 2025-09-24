@@ -74,6 +74,11 @@
             <?php endforeach; ?>
           </ul>
         <?php endif; ?>
+        <?php
+          $rawQuantity = isset($l['quantity']) ? (int) $l['quantity'] : 0;
+          $rawReserved = isset($l['reserved_qty']) ? (int) $l['reserved_qty'] : 0;
+          $availableQuantity = max(0, $rawQuantity - $rawReserved);
+        ?>
         <?php if ($l['sale_price'] !== null): ?>
           <p class="price">
             <span class="original">$<?= htmlspecialchars($l['price']); ?></span>
@@ -82,8 +87,18 @@
         <?php else: ?>
           <p class="price">$<?= htmlspecialchars($l['price']); ?></p>
         <?php endif; ?>
+        <p class="stock-availability <?= $availableQuantity > 0 ? '' : 'out-of-stock'; ?>" aria-live="polite">
+          <?= $availableQuantity > 0
+            ? 'In stock: ' . htmlspecialchars((string) $availableQuantity)
+            : 'Out of stock'; ?>
+        </p>
         <div class="rating">★★★★★</div>
-        <button class="add-to-cart" data-id="<?= $l['id']; ?>">Add to Cart</button>
+        <button
+          class="add-to-cart"
+          data-id="<?= $l['id']; ?>"
+          data-available="<?= $availableQuantity; ?>"
+          <?= $availableQuantity <= 0 ? 'disabled' : ''; ?>
+        >Add to Cart</button>
         <?php if (is_admin()): ?>
           <form method="post" action="listing-delete.php" onsubmit="return confirm('Delete listing?');">
             <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">

@@ -18,7 +18,7 @@ if (!$listing_id) {
 }
 
 // Fetch the listing details
-$stmt = $conn->prepare('SELECT id, title, description, price, sale_price, pickup_only FROM listings WHERE id = ? LIMIT 1');
+$stmt = $conn->prepare('SELECT id, title, description, price, sale_price, pickup_only, quantity, reserved_qty FROM listings WHERE id = ? LIMIT 1');
 $stmt->bind_param('i', $listing_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -31,6 +31,65 @@ if (!$listing) {
     exit;
 }
 
+if (!isset($_SESSION['checkout_quantities']) || !is_array($_SESSION['checkout_quantities'])) {
+    $_SESSION['checkout_quantities'] = [];
+}
+if (!isset($_SESSION['checkout_notices']) || !is_array($_SESSION['checkout_notices'])) {
+    $_SESSION['checkout_notices'] = [];
+}
+if (!isset($_SESSION['reservation_tokens']) || !is_array($_SESSION['reservation_tokens'])) {
+    $_SESSION['reservation_tokens'] = [];
+}
+
+$availableQuantity = max(0, (int)($listing['quantity'] ?? 0) - (int)($listing['reserved_qty'] ?? 0));
+$selectedQuantity = isset($_SESSION['checkout_quantities'][$listing_id])
+    ? (int) $_SESSION['checkout_quantities'][$listing_id]
+    : 1;
+$quantityNotice = isset($_SESSION['checkout_notices'][$listing_id])
+    ? (string) $_SESSION['checkout_notices'][$listing_id]
+    : '';
+
+if ($availableQuantity <= 0) {
+    $selectedQuantity = 0;
+    $quantityNotice = 'This listing is out of stock.';
+    unset($_SESSION['checkout_quantities'][$listing_id]);
+} else {
+    if ($selectedQuantity <= 0) {
+        $selectedQuantity = 1;
+    }
+    if ($selectedQuantity > $availableQuantity) {
+        $selectedQuantity = $availableQuantity;
+        $quantityNotice = 'Only ' . $availableQuantity . ' available. Quantity adjusted.';
+    }
+    $_SESSION['checkout_quantities'][$listing_id] = $selectedQuantity;
+}
+$_SESSION['checkout_notices'][$listing_id] = $quantityNotice;
+$now = time();
+foreach ($_SESSION['reservation_tokens'] as $token => $state) {
+    if (!is_array($state)) {
+        unset($_SESSION['reservation_tokens'][$token]);
+        continue;
+    }
+    if (($state['created_at'] ?? 0) < ($now - 3600)) {
+        unset($_SESSION['reservation_tokens'][$token]);
+        continue;
+    }
+    if (($state['listing_id'] ?? null) === $listing_id) {
+        unset($_SESSION['reservation_tokens'][$token]);
+    }
+}
+$reservationToken = null;
+if ($selectedQuantity > 0) {
+    $reservationToken = bin2hex(random_bytes(16));
+    $_SESSION['reservation_tokens'][$reservationToken] = [
+        'listing_id' => $listing_id,
+        'quantity' => $selectedQuantity,
+        'reserved' => false,
+        'created_at' => $now,
+    ];
+}
+$checkoutDisabled = $selectedQuantity <= 0 || $availableQuantity <= 0;
+
 $pickupOnly = !empty($listing['pickup_only']);
 if (!$pickupOnly && !isset($_SESSION['shipping'][$listing_id])) {
     header('Location: shipping.php?listing_id=' . $listing_id);
@@ -38,9 +97,9 @@ if (!$pickupOnly && !isset($_SESSION['shipping'][$listing_id])) {
 }
 $shipping = $pickupOnly ? ['address' => '', 'method' => 'pickup', 'notes' => ''] : $_SESSION['shipping'][$listing_id];
 
-$basePrice = $listing['sale_price'] !== null ? (float)$listing['sale_price'] : (float)$listing['price'];
+$unitPrice = $listing['sale_price'] !== null ? (float)$listing['sale_price'] : (float)$listing['price'];
 $couponCode = trim($_GET['coupon'] ?? '');
-$discount = 0.0;
+$unitDiscount = 0.0;
 if ($couponCode !== '') {
     $stmt = $conn->prepare('SELECT discount_type, discount_value FROM coupons WHERE listing_id = ? AND code = ? AND (expires_at IS NULL OR expires_at > NOW()) LIMIT 1');
     $stmt->bind_param('is', $listing['id'], $couponCode);
@@ -48,17 +107,19 @@ if ($couponCode !== '') {
     $res = $stmt->get_result();
     if ($c = $res->fetch_assoc()) {
         if ($c['discount_type'] === 'percentage') {
-            $discount = $basePrice * ((float)$c['discount_value'] / 100);
+            $unitDiscount = $unitPrice * ((float)$c['discount_value'] / 100);
         } else {
-            $discount = (float)$c['discount_value'];
+            $unitDiscount = (float)$c['discount_value'];
         }
-        if ($discount > $basePrice) {
-            $discount = $basePrice;
+        if ($unitDiscount > $unitPrice) {
+            $unitDiscount = $unitPrice;
         }
     }
     $stmt->close();
 }
-$finalPrice = $basePrice - $discount;
+$unitNetPrice = max(0.0, $unitPrice - $unitDiscount);
+$subtotal = round($unitNetPrice * $selectedQuantity, 2);
+$discountTotal = round($unitDiscount * $selectedQuantity, 2);
 
 $applicationId = $squareConfig['application_id'];
 $locationId = $squareConfig['location_id'];
@@ -73,8 +134,8 @@ $feesFixed = (int)($transparencyConfig['FEES_FIXED_CENTS'] ?? 0) / 100;
 $shippingCost = isset($shipping['cost']) ? (float)$shipping['cost'] : 0.0;
 $taxAmount = isset($shipping['tax']) ? (float)$shipping['tax'] : 0.0;
 $processorFee = isset($shipping['processor_fee']) ? (float)$shipping['processor_fee'] : 0.0;
-$marketplaceFee = round(($finalPrice * ($feesPercent / 100)) + $feesFixed, 2);
-$estimatedTotal = round($finalPrice + $shippingCost + $taxAmount + $processorFee + $marketplaceFee, 2);
+$marketplaceFee = round(($subtotal * ($feesPercent / 100)) + $feesFixed, 2);
+$estimatedTotal = round($subtotal + $shippingCost + $taxAmount + $processorFee + $marketplaceFee, 2);
 $walletEnabled = !empty($transparencyConfig['SHOW_WALLET']);
 $walletBalanceCents = 0;
 $walletPendingCents = 0;
@@ -90,7 +151,7 @@ if ($walletEnabled && isset($_SESSION['user_id'])) {
         $walletEnabled = false;
     }
 }
-$amountDueCents = (int) round($finalPrice * 100);
+$amountDueCents = (int) round($subtotal * 100);
 if ($amountDueCents < 0) {
     $amountDueCents = 0;
 }
@@ -117,10 +178,19 @@ if ($walletEnabled) {
     <?php else: ?>
       <p class="price">$<?= htmlspecialchars($listing['price']); ?></p>
     <?php endif; ?>
-    <?php if ($discount > 0): ?>
-      <p class="discount">Coupon: -$<?= htmlspecialchars(number_format($discount, 2)); ?></p>
+    <p class="stock-availability <?= $availableQuantity > 0 ? '' : 'out-of-stock'; ?>" aria-live="polite">
+      <?= $availableQuantity > 0
+          ? 'In stock: ' . htmlspecialchars((string) $availableQuantity)
+          : 'Out of stock'; ?>
+    </p>
+    <?php if ($quantityNotice !== ''): ?>
+      <p class="stock-availability notice"><?= htmlspecialchars($quantityNotice); ?></p>
     <?php endif; ?>
-    <p class="subtotal">Subtotal: $<?= htmlspecialchars(number_format($finalPrice, 2)); ?></p>
+    <p class="quantity">Quantity: <?= htmlspecialchars((string) $selectedQuantity); ?></p>
+    <?php if ($discountTotal > 0): ?>
+      <p class="discount">Coupon: -$<?= htmlspecialchars(number_format($discountTotal, 2)); ?></p>
+    <?php endif; ?>
+    <p class="subtotal">Subtotal: $<?= htmlspecialchars(number_format($subtotal, 2)); ?></p>
   </div>
   <form method="get" class="coupon-form">
     <input type="hidden" name="listing_id" value="<?= $listing['id']; ?>">
@@ -146,7 +216,7 @@ if ($walletEnabled) {
     <aside class="policy-callout fee-transparency" aria-live="polite">
       <h3>Fee Transparency</h3>
       <ul class="policy-callout__list">
-        <li><span>Subtotal</span><span>$<?= htmlspecialchars(number_format($finalPrice, 2)); ?></span></li>
+        <li><span>Subtotal</span><span>$<?= htmlspecialchars(number_format($subtotal, 2)); ?></span></li>
         <?php if ($shippingCost > 0): ?>
           <li><span>Shipping</span><span>$<?= htmlspecialchars(number_format($shippingCost, 2)); ?></span></li>
         <?php endif; ?>
@@ -187,11 +257,18 @@ if ($walletEnabled) {
     <div id="card-container" data-app-id="<?= htmlspecialchars($applicationId); ?>" data-location-id="<?= htmlspecialchars($locationId); ?>"></div>
     <input type="hidden" name="token" id="token">
     <input type="hidden" name="listing_id" value="<?= $listing['id']; ?>">
+    <input type="hidden" name="quantity" value="<?= max(0, $selectedQuantity); ?>">
+    <?php if ($reservationToken !== null): ?>
+      <input type="hidden" name="reservation_token" value="<?= htmlspecialchars($reservationToken); ?>">
+    <?php endif; ?>
     <input type="hidden" name="coupon_code" value="<?= htmlspecialchars($couponCode); ?>">
     <?php if ($walletEnabled): ?>
       <input type="hidden" name="wallet_allowed" value="1">
     <?php endif; ?>
-    <button type="submit" class="checkout-submit">Pay Now</button>
+    <button type="submit" class="checkout-submit" <?= $checkoutDisabled ? 'disabled' : ''; ?>>Pay Now</button>
+    <?php if ($checkoutDisabled): ?>
+      <p class="stock-availability out-of-stock">This item is currently unavailable. Please adjust your cart.</p>
+    <?php endif; ?>
   </form>
   <?php include 'includes/footer.php'; ?>
 </body>

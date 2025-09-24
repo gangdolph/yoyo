@@ -50,6 +50,9 @@ return [
     '100-499.99' => 2.50,
     '500+' => 5.00,
   ],
+  'WITHDRAW_FEE_PERCENT_NON_MEMBER' => 1.5,
+  'WITHDRAW_MIN_CENTS' => 100,
+  'MEMBER_ROLE_NAME' => 'member',
   'WALLET_WITHDRAW_MIN_CENTS' => 100,
   'WALLET_HOLD_HOURS' => 24,
 ];
