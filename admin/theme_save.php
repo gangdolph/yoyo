@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/require-auth.php';
 require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/theme_store.php';
 
