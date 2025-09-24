@@ -1,6 +1,85 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/security.php';
+
+function auth_bootstrap(bool $refreshUserContext = true): void
+{
+    static $sessionReady = false;
+
+    send_security_headers();
+
+    if (!$sessionReady) {
+        auth_ensure_session_started();
+        $sessionReady = true;
+    }
+
+    if ($refreshUserContext && !defined('AUTH_CONTEXT_REFRESHED') && is_authenticated()) {
+        define('AUTH_CONTEXT_REFRESHED', true);
+
+        $db = null;
+        if (isset($GLOBALS['conn']) && $GLOBALS['conn'] instanceof mysqli) {
+            $db = $GLOBALS['conn'];
+        } else {
+            try {
+                $db = require __DIR__ . '/db.php';
+                if ($db instanceof mysqli) {
+                    $GLOBALS['conn'] = $db;
+                }
+            } catch (Throwable $e) {
+                error_log('[auth.php] Bootstrap database connection failed: ' . $e->getMessage());
+                $db = null;
+            }
+        }
+
+        if ($db instanceof mysqli) {
+            try {
+                auth_sync_user_context($db, (int) $_SESSION['user_id']);
+                $db->query('UPDATE users SET last_active = NOW() WHERE id = ' . (int) $_SESSION['user_id']);
+            } catch (Throwable $e) {
+                error_log('[auth.php] Context sync failed: ' . $e->getMessage());
+            }
+        }
+    }
+
+    if (!defined('AUTH_BOOTSTRAPPED')) {
+        define('AUTH_BOOTSTRAPPED', true);
+    }
+}
+
+function auth_ensure_session_started(): void
+{
+    $status = session_status();
+    if ($status === PHP_SESSION_ACTIVE || $status === PHP_SESSION_DISABLED) {
+        return;
+    }
+
+    if (headers_sent($sentFile, $sentLine)) {
+        trigger_error(
+            sprintf('Unable to start session because headers were sent in %s on line %d.', $sentFile, $sentLine),
+            E_USER_WARNING
+        );
+
+        return;
+    }
+
+    session_start();
+}
+
+function is_authenticated(): bool
+{
+    return isset($_SESSION['user_id']) && (int) $_SESSION['user_id'] > 0;
+}
+
+function require_auth(): void
+{
+    auth_bootstrap();
+    if (!is_authenticated()) {
+        header('Location: /login.php');
+        exit;
+    }
+}
+
 if (!function_exists('auth_refresh_session_roles')) {
     /**
      * Normalise the role set available to the current session.
@@ -68,42 +147,47 @@ if (!function_exists('auth_refresh_session_roles')) {
     }
 }
 
-if (!defined('AUTH_BOOTSTRAPPED')) {
-    define('AUTH_BOOTSTRAPPED', true);
+if (!function_exists('current_user_id')) {
+    function current_user_id(): ?int
+    {
+        return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
+    }
+}
 
-    $sessionStatus = session_status();
+if (!function_exists('current_user_role')) {
+    function current_user_role(): string
+    {
+        return isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : 'guest';
+    }
+}
 
-    if ($sessionStatus === PHP_SESSION_ACTIVE) {
-        // Session is already active, so nothing else to bootstrap here.
-    } elseif ($sessionStatus === PHP_SESSION_NONE) {
-        if (headers_sent($sentFile, $sentLine)) {
-            trigger_error(
-                sprintf('Unable to start session because headers were sent in %s on line %d.', $sentFile, $sentLine),
-                E_USER_WARNING
-            );
-            return;
+if (!function_exists('is_admin')) {
+    function is_admin(): bool
+    {
+        return in_array('admin', auth_current_roles(), true);
+    }
+}
+
+if (!function_exists('is_skuze_official')) {
+    function is_skuze_official(): bool
+    {
+        return in_array('skuze_official', auth_current_roles(), true);
+    }
+}
+
+if (!function_exists('auth_current_roles')) {
+    /**
+     * Return the normalised role set for the active session.
+     *
+     * @return array<int, string>
+     */
+    function auth_current_roles(): array
+    {
+        if (isset($_SESSION['auth_roles']) && is_array($_SESSION['auth_roles'])) {
+            return array_values(array_unique(array_map('strtolower', $_SESSION['auth_roles'])));
         }
 
-        session_start();
-    } else {
-        // Sessions are disabled; nothing to do.
-        return;
-    }
-
-    $db = require __DIR__ . '/db.php';
-
-    if (!isset($_SESSION['user_id'])) {
-        // Redirect to the login page at the site root
-        header('Location: /login.php');
-        exit;
-    }
-
-    $userId = (int) $_SESSION['user_id'];
-    auth_sync_user_context($db, $userId);
-
-    // Optional: update last_active for online tracking
-    if ($db instanceof mysqli) {
-        $db->query('UPDATE users SET last_active = NOW() WHERE id = ' . $userId);
+        return auth_refresh_session_roles();
     }
 }
 
@@ -167,7 +251,6 @@ function auth_sync_user_context(mysqli $conn, int $userId): void
         $_SESSION['status'] = $status;
     }
 
-    // Maintain backwards compatibility for legacy checks until they are replaced.
     $_SESSION['is_admin'] = $role === 'admin' ? 1 : 0;
 
     auth_refresh_session_roles([
@@ -201,48 +284,4 @@ function auth_users_table_has_column(mysqli $conn, string $column): bool
     }
 
     return $columnCache[$column];
-}
-
-if (!function_exists('current_user_id')) {
-    function current_user_id(): ?int
-    {
-        return isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : null;
-    }
-}
-
-if (!function_exists('current_user_role')) {
-    function current_user_role(): string
-    {
-        return isset($_SESSION['user_role']) ? (string) $_SESSION['user_role'] : 'guest';
-    }
-}
-
-if (!function_exists('is_admin')) {
-    function is_admin(): bool
-    {
-        return in_array('admin', auth_current_roles(), true);
-    }
-}
-
-if (!function_exists('is_skuze_official')) {
-    function is_skuze_official(): bool
-    {
-        return in_array('skuze_official', auth_current_roles(), true);
-    }
-}
-
-if (!function_exists('auth_current_roles')) {
-    /**
-     * Return the normalised role set for the active session.
-     *
-     * @return array<int, string>
-     */
-    function auth_current_roles(): array
-    {
-        if (isset($_SESSION['auth_roles']) && is_array($_SESSION['auth_roles'])) {
-            return array_values(array_unique(array_map('strtolower', $_SESSION['auth_roles'])));
-        }
-
-        return auth_refresh_session_roles();
-    }
 }

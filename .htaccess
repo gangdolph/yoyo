@@ -1,0 +1,21 @@
+# Security hardening rules for Apache-compatible environments.
+# If your deployment does not use .htaccess, equivalent headers and
+# request filters are applied via includes/security.php.
+
+# Block direct access to version control and environment files.
+RedirectMatch 404 ^/(\.git|\.svn|\.hg)(/|$)
+RedirectMatch 404 ^/(\.|_)?env$
+RedirectMatch 404 ^/composer\.(json|lock)$
+
+# Deny access to other dotfiles.
+<FilesMatch "^\\.(.*)$">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "SAMEORIGIN"
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+    Header set Permissions-Policy "camera=(), microphone=(), geolocation=()"
+    Header set Content-Security-Policy "default-src 'self'; img-src 'self' data: https:; script-src 'self' 'unsafe-inline' https:; style-src 'self' 'unsafe-inline' https:; font-src 'self' data: https:; connect-src 'self' https:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'"
+</IfModule>
