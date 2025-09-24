@@ -1,7 +1,11 @@
 <?php
+/*
+ * Change: Hook shipping actions into the unified Shop Manager controller so async updates work after Store Manager merge.
+ */
 $shippingActive = $activeTab === 'shipping';
 $shippingPanelId = 'shop-manager-panel-shipping';
 $shippingTabId = 'shop-manager-tab-shipping';
+$shippingScope = $managerScope ?? STORE_SCOPE_MINE;
 ?>
 <section
   id="<?= htmlspecialchars($shippingPanelId, ENT_QUOTES, 'UTF-8'); ?>"
@@ -49,9 +53,10 @@ $shippingTabId = 'shop-manager-tab-shipping';
               <?php endif; ?>
             </td>
             <td class="store-shipping__status">
-              <form class="store-shipping__status-form" method="post" action="/account/order_update_status.php">
+              <form class="store-shipping__status-form" method="post" action="/account/order_update_status.php" data-manager-action="shipping_status">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="order_id" value="<?= $orderId; ?>">
+                <input type="hidden" name="scope" value="<?= htmlspecialchars($shippingScope, ENT_QUOTES, 'UTF-8'); ?>">
                 <label class="sr-only" for="order-status-<?= $orderId; ?>">Fulfillment status</label>
                 <select id="order-status-<?= $orderId; ?>" name="status">
                   <?php foreach ($fulfillmentStatusOptions as $value => $label): ?>
@@ -62,9 +67,10 @@ $shippingTabId = 'shop-manager-tab-shipping';
               </form>
             </td>
             <td class="store-shipping__tracking" data-field="tracking">
-              <form class="store-shipping__tracking-form" method="post" action="/account/order_add_tracking.php">
+              <form class="store-shipping__tracking-form" method="post" action="/account/order_add_tracking.php" data-manager-action="shipping_tracking">
                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
                 <input type="hidden" name="order_id" value="<?= $orderId; ?>">
+                <input type="hidden" name="scope" value="<?= htmlspecialchars($shippingScope, ENT_QUOTES, 'UTF-8'); ?>">
                 <label class="sr-only" for="order-tracking-<?= $orderId; ?>">Tracking number</label>
                 <div class="store-shipping__tracking-inputs">
                   <input id="order-tracking-<?= $orderId; ?>" type="text" name="tracking_number" value="<?= htmlspecialchars($trackingValue, ENT_QUOTES, 'UTF-8'); ?>" maxlength="100" placeholder="Add tracking">

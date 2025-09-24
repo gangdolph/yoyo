@@ -1,3 +1,10 @@
+<?php
+// Update: Footer now highlights transparency content and wallet access when enabled.
+if (!isset($config) || !is_array($config)) {
+    $config = require __DIR__ . '/../config.php';
+}
+$walletEnabled = !empty($config['SHOW_WALLET']);
+?>
 <footer>
   <div class="footer-nav">
     <nav class="footer-column">
@@ -14,6 +21,9 @@
       <ul>
         <li><a href="/dashboard.php">Dashboard</a></li>
         <li><a href="/shop-manager/index.php">Shop Manager</a></li>
+        <?php if ($walletEnabled): ?>
+          <li><a href="/wallet.php">Wallet</a></li>
+        <?php endif; ?>
         <li><a href="/messages.php">Messages</a></li>
         <li><a href="/support.php">Support</a></li>
         <li><a href="/logout.php">Logout</a></li>
@@ -28,6 +38,7 @@
         <li><a href="/vip.php">VIP Plans</a></li>
         <li><a href="/terms.php">Terms</a></li>
         <li><a href="/privacy.php">Privacy</a></li>
+        <li><a href="/policies/">Policies</a></li>
       </ul>
     </nav>
   </div>

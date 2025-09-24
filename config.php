@@ -3,6 +3,7 @@
  * Discovery note: Config already combines database, SMTP, and Square keys.
  * Change: Added Square feature toggles earlier, introduced a manager UI flag for phased rollout,
  *         and now expose the webhook signature key for securing inbound events.
+ * Change: Introduced non-secret policy display defaults for public transparency messaging.
  */
 // Copy this file to config.php and fill in real credentials.
 // Never commit your actual config.php to version control.
@@ -37,4 +38,18 @@ return [
   'SQUARE_SYNC_ENABLED' => false,
   'SQUARE_SYNC_DIRECTION' => 'pull', // 'pull'|'push'|'two_way'
   'SHOP_MANAGER_V1_ENABLED' => false,
+  'SHOW_WALLET' => true,
+
+  // Public transparency defaults
+  'FEES_PERCENT' => 2.0,
+  'FEES_FIXED_CENTS' => 0,
+  'FEE_SHOW_BREAKDOWN' => true,
+  'AUCTION_SOFT_CLOSE_SECS' => 120,
+  'AUCTION_MIN_INCREMENT_TABLE' => [
+    '0-99.99' => 1.00,
+    '100-499.99' => 2.50,
+    '500+' => 5.00,
+  ],
+  'WALLET_WITHDRAW_MIN_CENTS' => 100,
+  'WALLET_HOLD_HOURS' => 24,
 ];

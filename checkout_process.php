@@ -2,6 +2,8 @@
 /*
  * Discovery note: Checkout relied on bespoke cURL calls straight to Square Payments without order scaffolding.
  * Change: Use the shared Square HTTP client with optional order creation behind USE_SQUARE_ORDERS.
+ * Change: Added wallet settlement path so buyers can pay via store credit with escrow holds.
+ * Fix: Permit wallet-only payments to skip Square token requirements while keeping card flows strict.
  */
 declare(strict_types=1);
 
@@ -22,6 +24,7 @@ require_once __DIR__ . '/includes/repositories/InventoryService.php';
 require_once __DIR__ . '/includes/repositories/OrdersService.php';
 require_once __DIR__ . '/includes/SquareHttpClient.php';
 require_once __DIR__ . '/includes/OrderService.php';
+require_once __DIR__ . '/includes/WalletService.php';
 
 try {
   /* --------------------------- Resolve mysqli handle --------------------------- */
@@ -55,7 +58,8 @@ try {
 
   /* ------------------------------ Config/inputs -------------------------------- */
   $inventoryService = new InventoryService($db);
-  $ordersService = new OrdersService($db, $inventoryService);
+  $walletService = new WalletService($db);
+  $ordersService = new OrdersService($db, $inventoryService, $walletService);
   $buyerId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
   $reservationQty = 0;
 
@@ -75,6 +79,11 @@ try {
   }
   $listing_id = isset($_POST['listing_id']) ? (int)$_POST['listing_id'] : 0;
   $coupon_code = isset($_POST['coupon_code']) && is_string($_POST['coupon_code']) ? trim($_POST['coupon_code']) : '';
+  $walletAllowed = !empty($config['SHOW_WALLET']) && !empty($_POST['wallet_allowed']);
+  $paymentMethod = isset($_POST['payment_method']) && is_string($_POST['payment_method'])
+    ? strtolower(trim($_POST['payment_method']))
+    : 'card';
+  $useWallet = $walletAllowed && $paymentMethod === 'wallet';
 
   // Helper: redirect to cancel with short reason + log
   $fail = function (string $reason, string $logDetail = '') use (&$reservationQty, $inventoryService, $listing_id, $buyerId) {
@@ -91,7 +100,7 @@ try {
     exit;
   };
 
-  if ($sourceId === '') {
+  if (!$useWallet && $sourceId === '') {
     $fail('missing_token', 'no token/source_id in POST');
   }
   if ($listing_id <= 0) {
@@ -109,10 +118,10 @@ try {
     $listingQuantity = 1;
     $listingReserved = 0;
     $listingStatus = 'draft';
-    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.stock, p.is_skuze_official, p.is_skuze_product, l.is_official_listing, l.quantity, l.reserved_qty, l.status FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+    $stmt = $db->prepare('SELECT l.price, l.sale_price, l.product_sku, p.stock, p.is_skuze_official, p.is_skuze_product, l.is_official_listing, l.quantity, l.reserved_qty, l.status, l.owner_id FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
     $stmt->bind_param('i', $listing_id);
     $stmt->execute();
-    $stmt->bind_result($basePrice, $salePrice, $sku, $stock, $productOfficial, $productLine, $listingOfficial, $listingQuantityRow, $listingReservedRow, $listingStatus);
+    $stmt->bind_result($basePrice, $salePrice, $sku, $stock, $productOfficial, $productLine, $listingOfficial, $listingQuantityRow, $listingReservedRow, $listingStatus, $sellerId);
     if (!$stmt->fetch()) {
       $stmt->close();
       $fail('listing_not_found', 'listing_id=' . $listing_id);
@@ -132,6 +141,7 @@ try {
     $listingQuantity = $listingQuantityRow !== null ? (int) $listingQuantityRow : 1;
     $listingReserved = $listingReservedRow !== null ? (int) $listingReservedRow : 0;
     $listingStatus = (string) $listingStatus;
+    $sellerId = (int) $sellerId;
 
     $price = $salePrice !== null ? $salePrice : $basePrice;
     $discount = 0.0;
@@ -178,6 +188,93 @@ try {
   $amount = (int)round(((float)$price) * 100); // cents
   if ($amount <= 0) {
     $fail('invalid_amount', 'price=' . var_export($price, true));
+  }
+
+  // Reconfirm wallet usage after computing amounts (balance checks may disable it below)
+  if ($useWallet) {
+    try {
+      $walletBalance = $walletService->getBalance($buyerId);
+      if ((int) $walletBalance['available_cents'] < $amount) {
+        $useWallet = false;
+      }
+    } catch (Throwable $walletCheckError) {
+      error_log('[checkout_process] wallet preflight failed: ' . $walletCheckError->getMessage());
+      $useWallet = false;
+    }
+  }
+
+  if ($useWallet) {
+    $paymentReference = 'wallet-' . bin2hex(random_bytes(8));
+    $paymentDbId = 0;
+    try {
+      $stmt = $db->prepare('INSERT INTO payments (user_id, listing_id, amount, payment_id, status) VALUES (?,?,?,?,?)');
+      if ($stmt === false) {
+        throw new RuntimeException('Failed to prepare wallet payment insert.');
+      }
+      $status = 'WALLET_HELD';
+      $stmt->bind_param('iiiss', $buyerId, $listing_id, $amount, $paymentReference, $status);
+      if (!$stmt->execute()) {
+        $stmt->close();
+        throw new RuntimeException('Failed to log wallet payment.');
+      }
+      $paymentDbId = (int) $stmt->insert_id;
+      $stmt->close();
+
+      $ship = $_SESSION['shipping'][$listing_id] ?? [];
+      $isOfficialOrder = ($productOfficial === 1 || $productLine === 1 || $listingOfficial === 1) ? 1 : 0;
+      $shippingProfileId = isset($ship['profile_id']) ? (int) $ship['profile_id'] : 0;
+      $shipAddress = (string) ($ship['address'] ?? '');
+      $shipMethod = (string) ($ship['method'] ?? '');
+      $shipNotes = (string) ($ship['notes'] ?? '');
+      $shippingSnapshot = json_encode([
+        'address' => $shipAddress,
+        'delivery_method' => $shipMethod,
+        'notes' => $shipNotes,
+      ], JSON_UNESCAPED_UNICODE);
+      if ($shippingSnapshot === false) {
+        $shippingSnapshot = null;
+      }
+
+      try {
+        $orderResult = $ordersService->createFulfillment(
+          $paymentDbId,
+          $buyerId,
+          $listing_id,
+          [
+            'address' => $shipAddress,
+            'delivery_method' => $shipMethod,
+            'notes' => $shipNotes,
+            'snapshot' => $shippingSnapshot,
+          ],
+          [
+            'sku' => $sku,
+            'is_official_order' => $isOfficialOrder,
+            'shipping_profile_id' => $shippingProfileId,
+            'quantity' => $reservationQty > 0 ? $reservationQty : 1,
+          ]
+        );
+        $reservationQty = 0;
+      } catch (Throwable $orderError) {
+        throw $orderError;
+      }
+
+      $walletService->holdForOrder($orderResult['order_id'], $buyerId, $sellerId, $amount, 'wallet-hold-' . $orderResult['order_id']);
+
+      unset($_SESSION['shipping'][$listing_id]);
+      header('Location: /success.php?id=' . urlencode($paymentReference) . '&wallet=1');
+      exit;
+    } catch (Throwable $walletFlowError) {
+      error_log('[checkout_process] wallet settlement failed: ' . $walletFlowError->getMessage());
+      if ($reservationQty > 0) {
+        try {
+          $inventoryService->releaseListing($listing_id, $reservationQty, $buyerId);
+        } catch (Throwable $releaseError) {
+          error_log('[checkout_process] wallet release_failed listing_id=' . $listing_id . ' :: ' . $releaseError->getMessage());
+        }
+        $reservationQty = 0;
+      }
+      $fail('wallet_error', 'wallet_flow_failed');
+    }
   }
 
   /* --------------------- Square REST via shared HTTP client -------------------- */

@@ -1,4 +1,5 @@
 <?php
+// Update: Added trades policy reminder so offer management references transparency docs.
 require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
@@ -80,6 +81,10 @@ if ($listing_filter) {
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <h2>Trade Offers</h2>
+  <aside class="policy-callout trade-policy-overview" aria-live="polite">
+    <h3>How trades stay fair</h3>
+    <p>Review our <a href="/policies/trades.php">Trades &amp; Escrow policy</a> for hold releases, dispute paths, and audit logging expectations.</p>
+  </aside>
   <?php if ($user_id): ?>
     <p><a class="button" href="trade-listing.php">Create Trade Listing</a></p>
   <?php endif; ?>

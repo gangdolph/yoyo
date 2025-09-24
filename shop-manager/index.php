@@ -3,6 +3,8 @@
  * Discovery note: Seller manager supported tags and status edits but lacked controlled updates for pricing or quantity.
  * Change: Added moderated detail edits with change request escalation, surfaced pending review indicators, and now expose
  *         a Square sync action for administrators.
+ * Change: Unified the legacy Store Manager scope controls and catalogue views so Shop Manager is the single dashboard
+ *         with products, reports, and fulfillment tooling.
  */
 
 declare(strict_types=1);
@@ -35,6 +37,12 @@ $squareSync = new SquareCatalogSync($db, $config);
 $squareSyncEnabled = $squareSync->isEnabled();
 $isAdmin = authz_has_role('admin');
 $isOfficialRole = authz_has_role('skuze_official');
+$isOfficial = store_user_is_official($db, $viewerId);
+$scopeOptions = store_scope_options($isOfficial, $isAdmin);
+$requestedScope = $_SERVER['REQUEST_METHOD'] === 'POST'
+    ? ($_POST['scope'] ?? $_GET['scope'] ?? STORE_SCOPE_MINE)
+    : ($_GET['scope'] ?? STORE_SCOPE_MINE);
+$managerScope = store_resolve_scope((string) $requestedScope, $isOfficial, $isAdmin);
 
 $requestedTab = $_SERVER['REQUEST_METHOD'] === 'POST'
     ? ($_POST['tab'] ?? SHOP_MANAGER_DEFAULT_TAB)
@@ -204,7 +212,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    $query = ['tab' => $activeTab];
+    $query = [
+        'tab' => $activeTab,
+        'scope' => $managerScope,
+    ];
     if (!empty($_POST['filters']) && is_array($_POST['filters'])) {
         foreach ($_POST['filters'] as $key => $value) {
             if ($value === '' || $value === null) {
@@ -232,12 +243,50 @@ $listingsFilters = [
 $listingsData = $listingsRepository->paginateForOwner($viewerId, $listingsFilters, $squareSyncEnabled);
 $listingsStatuses = $listingsRepository->allowedStatuses();
 
-$storeInventory = store_fetch_inventory($db, $viewerId, STORE_SCOPE_MINE);
-$isOfficial = store_user_is_official($db, $viewerId);
-$ordersList = store_fetch_orders($db, $viewerId, STORE_SCOPE_MINE, $isAdmin, $isOfficial);
+$productsList = store_fetch_products($db, $viewerId, $managerScope);
+$storeInventory = store_fetch_inventory($db, $viewerId, $managerScope);
+$ordersList = store_fetch_orders($db, $viewerId, $managerScope, $isAdmin, $isOfficial);
 $shippingList = store_manageable_shipping_orders($ordersList, $viewerId, $isAdmin, $isOfficial);
 $fulfillmentStatusOptions = order_fulfillment_status_options();
 $syncDirection = strtolower((string) ($config['SQUARE_SYNC_DIRECTION'] ?? 'pull'));
+$scopeLabel = $scopeOptions[$managerScope] ?? 'My inventory';
+$showOwnerColumn = $managerScope !== STORE_SCOPE_MINE;
+$listingsItems = $listingsData['items'];
+$listingsPagination = $listingsData['pagination'];
+$listingsTotal = (int) ($listingsPagination['total'] ?? count($listingsItems));
+$reportsSummary = [
+    'total_products' => count($productsList),
+    'official_products' => count(array_filter(
+        $productsList,
+        static function (array $product): bool {
+            return !empty($product['is_skuze_official']) || !empty($product['is_skuze_product']);
+        }
+    )),
+    'total_listings' => $listingsTotal,
+    'pending_listings' => count(array_filter(
+        $listingsItems,
+        static function (array $listing): bool {
+            $status = strtolower((string) ($listing['status'] ?? ''));
+            return in_array($status, ['pending', 'under_review', 'review'], true);
+        }
+    )),
+    'open_orders' => count(array_filter(
+        $ordersList,
+        static function (array $order): bool {
+            $status = strtolower((string) ($order['shipping_status'] ?? ''));
+            return !in_array($status, ['completed', 'cancelled'], true);
+        }
+    )),
+    'low_stock' => count(array_filter(
+        $storeInventory,
+        static function (array $item): bool {
+            return (int) $item['reorder_threshold'] > 0 && (int) $item['stock'] <= (int) $item['reorder_threshold'];
+        }
+    )),
+    'sync_enabled' => $squareSyncEnabled,
+    'sync_direction' => $syncDirection,
+    'scope_label' => $scopeLabel,
+];
 
 $csrfToken = generate_token();
 $flash = shop_manager_consume_flash($activeTab);
@@ -246,7 +295,6 @@ $flash = shop_manager_consume_flash($activeTab);
   <title>Shop Manager</title>
   <link rel="stylesheet" href="/assets/style.css">
   <script src="/assets/tags.js" defer></script>
-  <script type="module" src="/assets/store.js" defer></script>
   <script type="module" src="/assets/shop-manager.js" defer></script>
 </head>
 <body>
@@ -263,6 +311,24 @@ $flash = shop_manager_consume_flash($activeTab);
         <h2>Shop Manager</h2>
         <p class="store__subtitle">A single workspace for listings, inventory, and fulfillment tasks.</p>
       </div>
+      <?php if (count($scopeOptions) > 1): ?>
+        <form class="store__scope" method="get">
+          <input type="hidden" name="tab" value="<?= htmlspecialchars($activeTab, ENT_QUOTES, 'UTF-8'); ?>">
+          <?php foreach ($_GET as $key => $value): ?>
+            <?php if (in_array($key, ['tab', 'scope'], true)) { continue; } ?>
+            <?php if (!is_scalar($value)) { continue; } ?>
+            <input type="hidden" name="<?= htmlspecialchars((string) $key, ENT_QUOTES, 'UTF-8'); ?>" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>">
+          <?php endforeach; ?>
+          <label for="shop-manager-scope">Viewing</label>
+          <select id="shop-manager-scope" name="scope" onchange="this.form.submit()">
+            <?php foreach ($scopeOptions as $value => $label): ?>
+              <option value="<?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8'); ?>" <?= $managerScope === $value ? 'selected' : ''; ?>>
+                <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8'); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </form>
+      <?php endif; ?>
     </header>
 
     <div class="store__tabs" role="tablist" aria-label="Shop manager sections">
@@ -298,12 +364,16 @@ $flash = shop_manager_consume_flash($activeTab);
       $shipping = $shippingList;
       $squareSyncAvailable = $squareSyncEnabled;
       $squareSyncDirection = $syncDirection;
+      $products = $productsList;
+      $reports = $reportsSummary;
+      include __DIR__ . '/products.php';
       include __DIR__ . '/listings.php';
       include __DIR__ . '/inventory.php';
       include __DIR__ . '/orders.php';
       include __DIR__ . '/shipping.php';
-      include __DIR__ . '/settings.php';
       include __DIR__ . '/sync.php';
+      include __DIR__ . '/reports.php';
+      include __DIR__ . '/settings.php';
     ?>
   </div>
   <?php include __DIR__ . '/../includes/footer.php'; ?>

@@ -2,6 +2,7 @@
 /*
  * Discovery note: Shop manager tabs previously omitted a dedicated sync panel for catalog ops.
  * Change: Added a Sync tab definition to surface manual Square reconciliations.
+ * Change: Registered Products and Reports tabs so the unified dashboard replaces the old Store Manager surface.
  */
 
 declare(strict_types=1);
@@ -11,6 +12,10 @@ require_once __DIR__ . '/store.php';
 
 const SHOP_MANAGER_DEFAULT_TAB = 'listings';
 const SHOP_MANAGER_TABS = [
+    'products' => [
+        'label' => 'Products',
+        'description' => 'Review catalogue entries and confirm merchandising details.',
+    ],
     'listings' => [
         'label' => 'Listings',
         'description' => 'Review and manage your live, draft, or pending listings.',
@@ -27,13 +32,17 @@ const SHOP_MANAGER_TABS = [
         'label' => 'Shipping',
         'description' => 'Update fulfillment statuses and tracking numbers.',
     ],
-    'settings' => [
-        'label' => 'Settings',
-        'description' => 'Configure default preferences for your shop.',
-    ],
     'sync' => [
         'label' => 'Sync',
         'description' => 'Manage catalog synchronisation with Square.',
+    ],
+    'reports' => [
+        'label' => 'Reports',
+        'description' => 'View shop health indicators and review queue counts.',
+    ],
+    'settings' => [
+        'label' => 'Settings',
+        'description' => 'Configure default preferences for your shop.',
     ],
 ];
 

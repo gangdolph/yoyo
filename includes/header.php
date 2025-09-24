@@ -1,4 +1,5 @@
 <?php
+// Update: Added transparency and wallet shortcuts so visitors can reach policies and balances quickly.
 require_once __DIR__ . '/auth.php';
 
 $headerRequiresAuth = !defined('HEADER_SKIP_AUTH') || HEADER_SKIP_AUTH !== true;
@@ -9,6 +10,10 @@ if ($headerRequiresAuth) {
 }
 
 $db = require __DIR__ . '/db.php';
+if (!isset($config) || !is_array($config)) {
+  $config = require __DIR__ . '/../config.php';
+}
+$walletEnabled = !empty($config['SHOW_WALLET']);
 require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/notifications.php';
 
@@ -72,6 +77,7 @@ endif;
       <a href="/about.php" data-i18n="about">About</a>
       <a href="/help.php" data-i18n="help">Help/FAQ</a>
       <a href="/support.php" data-i18n="support">Support</a>
+      <a href="/policies/" data-i18n="policies">Policies</a>
     </nav>
   </div>
   <div class="search-container header-center">
@@ -89,6 +95,9 @@ endif;
     <div class="header-user"><?= username_with_avatar($db, $uid, $username) ?></div>
     <nav class="site-nav header-links">
       <a href="/dashboard.php" class="btn" data-i18n="dashboard">Dashboard</a>
+      <?php if ($walletEnabled): ?>
+        <a href="/wallet.php" class="btn" data-i18n="wallet">Wallet</a>
+      <?php endif; ?>
       <a href="/friend-requests.php" aria-label="Friend Requests<?= $pending_requests ? ' (' . $pending_requests . ' pending)' : '' ?>">
         <img src="/assets/user-plus.svg" alt="Friend Requests">
         <?php if (!empty($pending_requests)): ?><span class="badge"><?= $pending_requests ?></span><?php endif; ?>

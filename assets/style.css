@@ -1,3 +1,4 @@
+/* Update: Added policy callout styling for transparency panels. */
 :root {
   /* Design system: colors */
   --color-bg: #030016;
@@ -109,6 +110,107 @@ body {
   flex-direction: column;
   min-height: 100vh;
   overflow-x: hidden;
+}
+
+/* Wallet + admin ledger surfaces */
+.wallet-page, .admin-wallet {
+  padding: var(--space-lg) var(--space-md);
+}
+
+.wallet-balances {
+  display: flex;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  flex-wrap: wrap;
+}
+
+.wallet-balances__item {
+  background: rgba(0, 0, 0, 0.35);
+  padding: var(--space-md);
+  border-radius: 8px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.25);
+  min-width: 180px;
+}
+
+.wallet-history__table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--space-md);
+}
+
+.wallet-history__table th,
+.wallet-history__table td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: var(--space-sm);
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.wallet-history__meta {
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.wallet-options {
+  margin-bottom: var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: var(--space-md);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.wallet-options label {
+  display: block;
+  margin-bottom: var(--space-sm);
+}
+
+.wallet-options .wallet-note {
+  display: block;
+  font-size: 0.8rem;
+  color: #ffafcc;
+}
+
+.wallet-page__disclaimer {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+  margin-bottom: var(--space-md);
+}
+
+.wallet-history__actions {
+  display: flex;
+  gap: var(--space-sm);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.admin-wallet__search,
+.admin-wallet__adjust {
+  margin-bottom: var(--space-lg);
+}
+
+.admin-wallet__adjust form {
+  display: grid;
+  gap: var(--space-sm);
+  max-width: 420px;
+}
+
+.admin-wallet__actions {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.alert {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: 6px;
+  margin-bottom: var(--space-md);
+}
+
+.alert-success {
+  background: rgba(0, 128, 0, 0.35);
+}
+
+.alert-danger {
+  background: rgba(128, 0, 0, 0.4);
 }
 
 body::before,
@@ -3050,4 +3152,50 @@ body.nav-open .hero {
   margin-top: 0.25rem;
   opacity: 0.75;
   text-transform: none;
+}
+
+.policy-callout {
+  margin: var(--space-md) 0;
+  padding: var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 0.75rem;
+  background: rgba(0, 0, 0, 0.25);
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.3);
+  text-transform: none;
+}
+
+.policy-callout h3 {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.policy-callout p {
+  margin-top: 0;
+}
+
+.policy-callout__list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.policy-callout__list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.policy-callout__list span:last-child {
+  font-weight: 600;
+}
+
+.policy-callout__note {
+  font-size: 0.75rem;
+  opacity: 0.8;
 }

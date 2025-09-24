@@ -1,4 +1,8 @@
 <?php
+/*
+ * Change: Added product scope helpers so Shop Manager can surface merged Store Manager views
+ *         and report summaries from a single dashboard.
+ */
 declare(strict_types=1);
 
 if (!defined('YOYO_SKIP_DB_BOOTSTRAP')) {
@@ -197,6 +201,67 @@ function store_fetch_inventory(mysqli $conn, int $viewerId, string $scope): arra
             'sku' => $row['sku'],
             'title' => $row['title'],
             'stock' => (int) $row['stock'],
+            'reorder_threshold' => (int) $row['reorder_threshold'],
+            'owner_id' => (int) $row['owner_id'],
+            'owner_username' => $row['owner_username'],
+            'is_skuze_official' => (bool) $row['is_skuze_official'],
+            'is_skuze_product' => (bool) $row['is_skuze_product'],
+        ];
+    }
+    $stmt->close();
+
+    return $rows;
+}
+
+/**
+ * Fetch product catalogue rows for the requested scope.
+ *
+ * @return array<int, array<string, mixed>>
+ */
+function store_fetch_products(mysqli $conn, int $viewerId, string $scope): array
+{
+    $sql = 'SELECT p.sku, p.title, p.price, p.stock, p.quantity, p.reorder_threshold, '
+         . 'p.is_skuze_official, p.is_skuze_product, p.owner_id, u.username AS owner_username '
+         . 'FROM products p '
+         . 'LEFT JOIN users u ON p.owner_id = u.id';
+    $types = '';
+    $params = [];
+
+    if ($scope === STORE_SCOPE_MINE) {
+        $sql .= ' WHERE p.owner_id = ?';
+        $types = 'i';
+        $params[] = $viewerId;
+    } elseif ($scope === STORE_SCOPE_OFFICIAL) {
+        $sql .= ' WHERE p.is_skuze_official = 1 OR p.is_skuze_product = 1 OR p.is_official = 1';
+    }
+
+    $sql .= ' ORDER BY p.title ASC';
+
+    $stmt = $conn->prepare($sql);
+    if ($stmt === false) {
+        error_log('[store] Failed to prepare products query: ' . $conn->error);
+        return [];
+    }
+
+    if ($types !== '') {
+        $stmt->bind_param($types, ...$params);
+    }
+
+    if (!$stmt->execute()) {
+        error_log('[store] Failed to execute products query: ' . $stmt->error);
+        $stmt->close();
+        return [];
+    }
+
+    $result = $stmt->get_result();
+    $rows = [];
+    while ($row = $result->fetch_assoc()) {
+        $rows[] = [
+            'sku' => $row['sku'],
+            'title' => $row['title'],
+            'price' => (float) $row['price'],
+            'stock' => (int) $row['stock'],
+            'quantity' => isset($row['quantity']) ? (int) $row['quantity'] : null,
             'reorder_threshold' => (int) $row['reorder_threshold'],
             'owner_id' => (int) $row['owner_id'],
             'owner_username' => $row['owner_username'],

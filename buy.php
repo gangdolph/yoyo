@@ -1,9 +1,21 @@
 <?php
+// Update: Added auction rule callout leveraging config-driven transparency defaults.
 require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
 require 'includes/tags.php';
 require 'includes/listing-query.php';
+
+$marketConfig = require __DIR__ . '/config.php';
+$softCloseSeconds = (int)($marketConfig['AUCTION_SOFT_CLOSE_SECS'] ?? 120);
+$incrementRules = $marketConfig['AUCTION_MIN_INCREMENT_TABLE'] ?? [];
+$incrementSummary = [];
+if (is_array($incrementRules)) {
+    foreach ($incrementRules as $range => $increment) {
+        $incrementSummary[] = sprintf('%s → $%s', $range, number_format((float)$increment, 2));
+    }
+}
+$incrementText = $incrementSummary ? implode(', ', $incrementSummary) : 'See policy for current increments';
 
 $filters = sanitize_buy_filters($_GET);
 $search = $filters['search'];
@@ -60,6 +72,11 @@ $baseQuery = array_filter($baseQuery, static function ($value) {
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <h2>Available Listings</h2>
+  <aside class="policy-callout auction-policy-callout" aria-live="polite">
+    <h3>Bidding Rules</h3>
+    <p>Auctions use a <?= htmlspecialchars((string)$softCloseSeconds); ?>s soft close to deter sniping. Minimum increments: <?= htmlspecialchars($incrementText); ?>.</p>
+    <p><a href="/policies/auctions.php">Full auctions policy</a></p>
+  </aside>
   <div class="content">
     <form method="get" class="filter-bar" data-filter-form data-filter-context="buy" data-filter-endpoint="api/listings.php" data-filter-results="#buy-results" data-filter-status="#buy-filters-status">
       <div class="filter-bar__row">
