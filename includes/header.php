@@ -1,19 +1,13 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-  if (headers_sent($sentFile, $sentLine)) {
-    trigger_error(
-      sprintf('Unable to start session because headers were sent in %s on line %d.', $sentFile, $sentLine),
-      E_USER_WARNING
-    );
-  } else {
-    session_start();
-  }
-}
+require_once __DIR__ . '/auth.php';
 
 $headerRequiresAuth = !defined('HEADER_SKIP_AUTH') || HEADER_SKIP_AUTH !== true;
+
+auth_bootstrap();
 if ($headerRequiresAuth) {
-  require_once __DIR__ . '/auth.php';
+  require_auth();
 }
+
 $db = require __DIR__ . '/db.php';
 require_once __DIR__ . '/user.php';
 require_once __DIR__ . '/notifications.php';
