@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Admin update endpoint expected the legacy pending/shipped workflow.
+ * Change: Keeps flash messaging but now aligns with the staged lifecycle introduced in Shop Manager V1.
+ */
 require_once __DIR__ . '/../includes/require-auth.php';
 require_once __DIR__ . '/../includes/authz.php';
 require '../includes/db.php';

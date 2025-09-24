@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Order helpers still referenced the legacy pending/processing flow.
+ * Change: Introduced the New→Completed lifecycle map while preserving compatibility aliases.
+ */
 /**
  * Helper functions for retrieving enriched order data.
  */
@@ -244,11 +248,15 @@ function _orders_normalize_row(array $row): array {
  */
 function order_fulfillment_status_options(): array {
     return [
-        'pending' => 'Pending',
-        'processing' => 'Processing',
+        'new' => 'New',
+        'paid' => 'Paid',
+        'packing' => 'Packing',
         'shipped' => 'Shipped',
         'delivered' => 'Delivered',
+        'completed' => 'Completed',
         'cancelled' => 'Cancelled',
+        'pending' => 'Pending', // legacy alias
+        'processing' => 'Packing', // legacy alias
     ];
 }
 

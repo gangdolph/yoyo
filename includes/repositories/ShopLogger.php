@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Shared shop logger lacked the discovery/change header and context.
+ * Change: Documented the helper so future updates know it centralises structured auditing.
+ */
 declare(strict_types=1);
 
 /**

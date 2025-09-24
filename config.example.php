@@ -1,4 +1,9 @@
 <?php
+/*
+ * Discovery note: Example configuration lagged behind the live feature toggles.
+ * Change: Documented the Square-related flags so new installs match the current rollout options
+ *         and highlighted the webhook signature key used to validate Square callbacks.
+ */
 // Copy this file to config.php and fill in real credentials.
 // Never commit your actual config.php to version control.
 return [
@@ -23,5 +28,13 @@ return [
   'square_location_id' => 'LXXXXXXXXXXXX',
   'square_access_token' => 'EAAAxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
   'square_environment' => 'sandbox', // or 'production'
-  'SQUARE_CATALOG_SYNC' => false,
+  'square_webhook_signature_key' => '',
+
+  // Square feature flags
+  'USE_SQUARE_ORDERS' => false,
+  'SQUARE_SYNC_ENABLED' => false,
+  'SQUARE_SYNC_DIRECTION' => 'pull', // 'pull'|'push'|'two_way'
+
+  // Manager workspace rollout
+  'SHOP_MANAGER_V1_ENABLED' => false,
 ];

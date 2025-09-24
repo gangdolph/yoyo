@@ -1,4 +1,10 @@
 <?php
+/*
+ * Discovery note: Square catalog sync helper was wired to an obsolete config flag
+ * and lacked documentation.
+ * Change: Documented the helper and aligned enablement with the new SQUARE_SYNC
+ * feature flags so the manager UI honours the toggle.
+ */
 declare(strict_types=1);
 
 require_once __DIR__ . '/ShopLogger.php';
@@ -11,7 +17,7 @@ final class SquareCatalogSync
     public function __construct(mysqli $conn, array $config)
     {
         $this->conn = $conn;
-        $this->enabled = !empty($config['SQUARE_CATALOG_SYNC']) && $this->tableExists();
+        $this->enabled = !empty($config['SQUARE_SYNC_ENABLED']) && $this->tableExists();
     }
 
     public function isEnabled(): bool

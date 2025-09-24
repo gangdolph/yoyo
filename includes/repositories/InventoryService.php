@@ -1,4 +1,9 @@
 <?php
+/*
+ * Discovery note: Inventory adjustments only touched product stock and skipped linked listings.
+ * Change: Synced product updates across associated listings while retaining ledger logging and
+ *         now expose a Square webhook reconciliation path that records ledger entries.
+ */
 declare(strict_types=1);
 
 require_once __DIR__ . '/ShopLogger.php';
@@ -88,6 +93,27 @@ final class InventoryService
                 throw new RuntimeException('Failed to update inventory.');
             }
             $stmt->close();
+
+            $listingStmt = $this->conn->prepare(
+                'UPDATE listings '
+                . 'SET quantity = CASE WHEN quantity IS NULL THEN NULL ELSE GREATEST(quantity + ?, 0) END, '
+                . 'updated_at = NOW() WHERE product_sku = ?'
+            );
+            if ($listingStmt !== false) {
+                $listingStmt->bind_param('is', $delta, $sku);
+                $listingStmt->execute();
+                $listingStmt->close();
+            }
+
+            $reconcile = $this->conn->prepare(
+                'UPDATE listings SET reserved_qty = LEAST(reserved_qty, quantity) '
+                . 'WHERE product_sku = ? AND quantity IS NOT NULL'
+            );
+            if ($reconcile !== false) {
+                $reconcile->bind_param('s', $sku);
+                $reconcile->execute();
+                $reconcile->close();
+            }
 
             $this->recordInventoryTransaction(
                 $sku,
@@ -326,7 +352,7 @@ final class InventoryService
     ): void {
         $stmt = $this->conn->prepare(
             'INSERT INTO inventory_transactions (product_sku, owner_id, transaction_type, quantity_change, quantity_before, quantity_after, reference_type, reference_id, metadata) '
-            . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)' 
+            . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
         );
 
         if ($stmt === false) {
@@ -348,5 +374,126 @@ final class InventoryService
         );
         $stmt->execute();
         $stmt->close();
+    }
+
+    /**
+     * Synchronise a product's stock level against an authoritative external value.
+     *
+     * @return array{sku: string, stock: int, quantity: ?int, delta: int}|null
+     */
+    public function reconcileExternalStock(
+        string $sku,
+        int $authoritativeStock,
+        string $referenceType,
+        ?int $referenceId,
+        array $metadata
+    ): ?array {
+        if ($sku === '') {
+            return null;
+        }
+
+        $this->conn->begin_transaction();
+        try {
+            $stmt = $this->conn->prepare(
+                'SELECT owner_id, stock, quantity FROM products WHERE sku = ? FOR UPDATE'
+            );
+            if ($stmt === false) {
+                throw new RuntimeException('Unable to prepare inventory lookup.');
+            }
+
+            $stmt->bind_param('s', $sku);
+            if (!$stmt->execute()) {
+                $stmt->close();
+                throw new RuntimeException('Unable to fetch inventory for reconciliation.');
+            }
+
+            $stmt->bind_result($ownerId, $stock, $quantity);
+            if (!$stmt->fetch()) {
+                $stmt->close();
+                $this->conn->rollback();
+                return null;
+            }
+            $stmt->close();
+
+            $ownerId = (int) $ownerId;
+            $currentStock = (int) $stock;
+            $currentQuantity = $quantity !== null ? (int) $quantity : null;
+
+            $targetStock = max(0, $authoritativeStock);
+            $targetQuantity = $currentQuantity !== null ? $targetStock : null;
+            $delta = $targetStock - $currentStock;
+
+            if ($currentQuantity !== null) {
+                $update = $this->conn->prepare(
+                    'UPDATE products SET stock = ?, quantity = ?, updated_at = NOW() WHERE sku = ?'
+                );
+                if ($update === false) {
+                    throw new RuntimeException('Unable to update product inventory.');
+                }
+                $update->bind_param('iis', $targetStock, $targetQuantity, $sku);
+            } else {
+                $update = $this->conn->prepare('UPDATE products SET stock = ?, updated_at = NOW() WHERE sku = ?');
+                if ($update === false) {
+                    throw new RuntimeException('Unable to update product inventory.');
+                }
+                $update->bind_param('is', $targetStock, $sku);
+            }
+
+            if (!$update->execute()) {
+                $update->close();
+                throw new RuntimeException('Failed to persist reconciled inventory.');
+            }
+            $update->close();
+
+            $listingUpdate = $this->conn->prepare(
+                'UPDATE listings SET quantity = ?, updated_at = NOW() WHERE product_sku = ?'
+            );
+            if ($listingUpdate !== false) {
+                $listingUpdate->bind_param('is', $targetStock, $sku);
+                $listingUpdate->execute();
+                $listingUpdate->close();
+            }
+
+            $reconcileReserved = $this->conn->prepare(
+                'UPDATE listings SET reserved_qty = LEAST(reserved_qty, quantity) WHERE product_sku = ?'
+            );
+            if ($reconcileReserved !== false) {
+                $reconcileReserved->bind_param('s', $sku);
+                $reconcileReserved->execute();
+                $reconcileReserved->close();
+            }
+
+            if ($delta !== 0) {
+                $this->recordInventoryTransaction(
+                    $sku,
+                    $ownerId,
+                    'square_webhook_sync',
+                    $delta,
+                    $currentStock,
+                    $targetStock,
+                    $referenceType,
+                    $referenceId,
+                    $metadata
+                );
+            }
+
+            $this->conn->commit();
+
+            return [
+                'sku' => $sku,
+                'stock' => $targetStock,
+                'quantity' => $targetQuantity,
+                'delta' => $delta,
+            ];
+        } catch (Throwable $e) {
+            $this->conn->rollback();
+            shop_log('inventory.sync_error', [
+                'sku' => $sku,
+                'error' => $e->getMessage(),
+                'reference_type' => $referenceType,
+                'metadata' => $metadata,
+            ]);
+            throw $e;
+        }
     }
 }

@@ -1,4 +1,8 @@
 <?php
+/*
+ * Discovery note: Checkout relied on bespoke cURL calls straight to Square Payments without order scaffolding.
+ * Change: Use the shared Square HTTP client with optional order creation behind USE_SQUARE_ORDERS.
+ */
 declare(strict_types=1);
 
 require __DIR__ . '/_debug_bootstrap.php';
@@ -16,6 +20,8 @@ $maybeDb = require __DIR__ . '/includes/db.php';  // may return mysqli OR set $c
 $config  = require __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/repositories/InventoryService.php';
 require_once __DIR__ . '/includes/repositories/OrdersService.php';
+require_once __DIR__ . '/includes/SquareHttpClient.php';
+require_once __DIR__ . '/includes/OrderService.php';
 
 try {
   /* --------------------------- Resolve mysqli handle --------------------------- */
@@ -53,10 +59,12 @@ try {
   $buyerId = isset($_SESSION['user_id']) ? (int) $_SESSION['user_id'] : 0;
   $reservationQty = 0;
 
-  $env         = strtolower(trim($config['square_environment'] ?? 'sandbox'));
-  $accessToken = trim((string)($config['square_access_token'] ?? ''));
-  $locationId  = trim((string)($config['square_location_id'] ?? ''));
+  $squareClient = new SquareHttpClient($config);
+  $squareOrderService = new OrderService($squareClient);
+  $env         = $squareClient->getEnvironment();
+  $locationId  = $squareClient->getLocationId();
   $currency    = strtoupper((string)($config['CURRENCY'] ?? 'USD'));
+  $useSquareOrders = !empty($config['USE_SQUARE_ORDERS']);
 
   // Inputs
   $sourceId = '';
@@ -83,9 +91,6 @@ try {
     exit;
   };
 
-  if ($accessToken === '' || $locationId === '') {
-    $fail('config_error', 'missing access token or location id');
-  }
   if ($sourceId === '') {
     $fail('missing_token', 'no token/source_id in POST');
   }
@@ -175,13 +180,10 @@ try {
     $fail('invalid_amount', 'price=' . var_export($price, true));
   }
 
-  /* --------------------------- Square REST via cURL ---------------------------- */
-  $base = ($env === 'production')
-    ? 'https://connect.squareup.com'
-    : 'https://connect.squareupsandbox.com';
-
+  /* --------------------- Square REST via shared HTTP client -------------------- */
+  $paymentIdempotencyKey = bin2hex(random_bytes(16));
   $payload = [
-    'idempotency_key' => bin2hex(random_bytes(16)),
+    'idempotency_key' => $paymentIdempotencyKey,
     'source_id'       => $sourceId,
     'location_id'     => $locationId,
     'amount_money'    => [
@@ -192,30 +194,43 @@ try {
     // 'autocomplete' => true,
   ];
 
-  $ch = curl_init($base . '/v2/payments');
-  curl_setopt_array($ch, [
-    CURLOPT_POST           => true,
-    CURLOPT_RETURNTRANSFER => true,
-    CURLOPT_TIMEOUT        => 30,
-    CURLOPT_HTTPHEADER     => [
-      'Content-Type: application/json',
-      'Square-Version: 2024-08-15',
-      'Authorization: Bearer ' . $accessToken,
-    ],
-    CURLOPT_POSTFIELDS     => json_encode($payload, JSON_UNESCAPED_SLASHES),
-  ]);
+  if ($useSquareOrders) {
+    try {
+      $quantity = $reservationQty > 0 ? $reservationQty : 1;
+      $lineItems = [[
+        'name' => 'Listing #' . $listing_id,
+        'quantity' => (string)$quantity,
+        'base_price_money' => [
+          'amount' => $amount,
+          'currency' => $currency,
+        ],
+      ]];
 
-  $raw  = curl_exec($ch);
-  $err  = curl_errno($ch);
-  $http = (int)curl_getinfo($ch, CURLINFO_HTTP_CODE);
-  curl_close($ch);
-
-  if ($err) {
-    error_log('Square cURL error: ' . $err . ' body=' . $raw);
-    $fail('gateway_error', 'curl_errno=' . $err);
+      $orderId = $squareOrderService->createOrder($lineItems, [], $locationId);
+      $payload['order_id'] = $orderId;
+    } catch (Throwable $orderCreationError) {
+      square_log('square.order_create_failed', [
+        'listing_id' => $listing_id,
+        'error' => $orderCreationError->getMessage(),
+      ]);
+      $fail('order_error', 'order_create_failed');
+    }
   }
 
-  $resp      = json_decode($raw, true);
+  try {
+    $response = $squareClient->request('POST', '/v2/payments', $payload, $paymentIdempotencyKey);
+  } catch (Throwable $paymentRequestError) {
+    square_log('square.payment_request_failed', [
+      'listing_id' => $listing_id,
+      'error' => $paymentRequestError->getMessage(),
+    ]);
+    $fail('gateway_error', 'square_request_failed');
+  }
+
+  $raw  = $response['raw'];
+  $http = $response['statusCode'];
+  $resp = $response['body'];
+
   $status    = 'FAILED';
   $paymentId = null;
 
@@ -304,6 +319,20 @@ try {
   if ($short === '' || $short === '_') $short = 'payment_failed';
   $fail($short, 'detail=' . $errDetail);
 
+} catch (SquareConfigException $configError) {
+  if (isset($reservationQty) && $reservationQty > 0 && isset($inventoryService, $listing_id, $buyerId)) {
+    try {
+      $inventoryService->releaseListing($listing_id, $reservationQty, $buyerId);
+    } catch (Throwable $releaseError) {
+      error_log('[checkout_process] release_failed listing_id=' . $listing_id . ' :: ' . $releaseError->getMessage());
+    }
+  }
+  square_log('square.config_exception', [
+    'error' => $configError->getMessage(),
+  ]);
+  if (!headers_sent()) header('HTTP/1.1 500 Internal Server Error');
+  echo 'Square configuration error.';
+  exit;
 } catch (Throwable $e) {
   if (isset($reservationQty) && $reservationQty > 0 && isset($inventoryService, $listing_id, $buyerId)) {
     try {
