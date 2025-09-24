@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/auth.php';
+require_once __DIR__ . '/../includes/require-auth.php';
 require_once __DIR__ . '/../includes/authz.php';
 require '../includes/db.php';
 require '../includes/csrf.php';

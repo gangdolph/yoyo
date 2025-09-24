@@ -1,6 +1,6 @@
 <?php
 require __DIR__ . '/_debug_bootstrap.php';
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/require-auth.php';
 ?>
 <?php require 'includes/layout.php'; ?>
   <title>Payment Success</title>

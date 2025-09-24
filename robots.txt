@@ -1,0 +1,6 @@
+User-agent: *
+Disallow: /.git/
+Disallow: /vendor/
+Disallow: /node_modules/
+Disallow: /admin/
+Allow: /assets/

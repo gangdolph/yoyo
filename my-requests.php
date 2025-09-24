@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/includes/auth.php';
+require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 
 $id = $_SESSION['user_id'];

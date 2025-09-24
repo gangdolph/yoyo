@@ -1,4 +1,4 @@
-<?php require_once __DIR__ . '/includes/auth.php'; ?>
+<?php require_once __DIR__ . '/includes/require-auth.php'; ?>
 <?php require 'includes/layout.php'; ?>
   <meta charset="UTF-8">
   <title>About SkuzE</title>
