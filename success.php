@@ -11,7 +11,11 @@ require_once __DIR__ . '/includes/require-auth.php';
   <?php include 'includes/header.php'; ?>
   <div class="page-container">
     <h2>Payment Successful</h2>
-    <p>Your payment was processed successfully.</p>
+    <?php if (!empty($_GET['wallet'])): ?>
+      <p>Your wallet payment has been authorized and funds are now held in escrow until the order is fulfilled.</p>
+    <?php else: ?>
+      <p>Your payment was processed successfully.</p>
+    <?php endif; ?>
     <p><a href="dashboard.php">Return to dashboard</a></p>
   </div>
   <?php include 'includes/footer.php'; ?>

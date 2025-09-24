@@ -1,4 +1,5 @@
 <?php
+// Update: Added policy guidance box so buyers can review fees and fulfillment rules.
 require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
@@ -72,6 +73,10 @@ if (!$listing) {
       <?php if (!empty($listing['pickup_only'])): ?>
         <p class="pickup-only">Pickup only - no shipping available</p>
       <?php endif; ?>
+      <aside class="policy-callout listing-policy-hint">
+        <h3>How this works</h3>
+        <p>We break fees down at checkout and stick to <a href="/policies/fees.php">published rates</a>. Review <a href="/policies/shipping.php">shipping &amp; returns</a> before you place your order.</p>
+      </aside>
     </section>
     <section class="listing-cta">
       <a class="btn" href="shipping.php?listing_id=<?= $listing['id']; ?>">Proceed to Checkout</a>

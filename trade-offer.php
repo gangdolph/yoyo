@@ -1,4 +1,5 @@
 <?php
+// Update: Added trade policy callout near offer submission for transparency.
 require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
@@ -86,6 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <?php endif; ?>
       <label><input type="checkbox" name="use_escrow" value="1"> Use SkuzE escrow</label><br>
       <label>Message:<br><textarea name="message"></textarea></label><br>
+      <aside class="policy-callout trade-policy-callout">
+        <h3>Trades &amp; Escrow Overview</h3>
+        <p>Offers follow our <a href="/policies/trades.php">Trades &amp; Escrow</a> rules. Escrow releases and wallet holds follow the <a href="/policies/wallet.php">wallet policy</a>.</p>
+      </aside>
       <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
       <button type="submit">Submit Offer</button>
     </form>

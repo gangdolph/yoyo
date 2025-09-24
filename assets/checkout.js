@@ -14,8 +14,17 @@ async function initSquare() {
   await card.attach('#card-container');
 
   const form = document.getElementById('payment-form');
-  form.addEventListener('submit', async function (e) {
+
+  async function handleSubmit(e) {
     e.preventDefault();
+
+    const selected = form.querySelector('input[name="payment_method"]:checked');
+    if (selected && selected.value === 'wallet') {
+      form.removeEventListener('submit', handleSubmit);
+      form.submit();
+      return;
+    }
+
     try {
       const result = await card.tokenize();
       if (result.status === 'OK') {
@@ -29,7 +38,9 @@ async function initSquare() {
       console.error(err);
       alert('An unexpected error occurred');
     }
-  });
+  }
+
+  form.addEventListener('submit', handleSubmit);
 }
 
 document.addEventListener('DOMContentLoaded', initSquare);

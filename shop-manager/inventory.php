@@ -1,7 +1,12 @@
 <?php
+/*
+ * Change: Merge Store Manager inventory scope controls into Shop Manager and expose owner context when browsing broader data.
+ */
 $inventoryActive = $activeTab === 'inventory';
 $inventoryPanelId = 'shop-manager-panel-inventory';
 $inventoryTabId = 'shop-manager-tab-inventory';
+$inventoryScope = $managerScope ?? STORE_SCOPE_MINE;
+$inventoryShowOwner = $showOwnerColumn ?? false;
 ?>
 <section
   id="<?= htmlspecialchars($inventoryPanelId, ENT_QUOTES, 'UTF-8'); ?>"
@@ -28,6 +33,9 @@ $inventoryTabId = 'shop-manager-tab-inventory';
           <th scope="col">Product</th>
           <th scope="col">Stock</th>
           <th scope="col">Reorder point</th>
+          <?php if ($inventoryShowOwner): ?>
+          <th scope="col">Owner</th>
+          <?php endif; ?>
           <th scope="col" class="store-table__actions">Actions</th>
         </tr>
       </thead>
@@ -46,11 +54,15 @@ $inventoryTabId = 'shop-manager-tab-inventory';
           </td>
           <td class="store-inventory__quantity" data-field="stock"><?= (int) $item['stock']; ?></td>
           <td class="store-inventory__threshold" data-field="reorder_threshold"><?= (int) $item['reorder_threshold']; ?></td>
+          <?php if ($inventoryShowOwner): ?>
+          <td><?= htmlspecialchars($item['owner_username'] ?? '—', ENT_QUOTES, 'UTF-8'); ?></td>
+          <?php endif; ?>
           <td class="store-inventory__actions">
             <button type="button" class="store-inventory__edit" data-action="edit">Adjust stock</button>
-            <form class="store-inventory__form" method="post" action="/account/store_inventory_update.php" hidden>
+            <form class="store-inventory__form" method="post" action="/account/store_inventory_update.php" hidden data-manager-action="inventory_adjust">
               <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($csrfToken, ENT_QUOTES, 'UTF-8'); ?>">
               <input type="hidden" name="sku" value="<?= htmlspecialchars($item['sku'], ENT_QUOTES, 'UTF-8'); ?>">
+              <input type="hidden" name="scope" value="<?= htmlspecialchars($inventoryScope, ENT_QUOTES, 'UTF-8'); ?>">
               <div class="store-inventory__field">
                 <label>Adjust stock
                   <input type="number" name="stock_delta" value="0" step="1">

@@ -1,4 +1,5 @@
 <?php
+// Update: Added policy-aware fee transparency callout, config-driven breakdown data, and wallet payments.
 require __DIR__ . '/_debug_bootstrap.php';
 $client = require __DIR__ . '/includes/square.php';
 $squareConfig = require __DIR__ . '/includes/square-config.php';
@@ -6,6 +7,8 @@ require 'includes/requirements.php';
 require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/url.php';
+$transparencyConfig = require __DIR__ . '/config.php';
+require_once __DIR__ . '/includes/WalletService.php';
 
 // $paymentsApi = $client->getPaymentsApi();
 $listing_id = isset($_GET['listing_id']) ? intval($_GET['listing_id']) : 0;
@@ -63,6 +66,37 @@ $environment = $squareConfig['environment'];
 $squareJs = $environment === 'production'
     ? 'https://web.squarecdn.com/v1/square.js'
     : 'https://sandbox.web.squarecdn.com/v1/square.js';
+
+$showFeeBreakdown = !empty($transparencyConfig['FEE_SHOW_BREAKDOWN']);
+$feesPercent = (float)($transparencyConfig['FEES_PERCENT'] ?? 2.0);
+$feesFixed = (int)($transparencyConfig['FEES_FIXED_CENTS'] ?? 0) / 100;
+$shippingCost = isset($shipping['cost']) ? (float)$shipping['cost'] : 0.0;
+$taxAmount = isset($shipping['tax']) ? (float)$shipping['tax'] : 0.0;
+$processorFee = isset($shipping['processor_fee']) ? (float)$shipping['processor_fee'] : 0.0;
+$marketplaceFee = round(($finalPrice * ($feesPercent / 100)) + $feesFixed, 2);
+$estimatedTotal = round($finalPrice + $shippingCost + $taxAmount + $processorFee + $marketplaceFee, 2);
+$walletEnabled = !empty($transparencyConfig['SHOW_WALLET']);
+$walletBalanceCents = 0;
+$walletPendingCents = 0;
+$walletSufficient = false;
+if ($walletEnabled && isset($_SESSION['user_id'])) {
+    try {
+        $walletService = new WalletService($conn);
+        $walletData = $walletService->getBalance((int) $_SESSION['user_id']);
+        $walletBalanceCents = (int) $walletData['available_cents'];
+        $walletPendingCents = (int) $walletData['pending_cents'];
+    } catch (Throwable $walletError) {
+        error_log('[checkout] wallet lookup failed: ' . $walletError->getMessage());
+        $walletEnabled = false;
+    }
+}
+$amountDueCents = (int) round($finalPrice * 100);
+if ($amountDueCents < 0) {
+    $amountDueCents = 0;
+}
+if ($walletEnabled) {
+    $walletSufficient = $walletBalanceCents >= $amountDueCents;
+}
 ?>
 <?php require 'includes/layout.php'; ?>
   <title>Checkout</title>
@@ -108,11 +142,55 @@ $squareJs = $environment === 'production'
       <?php endif; ?>
     </div>
   <?php endif; ?>
-  <form id="payment-form" method="post" action="checkout_process.php">
+  <?php if ($showFeeBreakdown): ?>
+    <aside class="policy-callout fee-transparency" aria-live="polite">
+      <h3>Fee Transparency</h3>
+      <ul class="policy-callout__list">
+        <li><span>Subtotal</span><span>$<?= htmlspecialchars(number_format($finalPrice, 2)); ?></span></li>
+        <?php if ($shippingCost > 0): ?>
+          <li><span>Shipping</span><span>$<?= htmlspecialchars(number_format($shippingCost, 2)); ?></span></li>
+        <?php endif; ?>
+        <?php if ($taxAmount > 0): ?>
+          <li><span>Tax</span><span>$<?= htmlspecialchars(number_format($taxAmount, 2)); ?></span></li>
+        <?php endif; ?>
+        <?php if ($processorFee > 0): ?>
+          <li><span>Payment processor</span><span>$<?= htmlspecialchars(number_format($processorFee, 2)); ?></span></li>
+        <?php else: ?>
+          <li><span>Payment processor</span><span>Shown at confirmation</span></li>
+        <?php endif; ?>
+        <li><span>Marketplace fee</span><span><?= htmlspecialchars(number_format($feesPercent, 2)); ?>% + $<?= htmlspecialchars(number_format($feesFixed, 2)); ?> = $<?= htmlspecialchars(number_format($marketplaceFee, 2)); ?></span></li>
+        <li><span>Estimated total*</span><span>$<?= htmlspecialchars(number_format($estimatedTotal, 2)); ?></span></li>
+      </ul>
+      <p class="policy-callout__note">*Totals settle once processor fees finalize. <a href="/policies/fees.php">See full fee policy</a>.</p>
+    </aside>
+  <?php endif; ?>
+  <form id="payment-form" method="post" action="checkout_process.php" class="checkout-payment">
+    <?php if ($walletEnabled): ?>
+      <fieldset class="wallet-options">
+        <legend>Payment Method</legend>
+        <p>Wallet available: $<?= htmlspecialchars(number_format($walletBalanceCents / 100, 2)); ?><?php if ($walletPendingCents > 0): ?> (Pending: $<?= htmlspecialchars(number_format($walletPendingCents / 100, 2)); ?>)<?php endif; ?></p>
+        <label>
+          <input type="radio" name="payment_method" value="wallet" <?= $walletSufficient ? 'checked' : 'disabled'; ?>>
+          Pay with Wallet
+          <?php if (!$walletSufficient): ?>
+            <span class="wallet-note">Add funds to cover this order or use your card below.</span>
+          <?php endif; ?>
+        </label>
+        <label>
+          <input type="radio" name="payment_method" value="card" <?= $walletSufficient ? '' : 'checked'; ?>>
+          Pay with Card (Square)
+        </label>
+      </fieldset>
+    <?php else: ?>
+      <input type="hidden" name="payment_method" value="card">
+    <?php endif; ?>
     <div id="card-container" data-app-id="<?= htmlspecialchars($applicationId); ?>" data-location-id="<?= htmlspecialchars($locationId); ?>"></div>
     <input type="hidden" name="token" id="token">
     <input type="hidden" name="listing_id" value="<?= $listing['id']; ?>">
     <input type="hidden" name="coupon_code" value="<?= htmlspecialchars($couponCode); ?>">
+    <?php if ($walletEnabled): ?>
+      <input type="hidden" name="wallet_allowed" value="1">
+    <?php endif; ?>
     <button type="submit" class="checkout-submit">Pay Now</button>
   </form>
   <?php include 'includes/footer.php'; ?>

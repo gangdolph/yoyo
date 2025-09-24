@@ -1,4 +1,5 @@
 <?php
+// Update: Added wallet hold policy reminder for escrow participants.
 require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
@@ -74,6 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <h2>Escrow Status</h2>
+  <aside class="policy-callout wallet-policy-callout" aria-live="polite">
+    <h3>Holds &amp; Withdrawals</h3>
+    <p>Escrow balances follow our <a href="/policies/wallet.php">wallet policy</a> — holds auto-release on schedule unless escalated.</p>
+  </aside>
   <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
   <p>Status: <strong><?= htmlspecialchars($escrow['status']) ?></strong></p>
   <?php if ($escrow['status'] === 'initiated' && $escrow['offerer_id'] == $user_id): ?>

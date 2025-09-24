@@ -2,17 +2,20 @@
 /*
  * Discovery note: Orders service allowed arbitrary status jumps in the legacy pending/processing flow.
  * Change: Normalised to the New→Completed pipeline with sequential enforcement and cancellation guardrails.
+ * Change: Added wallet settlement hooks so escrow holds release automatically on completion or cancellation.
  */
 declare(strict_types=1);
 
 require_once __DIR__ . '/ShopLogger.php';
 require_once __DIR__ . '/InventoryService.php';
 require_once __DIR__ . '/../orders.php';
+require_once __DIR__ . '/../WalletService.php';
 
 final class OrdersService
 {
     private mysqli $conn;
     private InventoryService $inventory;
+    private ?WalletService $wallet;
     /**
      * @var array<string, array<int, string>>
      */
@@ -27,10 +30,16 @@ final class OrdersService
         'cancelled' => [],
     ];
 
-    public function __construct(mysqli $conn, ?InventoryService $inventory = null)
+    public function __construct(mysqli $conn, ?InventoryService $inventory = null, ?WalletService $wallet = null)
     {
         $this->conn = $conn;
         $this->inventory = $inventory ?? new InventoryService($conn);
+        $this->wallet = $wallet;
+    }
+
+    public function attachWalletService(WalletService $wallet): void
+    {
+        $this->wallet = $wallet;
     }
 
     /**
@@ -160,11 +169,68 @@ final class OrdersService
             'status' => $status,
         ]);
 
+        if ($status === 'completed') {
+            $this->settleWalletHold($orderId, false);
+        } elseif ($status === 'cancelled') {
+            $this->settleWalletHold($orderId, true);
+        }
+
         return [
             'order_id' => $orderId,
             'status' => $status,
             'status_label' => $statusOptions[$status],
         ];
+    }
+
+    private function settleWalletHold(int $orderId, bool $refundBuyer): void
+    {
+        try {
+            if ($this->wallet === null) {
+                $this->wallet = new WalletService($this->conn);
+            }
+        } catch (Throwable $walletBootstrap) {
+            error_log('[OrdersService] wallet bootstrap failed: ' . $walletBootstrap->getMessage());
+            return;
+        }
+
+        if ($this->wallet === null) {
+            return;
+        }
+
+        try {
+            $order = fetch_order_detail_for_admin($this->conn, $orderId, null);
+        } catch (Throwable $orderFetchError) {
+            error_log('[OrdersService] wallet settle fetch failed: ' . $orderFetchError->getMessage());
+            return;
+        }
+
+        if (!$order) {
+            return;
+        }
+
+        $reference = (string) ($order['payment_reference'] ?? '');
+        if (strpos($reference, 'wallet-') !== 0) {
+            return;
+        }
+
+        $idempotencyKey = 'wallet-settle-' . $orderId . ($refundBuyer ? '-refund' : '-release');
+        try {
+            $this->wallet->releaseHold($orderId, $idempotencyKey, !$refundBuyer);
+        } catch (Throwable $releaseError) {
+            error_log('[OrdersService] wallet release failed: ' . $releaseError->getMessage());
+            return;
+        }
+
+        if (!empty($order['payment_id'])) {
+            $stmt = $this->conn->prepare('UPDATE payments SET status = ? WHERE id = ?');
+            if ($stmt) {
+                $status = $refundBuyer ? 'WALLET_REFUNDED' : 'WALLET_SETTLED';
+                $paymentId = (int) $order['payment_id'];
+                $stmt->bind_param('si', $status, $paymentId);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
     }
 
     /**

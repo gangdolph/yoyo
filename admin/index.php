@@ -2,6 +2,7 @@
 /*
  * Discovery note: Admin dashboard organizes listings, trades, and system utilities but lacked status visibility.
  * Change: Extended navigation so the experimental manager workspace only appears when the rollout flag is enabled.
+ * Change: Linked the wallet manager so finance tooling is one click away.
  */
 require_once __DIR__ . '/../includes/require-auth.php';
 require_once __DIR__ . '/../includes/authz.php';
@@ -50,6 +51,7 @@ $requests = $stmt->fetch_all(MYSQLI_ASSOC);
         <li><a class="btn" href="users.php">Manage Users</a></li>
         <li><a class="btn" href="theme.php">Vaporwave Theme Settings</a></li>
         <li><a class="btn" href="toolbox.php">Manage Toolbox</a></li>
+        <li><a class="btn" href="wallet.php">Wallet Manager</a></li>
         <li><a class="btn" href="support.php">Support Tickets</a></li>
         <li><a class="btn" href="health.php">Square Health</a></li>
       </ul>

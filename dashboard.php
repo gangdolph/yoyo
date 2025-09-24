@@ -2,11 +2,15 @@
 /*
  * Discovery note: Dashboard already surfaced admin panel access but offered no direct route to system diagnostics.
  * Change: Added Square Health link for admins alongside documenting the new Square observability entry point.
+ * Change: Point legacy "Manage Store" actions at the unified Shop Manager dashboard.
+ * Change: Surface wallet access when enabled so members can review balances quickly.
  */
 require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/notifications.php';
 require 'includes/orders.php';
+$config = require __DIR__ . '/config.php';
+$walletEnabled = !empty($config['SHOW_WALLET']);
 
 $id = $_SESSION['user_id'];
 $username = '';
@@ -84,7 +88,10 @@ $orders = fetch_orders_for_user($conn, (int) $id);
           <?php elseif (is_skuze_official()): ?>
             <li><a class="btn" role="button" href="/admin/products.php">Official Inventory</a></li>
           <?php endif; ?>
-          <li><a class="btn" role="button" href="/account/store.php">Manage Store</a></li>
+          <li><a class="btn" role="button" href="/shop-manager/index.php">Shop Manager</a></li>
+          <?php if ($walletEnabled): ?>
+            <li><a class="btn" role="button" href="wallet.php">Wallet</a></li>
+          <?php endif; ?>
           <li><a class="btn" role="button" href="profile.php">Edit Profile</a></li>
           <li><a class="btn" role="button" href="logout.php">Logout</a></li>
         </ul>

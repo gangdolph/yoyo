@@ -2,6 +2,7 @@
 /*
  * Discovery note: Listings tab listed status and tags but lacked inline controls for pricing or quantity updates.
  * Change: Added detail edit form with moderation hooks and surfaced pending approval cues for live listings.
+ * Change: Preserve scope filters when navigating from the merged Store Manager view.
  */
 $listingsActive = $activeTab === 'listings';
 $listingsPanelId = 'shop-manager-panel-listings';
@@ -19,6 +20,7 @@ $paginationQuery = [
     'search' => $listingsSearch,
     'per_page' => $listingsPerPage,
 ];
+$currentScope = $managerScope ?? STORE_SCOPE_MINE;
 ?>
 <section
   id="<?= htmlspecialchars($listingsPanelId, ENT_QUOTES, 'UTF-8'); ?>"
@@ -38,6 +40,7 @@ $paginationQuery = [
       <a class="btn" href="/sell.php">Create listing</a>
       <form class="manager-panel__filters" method="get" action="/shop-manager/index.php" data-manager-filters="listings">
         <input type="hidden" name="tab" value="listings">
+        <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8'); ?>">
         <label class="manager-filter">
           <span class="manager-filter__label">Search</span>
           <input type="search" name="search" value="<?= htmlspecialchars($listingsSearch, ENT_QUOTES, 'UTF-8'); ?>" placeholder="Search listings">
@@ -109,6 +112,7 @@ $paginationQuery = [
                 <input type="hidden" name="tab" value="listings">
                 <input type="hidden" name="manager_action" value="update_listing_status">
                 <input type="hidden" name="listing_id" value="<?= $listingId; ?>">
+                <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php foreach ($filtersState as $key => $value): ?>
                   <input type="hidden" name="filters[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>]" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php endforeach; ?>
@@ -144,6 +148,7 @@ $paginationQuery = [
                 <input type="hidden" name="tab" value="listings">
                 <input type="hidden" name="manager_action" value="update_listing_tags">
                 <input type="hidden" name="listing_id" value="<?= $listingId; ?>">
+                <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php foreach ($filtersState as $key => $value): ?>
                   <input type="hidden" name="filters[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>]" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php endforeach; ?>
@@ -164,6 +169,7 @@ $paginationQuery = [
                 <input type="hidden" name="tab" value="listings">
                 <input type="hidden" name="manager_action" value="update_listing_details">
                 <input type="hidden" name="listing_id" value="<?= $listingId; ?>">
+                <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php foreach ($filtersState as $key => $value): ?>
                   <input type="hidden" name="filters[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>]" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php endforeach; ?>
@@ -183,6 +189,7 @@ $paginationQuery = [
                 <input type="hidden" name="tab" value="listings">
                 <input type="hidden" name="manager_action" value="sync_listing">
                 <input type="hidden" name="listing_id" value="<?= $listingId; ?>">
+                <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php foreach ($filtersState as $key => $value): ?>
                   <input type="hidden" name="filters[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>]" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php endforeach; ?>
@@ -197,6 +204,7 @@ $paginationQuery = [
                 <input type="hidden" name="tab" value="listings">
                 <input type="hidden" name="manager_action" value="delete_listing">
                 <input type="hidden" name="listing_id" value="<?= $listingId; ?>">
+                <input type="hidden" name="scope" value="<?= htmlspecialchars($currentScope, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php foreach ($filtersState as $key => $value): ?>
                   <input type="hidden" name="filters[<?= htmlspecialchars($key, ENT_QUOTES, 'UTF-8'); ?>]" value="<?= htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8'); ?>">
                 <?php endforeach; ?>
