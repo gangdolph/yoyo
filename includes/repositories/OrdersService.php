@@ -65,6 +65,20 @@ final class OrdersService
         $deliveryMethod = isset($shipping['delivery_method']) ? (string) $shipping['delivery_method'] : '';
         $snapshot = $shipping['snapshot'] ?? null;
 
+        $existingOrderId = null;
+        $check = $this->conn->prepare('SELECT id FROM order_fulfillments WHERE payment_id = ? LIMIT 1');
+        if ($check !== false) {
+            $check->bind_param('i', $paymentId);
+            if ($check->execute()) {
+                $check->bind_result($existingOrderId);
+                if ($check->fetch()) {
+                    $check->close();
+                    return ['order_id' => (int) $existingOrderId];
+                }
+            }
+            $check->close();
+        }
+
         $stmt = $this->conn->prepare(
             'INSERT INTO order_fulfillments '
             . '(payment_id, user_id, listing_id, sku, shipping_address, delivery_method, notes, tracking_number, status, shipping_profile_id, shipping_snapshot, is_official_order) '

@@ -1036,6 +1036,7 @@ footer:focus-within {
   border-radius: 50%;
 }
 
+.member-badge,
 .vip-badge {
   background: gold;
   color: var(--btn-text);
@@ -1904,6 +1905,17 @@ tbody tr:nth-child(even) {
 .rating {
   color: gold;
 }
+.stock-availability {
+  margin: 0.5rem 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+.stock-availability.out-of-stock {
+  color: #ff8da1;
+}
+.stock-availability.notice {
+  color: #ffd166;
+}
 .add-to-cart {
   background: var(--accent);
   color: #fff;
@@ -1914,6 +1926,10 @@ tbody tr:nth-child(even) {
 }
 .add-to-cart:hover {
   opacity: 0.9;
+}
+.add-to-cart[disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
 }
 .listing-detail {
   display: flex;
@@ -1940,6 +1956,125 @@ tbody tr:nth-child(even) {
   flex-direction: column;
   gap: 1rem;
 }
+.listing-offers {
+  margin-top: 1.5rem;
+  padding: var(--space-md);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.35);
+}
+.listing-offers__header {
+  margin-bottom: var(--space-sm);
+}
+.listing-offers__header h3 {
+  margin: 0 0 var(--space-xs);
+}
+.listing-offers__header p {
+  margin: 0;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+.listing-offers__messages {
+  margin-bottom: var(--space-sm);
+}
+.listing-offers__message {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.8);
+}
+.listing-offers__message--error {
+  color: #ff8da1;
+}
+.listing-offers__empty {
+  margin: 0;
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+.listing-offers__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.listing-offers__item {
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 6px;
+  padding: var(--space-sm);
+  background: rgba(0, 0, 0, 0.25);
+  display: grid;
+  gap: var(--space-sm);
+}
+.listing-offers__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  align-items: center;
+}
+.listing-offers__initiator {
+  font-weight: 600;
+}
+.listing-offers__details {
+  font-size: 0.85rem;
+}
+.offer-pill {
+  background: rgba(155, 89, 182, 0.35);
+  border-radius: 999px;
+  padding: 0 0.5rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+.listing-offers__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.65);
+}
+.listing-offers__timestamp {
+  font-style: normal;
+}
+.offer-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 64px;
+}
+.offer-status--open {
+  background: #3498db;
+}
+.offer-status--countered {
+  background: #9b59b6;
+}
+.offer-status--accepted {
+  background: #2ecc71;
+  color: #0b2d2b;
+}
+.offer-status--declined {
+  background: #f39c12;
+  color: #2c2c2c;
+}
+.offer-status--expired {
+  background: #7f8c8d;
+}
+.offer-status--cancelled {
+  background: #e74c3c;
+}
+.listing-offers__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  align-items: center;
+}
+.listing-offers__actions form {
+  margin: 0;
+}
+.listing-offers__note {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.7);
+}
 .listing-cta .related-items {
   font-size: 0.9rem;
 }
@@ -1959,6 +2094,19 @@ tbody tr:nth-child(even) {
   margin: 0 0.5rem;
   color: var(--accent);
   text-decoration: none;
+}
+
+.cart-messages {
+  margin: 1rem 0;
+  padding: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.cart-messages p {
+  margin: 0.25rem 0;
+  font-size: 0.85rem;
 }
 
 /* Side navigation */
@@ -3152,6 +3300,12 @@ body.nav-open .hero {
   margin-top: 0.25rem;
   opacity: 0.75;
   text-transform: none;
+}
+
+.field-hint--error {
+  color: #ff6b6b;
+  font-weight: 600;
+  opacity: 1;
 }
 
 .policy-callout {

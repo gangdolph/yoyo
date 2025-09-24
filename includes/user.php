@@ -35,7 +35,7 @@ function username_with_avatar(mysqli $conn, int $user_id, ?string $username = nu
 
     $badge = '';
     if ($vip && (!$vip_expires || strtotime($vip_expires) > time())) {
-        $badge = ' <span class="vip-badge">VIP</span>';
+        $badge = ' <span class="member-badge vip-badge">Member</span>';
     }
 
     $allowedStatuses = ['online', 'offline', 'busy', 'away'];

@@ -8,34 +8,138 @@ if (!isset($_SESSION['cart'])) {
     $_SESSION['cart'] = [];
 }
 
+$cartMessages = $_SESSION['cart_messages'] ?? [];
+if (!empty($cartMessages)) {
+    $cartMessages = array_unique($cartMessages);
+}
+unset($_SESSION['cart_messages']);
+
 // Handle add-to-cart via AJAX
 if (isset($_GET['action']) && $_GET['action'] === 'add' && $_SERVER['REQUEST_METHOD'] === 'POST') {
     $id = isset($_POST['id']) ? (int)$_POST['id'] : 0;
+    $available = 0;
+    $message = '';
+    $remaining = 0;
     if ($id > 0) {
-        if (isset($_SESSION['cart'][$id])) {
-            $_SESSION['cart'][$id]++;
+        $stmt = $conn->prepare('SELECT quantity, reserved_qty FROM listings WHERE id = ? LIMIT 1');
+        if ($stmt) {
+            $stmt->bind_param('i', $id);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $row = $result ? $result->fetch_assoc() : null;
+            $stmt->close();
         } else {
-            $_SESSION['cart'][$id] = 1;
+            $row = null;
         }
+
+        $available = 0;
+        if ($row) {
+            $rawQuantity = isset($row['quantity']) ? (int) $row['quantity'] : 0;
+            $rawReserved = isset($row['reserved_qty']) ? (int) $row['reserved_qty'] : 0;
+            $available = max(0, $rawQuantity - $rawReserved);
+        }
+
+        $currentQty = $_SESSION['cart'][$id] ?? 0;
+        $message = '';
+
+        if ($available <= 0) {
+            unset($_SESSION['cart'][$id]);
+            $response = [
+                'success' => false,
+                'count' => array_sum($_SESSION['cart']),
+                'available' => 0,
+                'message' => 'This listing is out of stock.',
+            ];
+            header('Content-Type: application/json');
+            echo json_encode($response);
+            exit;
+        }
+
+        $newQty = $currentQty + 1;
+        if ($newQty > $available) {
+            $newQty = $available;
+            $message = 'Only ' . $available . ' available. Quantity adjusted.';
+        }
+
+        $_SESSION['cart'][$id] = $newQty;
+        $remaining = max(0, $available - $newQty);
     }
     header('Content-Type: application/json');
     echo json_encode([
-        'success' => true,
-        'count' => array_sum($_SESSION['cart'])
+        'success' => $available > 0,
+        'count' => array_sum($_SESSION['cart']),
+        'available' => isset($remaining) ? $remaining : 0,
+        'message' => $message !== '' ? $message : null,
     ]);
     exit;
 }
 
 // Handle quantity updates
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['qty'])) {
+    $requested = [];
     foreach ($_POST['qty'] as $id => $qty) {
-        $id = (int)$id;
-        $qty = (int)$qty;
-        if ($qty <= 0) {
-            unset($_SESSION['cart'][$id]);
-        } else {
-            $_SESSION['cart'][$id] = $qty;
+        $id = (int) $id;
+        if ($id <= 0) {
+            continue;
         }
+        $requested[$id] = (int) $qty;
+    }
+
+    $messages = [];
+    if ($requested) {
+        $ids = array_keys($requested);
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $types = str_repeat('i', count($ids));
+        $stmt = $conn->prepare("SELECT id, title, quantity, reserved_qty FROM listings WHERE id IN ($placeholders)");
+        if ($stmt) {
+            $stmt->bind_param($types, ...$ids);
+            $stmt->execute();
+            $result = $stmt->get_result();
+            $rows = [];
+            while ($row = $result->fetch_assoc()) {
+                $rows[(int) $row['id']] = $row;
+            }
+            $stmt->close();
+        } else {
+            $rows = [];
+        }
+
+        foreach ($requested as $id => $qty) {
+            if (!isset($rows[$id])) {
+                unset($_SESSION['cart'][$id]);
+                $messages[] = 'Listing #' . $id . ' is no longer available and was removed from your cart.';
+                continue;
+            }
+
+            $row = $rows[$id];
+            $rawQuantity = isset($row['quantity']) ? (int) $row['quantity'] : 0;
+            $rawReserved = isset($row['reserved_qty']) ? (int) $row['reserved_qty'] : 0;
+            $available = max(0, $rawQuantity - $rawReserved);
+            $title = isset($row['title']) ? (string) $row['title'] : ('Listing #' . $id);
+
+            if ($qty <= 0) {
+                unset($_SESSION['cart'][$id]);
+                $messages[] = $title . ' removed from your cart.';
+                continue;
+            }
+
+            if ($available <= 0) {
+                unset($_SESSION['cart'][$id]);
+                $messages[] = $title . ' is out of stock and was removed from your cart.';
+                continue;
+            }
+
+            if ($qty > $available) {
+                $_SESSION['cart'][$id] = $available;
+                $messages[] = 'Limited stock for ' . $title . '. Quantity adjusted to ' . $available . '.';
+            } else {
+                $_SESSION['cart'][$id] = $qty;
+            }
+        }
+    }
+
+    if (!empty($messages)) {
+        $_SESSION['cart_messages'] = $messages;
     }
     header('Location: cart.php');
     exit;
@@ -48,7 +152,7 @@ if (!empty($_SESSION['cart'])) {
     $ids = array_map('intval', array_keys($_SESSION['cart']));
     $placeholders = implode(',', array_fill(0, count($ids), '?'));
     $types = str_repeat('i', count($ids));
-    $query = "SELECT l.id, l.title, l.image, l.price, l.sale_price, l.product_sku, p.quantity AS stock_quantity
+    $query = "SELECT l.id, l.title, l.image, l.price, l.sale_price, l.product_sku, l.quantity AS listing_quantity, l.reserved_qty
         FROM listings l
         LEFT JOIN products p ON l.product_sku = p.sku
         WHERE l.id IN ($placeholders)";
@@ -65,11 +169,28 @@ if (!empty($_SESSION['cart'])) {
         }
 
         $quantity = (int)$_SESSION['cart'][$id];
+        $listingQty = isset($row['listing_quantity']) ? (int) $row['listing_quantity'] : 0;
+        $listingReserved = isset($row['reserved_qty']) ? (int) $row['reserved_qty'] : 0;
+        $available = max(0, $listingQty - $listingReserved);
+
+        if ($available <= 0) {
+            unset($_SESSION['cart'][$id]);
+            $cartMessages[] = ($row['title'] ?? ('Listing #' . $id)) . ' is out of stock and was removed from your cart.';
+            continue;
+        }
+
+        if ($quantity > $available) {
+            $quantity = $available;
+            $_SESSION['cart'][$id] = $available;
+            $cartMessages[] = 'Limited stock for ' . ($row['title'] ?? ('Listing #' . $id)) . '. Quantity adjusted to ' . $available . '.';
+        }
+
         $effectivePrice = $row['sale_price'] !== null && $row['sale_price'] !== ''
             ? (float)$row['sale_price']
             : (float)$row['price'];
 
-        $row['quantity'] = $quantity;
+        $row['cart_quantity'] = $quantity;
+        $row['available_quantity'] = $available;
         $row['effective_price'] = $effectivePrice;
         $row['subtotal'] = $effectivePrice * $quantity;
         $total += $row['subtotal'];
@@ -81,6 +202,7 @@ if (!empty($_SESSION['cart'])) {
     if (!empty($missingIds)) {
         foreach ($missingIds as $missingId) {
             unset($_SESSION['cart'][$missingId]);
+            $cartMessages[] = 'Listing #' . $missingId . ' is no longer available and was removed from your cart.';
         }
     }
 
@@ -107,6 +229,13 @@ $grand_total = $total + $tax + $shipping;
 <body>
 <h1>Your Cart</h1>
 <p><a href="buy.php">Continue Shopping</a></p>
+<?php if (!empty($cartMessages)): ?>
+    <div class="cart-messages" role="status" aria-live="polite">
+        <?php foreach ($cartMessages as $message): ?>
+            <p><?= htmlspecialchars($message); ?></p>
+        <?php endforeach; ?>
+    </div>
+<?php endif; ?>
 <?php if (empty($cart_items)): ?>
     <p>Your cart is empty.</p>
 <?php else: ?>
@@ -134,7 +263,10 @@ $grand_total = $total + $tax + $shipping;
                     $<?= number_format((float)$item['price'], 2) ?>
                 <?php endif; ?>
             </td>
-            <td><input type="number" name="qty[<?= $item['id'] ?>]" value="<?= $item['quantity'] ?>" min="0"></td>
+            <td>
+                <input type="number" name="qty[<?= $item['id'] ?>]" value="<?= $item['cart_quantity'] ?>" min="0" max="<?= isset($item['available_quantity']) ? (int)$item['available_quantity'] : 0 ?>">
+                <small class="stock-availability">In stock: <?= isset($item['available_quantity']) ? (int)$item['available_quantity'] : 0 ?></small>
+            </td>
             <td>$<?= number_format($item['subtotal'], 2) ?></td>
         </tr>
         <?php endforeach; ?>

@@ -162,7 +162,7 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
         $orderBy = 'created_at DESC';
     }
 
-    $sql = "SELECT l.id, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.`condition`, l.product_sku, l.is_official_listing, p.is_skuze_official, p.is_skuze_product FROM listings l LEFT JOIN products p ON l.product_sku = p.sku $where ORDER BY $orderBy LIMIT ? OFFSET ?";
+    $sql = "SELECT l.id, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.`condition`, l.product_sku, l.is_official_listing, l.quantity, l.reserved_qty, p.is_skuze_official, p.is_skuze_product FROM listings l LEFT JOIN products p ON l.product_sku = p.sku $where ORDER BY $orderBy LIMIT ? OFFSET ?";
     $paramsLimit = $params;
     $typesLimit = $types . 'ii';
     $paramsLimit[] = $limit;

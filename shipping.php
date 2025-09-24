@@ -10,7 +10,7 @@ if (!$listing_id) {
 }
 
 // Fetch listing to confirm exists
-if ($stmt = $conn->prepare('SELECT id, title, price, pickup_only FROM listings WHERE id = ? LIMIT 1')) {
+if ($stmt = $conn->prepare('SELECT id, title, price, pickup_only, quantity, reserved_qty FROM listings WHERE id = ? LIMIT 1')) {
     $stmt->bind_param('i', $listing_id);
     $stmt->execute();
     $listing = $stmt->get_result()->fetch_assoc();
@@ -22,8 +22,37 @@ if (!$listing) {
     exit;
 }
 
-// If pickup only, skip shipping form
-if (!empty($listing['pickup_only'])) {
+$availableQuantity = max(0, (int)($listing['quantity'] ?? 0) - (int)($listing['reserved_qty'] ?? 0));
+if (!isset($_SESSION['checkout_quantities']) || !is_array($_SESSION['checkout_quantities'])) {
+    $_SESSION['checkout_quantities'] = [];
+}
+if (!isset($_SESSION['checkout_notices']) || !is_array($_SESSION['checkout_notices'])) {
+    $_SESSION['checkout_notices'] = [];
+}
+
+$requestedQuantity = isset($_GET['quantity']) ? (int) $_GET['quantity'] : 0;
+if ($requestedQuantity <= 0) {
+    $requestedQuantity = isset($_SESSION['checkout_quantities'][$listing_id])
+        ? (int) $_SESSION['checkout_quantities'][$listing_id]
+        : 1;
+}
+$requestedQuantity = max(1, $requestedQuantity);
+$quantityNotice = '';
+
+if ($availableQuantity <= 0) {
+    $quantityNotice = 'This listing is out of stock.';
+    unset($_SESSION['checkout_quantities'][$listing_id]);
+} else {
+    if ($requestedQuantity > $availableQuantity) {
+        $requestedQuantity = $availableQuantity;
+        $quantityNotice = 'Only ' . $availableQuantity . ' available. Quantity adjusted.';
+    }
+    $_SESSION['checkout_quantities'][$listing_id] = $requestedQuantity;
+}
+$_SESSION['checkout_notices'][$listing_id] = $quantityNotice;
+
+// If pickup only, skip shipping form when stock remains
+if (!empty($listing['pickup_only']) && $availableQuantity > 0) {
     $_SESSION['shipping'][$listing_id] = [
         'address' => '',
         'method' => 'pickup',
@@ -35,7 +64,9 @@ if (!empty($listing['pickup_only'])) {
 
 $error = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (!validate_token($_POST['csrf_token'] ?? '')) {
+    if ($availableQuantity <= 0) {
+        $error = 'This listing is out of stock.';
+    } elseif (!validate_token($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid CSRF token.';
     } else {
         $address = trim($_POST['address'] ?? '');
@@ -66,6 +97,14 @@ $stored = $_SESSION['shipping'][$listing_id] ?? ['address' => '', 'method' => ''
   <?php include 'includes/header.php'; ?>
   <h2>Shipping Information</h2>
   <?php if ($error): ?><p class="error"><?= htmlspecialchars($error) ?></p><?php endif; ?>
+  <p class="stock-availability <?= $availableQuantity > 0 ? '' : 'out-of-stock'; ?>" aria-live="polite">
+    <?= $availableQuantity > 0
+        ? 'In stock: ' . htmlspecialchars((string) $availableQuantity)
+        : 'Out of stock'; ?>
+  </p>
+  <?php if ($quantityNotice !== ''): ?>
+    <p class="stock-availability notice"><?= htmlspecialchars($quantityNotice); ?></p>
+  <?php endif; ?>
   <form method="post">
     <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
     <label>Shipping Address:<br>

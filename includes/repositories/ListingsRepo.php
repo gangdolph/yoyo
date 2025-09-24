@@ -58,6 +58,16 @@ final class ListingsRepo
         $pickupOnly = !empty($data['pickup_only']) ? 1 : 0;
         $productSku = $data['product_sku'] ?? null;
         $quantity = isset($data['quantity']) ? max(1, (int) $data['quantity']) : 1;
+        $originalPriceInput = $data['original_price'] ?? null;
+
+        $normalisedPrice = number_format((float) $price, 2, '.', '');
+        $price = $normalisedPrice;
+
+        if ($originalPriceInput !== null && $originalPriceInput !== '') {
+            $originalPrice = number_format((float) $originalPriceInput, 2, '.', '');
+        } else {
+            $originalPrice = $normalisedPrice;
+        }
 
         if ($title === '' || $description === '' || $condition === '' || $price === '') {
             return ['success' => false, 'error' => 'Missing required fields.'];
@@ -69,8 +79,8 @@ final class ListingsRepo
         $this->conn->begin_transaction();
         try {
             $stmt = $this->conn->prepare(
-                'INSERT INTO listings (owner_id, product_sku, title, description, `condition`, price, quantity, reserved_qty, category, tags, image, status, pickup_only) '
-                . 'VALUES (?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)'
+                'INSERT INTO listings (owner_id, product_sku, title, description, `condition`, price, original_price, quantity, reserved_qty, category, tags, image, status, pickup_only) '
+                . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)'
             );
 
             if ($stmt === false) {
@@ -78,13 +88,14 @@ final class ListingsRepo
             }
 
             $stmt->bind_param(
-                'isssssisissi',
+                'issssssissssi',
                 $ownerId,
                 $productSku,
                 $title,
                 $description,
                 $condition,
                 $price,
+                $originalPrice,
                 $quantity,
                 $category,
                 $tagsStorage,
@@ -278,6 +289,10 @@ final class ListingsRepo
             $status = strtolower((string) $listing['status']);
             $isOwner = $ownerId === $actorId;
 
+            $originalCeilingValue = $listing['original_price'] ?? $listing['price'];
+            $originalCeiling = number_format((float) $originalCeilingValue, 2, '.', '');
+            $originalCeilingFloat = (float) $originalCeiling;
+
             if (!$isOwner && !$isAdmin && !$isOfficial) {
                 throw new RuntimeException('You do not have permission to edit this listing.');
             }
@@ -299,8 +314,47 @@ final class ListingsRepo
                     }
                     $normalisedPrice = number_format((float) $priceInput, 2, '.', '');
                     $currentPrice = number_format((float) $listing['price'], 2, '.', '');
+                    $requestedPrice = (float) $normalisedPrice;
+                    if ($requestedPrice > $originalCeilingFloat + 0.00001) {
+                        throw new RuntimeException(
+                            sprintf(
+                                'Price cannot exceed the original listing price of $%s.',
+                                number_format($originalCeilingFloat, 2, '.', '')
+                            )
+                        );
+                    }
                     if ($normalisedPrice !== $currentPrice) {
                         $changes['price'] = $normalisedPrice;
+                    }
+                }
+            }
+
+            if (array_key_exists('sale_price', $data)) {
+                $salePriceInput = trim((string) $data['sale_price']);
+                $currentSalePrice = $listing['sale_price'];
+                if ($salePriceInput === '') {
+                    if ($currentSalePrice !== null) {
+                        $changes['sale_price'] = null;
+                    }
+                } else {
+                    if (!preg_match('/^\d+(?:\.\d{1,2})?$/', $salePriceInput)) {
+                        throw new RuntimeException('Sale price must be numeric with up to two decimals.');
+                    }
+                    $normalisedSalePrice = number_format((float) $salePriceInput, 2, '.', '');
+                    $requestedSalePrice = (float) $normalisedSalePrice;
+                    if ($requestedSalePrice > $originalCeilingFloat + 0.00001) {
+                        throw new RuntimeException(
+                            sprintf(
+                                'Sale price cannot exceed the original listing price of $%s.',
+                                number_format($originalCeilingFloat, 2, '.', '')
+                            )
+                        );
+                    }
+                    $currentSalePriceNormalised = $currentSalePrice === null
+                        ? null
+                        : number_format((float) $currentSalePrice, 2, '.', '');
+                    if ($currentSalePriceNormalised !== $normalisedSalePrice) {
+                        $changes['sale_price'] = $normalisedSalePrice;
                     }
                 }
             }
@@ -346,6 +400,12 @@ final class ListingsRepo
                 $set[] = 'price = ?';
                 $types .= 's';
                 $params[] = $changes['price'];
+            }
+
+            if (array_key_exists('sale_price', $changes)) {
+                $set[] = 'sale_price = ?';
+                $types .= 's';
+                $params[] = $changes['sale_price'];
             }
 
             if (array_key_exists('quantity', $changes)) {
@@ -566,7 +626,7 @@ final class ListingsRepo
         $offset = ($page - 1) * $perPage;
         $items = [];
 
-        $select = 'SELECT l.id, l.title, l.price, l.category, l.tags, l.image, l.status, l.pickup_only, l.created_at, '
+        $select = 'SELECT l.id, l.title, l.price, l.original_price, l.sale_price, l.category, l.tags, l.image, l.status, l.pickup_only, l.created_at, '
             . 'l.updated_at, l.quantity, l.reserved_qty, l.is_official_listing, '
             . '(SELECT COUNT(*) FROM listing_change_requests r WHERE r.listing_id = l.id AND r.status = "pending") '
             . 'AS pending_change_count, '
@@ -598,6 +658,8 @@ final class ListingsRepo
                             'id' => (int) $row['id'],
                             'title' => (string) $row['title'],
                             'price' => $row['price'],
+                            'original_price' => $row['original_price'],
+                            'sale_price' => $row['sale_price'],
                             'category' => $row['category'],
                             'tags' => tags_from_storage($row['tags'] ?? null),
                             'status' => (string) $row['status'],
@@ -677,7 +739,7 @@ final class ListingsRepo
      */
     private function fetchListingDetails(int $listingId, bool $forUpdate = false): ?array
     {
-        $sql = 'SELECT id, owner_id, status, title, price, quantity, reserved_qty FROM listings WHERE id = ?';
+        $sql = 'SELECT id, owner_id, status, title, price, original_price, sale_price, quantity, reserved_qty FROM listings WHERE id = ?';
         if ($forUpdate) {
             $sql .= ' FOR UPDATE';
         }

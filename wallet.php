@@ -5,6 +5,7 @@
 require __DIR__ . '/_debug_bootstrap.php';
 require_once __DIR__ . '/includes/require-auth.php';
 require_once __DIR__ . '/includes/db.php';
+require_once __DIR__ . '/includes/csrf.php';
 
 if (!isset($config) || !is_array($config)) {
     $config = require __DIR__ . '/config.php';
@@ -45,6 +46,43 @@ $walletService = new WalletService($conn instanceof mysqli ? $conn : (function (
 })());
 
 $balance = $walletService->getBalance($userId);
+
+$memberStatus = 0;
+$memberExpiresAt = null;
+if ($stmt = $conn->prepare('SELECT vip_status, vip_expires_at FROM users WHERE id = ?')) {
+    $stmt->bind_param('i', $userId);
+    if ($stmt->execute()) {
+        $stmt->bind_result($memberStatus, $memberExpiresAt);
+        $stmt->fetch();
+    }
+    $stmt->close();
+}
+
+$isMember = false;
+if ($memberStatus) {
+    $isMember = true;
+    if ($memberExpiresAt) {
+        $expiresTs = strtotime((string) $memberExpiresAt);
+        if ($expiresTs !== false && $expiresTs <= time()) {
+            $isMember = false;
+        }
+    }
+}
+
+$withdrawMinCents = (int) ($config['WITHDRAW_MIN_CENTS'] ?? $config['WALLET_WITHDRAW_MIN_CENTS'] ?? 100);
+if ($withdrawMinCents < 0) {
+    $withdrawMinCents = 0;
+}
+$withdrawMinDisplay = number_format($withdrawMinCents / 100, 2);
+$withdrawMinInput = number_format($withdrawMinCents / 100, 2, '.', '');
+$nonMemberFeePercent = (float) ($config['WITHDRAW_FEE_PERCENT_NON_MEMBER'] ?? 0.0);
+
+try {
+    $withdrawToken = bin2hex(random_bytes(16));
+} catch (Throwable $tokenError) {
+    $withdrawToken = hash('sha256', microtime(true) . '|' . $userId);
+}
+$_SESSION['wallet_withdraw_token'] = $withdrawToken;
 
 $rangeDays = isset($_GET['range']) ? max(7, min(90, (int) $_GET['range'])) : 30;
 $rangeLabel = $rangeDays === 30 ? '30 days' : ($rangeDays . ' days');
@@ -107,11 +145,38 @@ $ledgerStmt->close();
     <header class="wallet-page__header">
       <h1>Wallet (Store Credit)</h1>
       <p class="wallet-page__disclaimer">Funds are held as store credit and are not a bank account. Use within SkuzE only.</p>
-      <?php if (!empty($_GET['topup'])): ?>
-        <div class="alert alert-success" role="status">Funds added to your wallet successfully.</div>
-      <?php elseif (!empty($_GET['error'])): ?>
-        <div class="alert alert-danger" role="alert">We were unable to process that request. Please verify your details and try again.</div>
-      <?php endif; ?>
+      <?php
+        $alerts = [];
+        if (!empty($_GET['topup'])) {
+            $alerts[] = ['class' => 'alert-success', 'role' => 'status', 'message' => 'Funds added to your wallet successfully.'];
+        }
+        if (!empty($_GET['withdraw'])) {
+            $alerts[] = ['class' => 'alert-success', 'role' => 'status', 'message' => 'Withdrawal request submitted. We will notify you once it is processed.'];
+        }
+        if (!empty($_GET['error'])) {
+            $alerts[] = ['class' => 'alert-danger', 'role' => 'alert', 'message' => 'We were unable to process that request. Please verify your details and try again.'];
+        }
+        $withdrawError = isset($_GET['withdraw_error']) ? (string) $_GET['withdraw_error'] : '';
+        if ($withdrawError !== '') {
+            $withdrawMessages = [
+                'csrf' => 'The withdrawal form expired. Please try again.',
+                'invalid' => 'Enter a valid withdrawal amount before submitting.',
+                'min' => 'Withdrawal amount must meet the minimum requirement.',
+                'insufficient' => 'Insufficient wallet balance for that withdrawal request.',
+                'general' => 'We were unable to submit your withdrawal. Please try again.',
+            ];
+            $alerts[] = [
+                'class' => 'alert-danger',
+                'role' => 'alert',
+                'message' => $withdrawMessages[$withdrawError] ?? 'We were unable to submit your withdrawal. Please try again.',
+            ];
+        }
+        foreach ($alerts as $alert):
+      ?>
+        <div class="alert <?= htmlspecialchars($alert['class'], ENT_QUOTES, 'UTF-8'); ?>" role="<?= htmlspecialchars($alert['role'], ENT_QUOTES, 'UTF-8'); ?>">
+          <?= htmlspecialchars($alert['message'], ENT_QUOTES, 'UTF-8'); ?>
+        </div>
+      <?php endforeach; ?>
     </header>
     <section class="wallet-balances">
       <div class="wallet-balances__item">
@@ -133,6 +198,28 @@ $ledgerStmt->close();
         <button type="submit" class="btn">Add Funds</button>
       </form>
       <p class="wallet-page__disclaimer">Top-ups process through Square Payments; receipts appear in your ledger instantly.</p>
+    </section>
+    <section class="wallet-withdraw">
+      <h2>Withdraw Funds</h2>
+      <p class="wallet-page__disclaimer">
+        <?php if ($isMember): ?>
+          You are a Member. Withdrawal requests are fee-free.
+        <?php else: ?>
+          Members withdraw free; non-members pay <?= htmlspecialchars(number_format($nonMemberFeePercent, 2)); ?>%.
+        <?php endif; ?>
+      </p>
+      <form method="post" action="wallet_withdraw_process.php" class="wallet-withdraw__form">
+        <label for="withdraw-amount">Amount (USD)</label>
+        <input type="number" id="withdraw-amount" name="amount" min="<?= htmlspecialchars($withdrawMinInput); ?>" step="0.01" required>
+        <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
+        <input type="hidden" name="withdraw_token" value="<?= htmlspecialchars($withdrawToken); ?>">
+        <button type="submit" class="btn">Request Withdrawal</button>
+      </form>
+      <p class="wallet-page__disclaimer">Minimum withdrawal: $<?= htmlspecialchars($withdrawMinDisplay); ?>. Requests are reviewed before payout.</p>
+      <?php if (!$isMember): ?>
+        <p class="wallet-page__disclaimer">Upgrade to a <a href="/member.php">Member plan</a> to remove withdrawal fees.</p>
+      <?php endif; ?>
+      <p class="wallet-page__disclaimer">Need details? Review the <a href="/policies/wallet.php">wallet policy</a>.</p>
     </section>
     <section class="wallet-history">
       <header class="wallet-history__header">

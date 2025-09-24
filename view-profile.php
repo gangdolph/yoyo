@@ -96,7 +96,7 @@ if ($viewer !== $target) {
 <body>
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
-  <h2><?= htmlspecialchars($username); ?><?php if ($vipActive) echo ' <span class="vip-badge">VIP</span>'; ?></h2>
+  <h2><?= htmlspecialchars($username); ?><?php if ($vipActive) echo ' <span class="member-badge vip-badge">Member</span>'; ?></h2>
   <?php if ($viewer === $target): ?>
     <p><?= render_button('edit-profile.php', 'Edit Profile'); ?></p>
   <?php endif; ?>

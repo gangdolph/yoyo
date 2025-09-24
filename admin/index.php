@@ -54,6 +54,7 @@ $requests = $stmt->fetch_all(MYSQLI_ASSOC);
         <li><a class="btn" href="wallet.php">Wallet Manager</a></li>
         <li><a class="btn" href="support.php">Support Tickets</a></li>
         <li><a class="btn" href="health.php">Square Health</a></li>
+        <li><a class="btn" href="square-connection.php">Square Connection</a></li>
       </ul>
     </div>
   </div>

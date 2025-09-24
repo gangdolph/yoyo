@@ -67,6 +67,11 @@ final class SquareHttpClient
         return $this->baseUrl;
     }
 
+    public static function getSquareVersion(): string
+    {
+        return self::SQUARE_VERSION;
+    }
+
     /**
      * @param array<string, mixed> $payload
      * @return array{statusCode: int, body: mixed, raw: string}

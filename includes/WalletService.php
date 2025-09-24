@@ -194,6 +194,107 @@ final class WalletService
     }
 
     /**
+     * Record a withdrawal request while debiting the user's available balance.
+     *
+     * @return array<string, mixed>
+     */
+    public function requestWithdrawal(int $userId, int $amountCents, int $feeCents, string $idempotencyKey): array
+    {
+        if ($amountCents <= 0) {
+            throw new InvalidArgumentException('Withdrawal amount must be positive.');
+        }
+
+        if ($feeCents < 0) {
+            throw new InvalidArgumentException('Withdrawal fee cannot be negative.');
+        }
+
+        if ($idempotencyKey === '') {
+            throw new InvalidArgumentException('Withdrawal idempotency key is required.');
+        }
+
+        if (strlen($idempotencyKey) > 64) {
+            throw new InvalidArgumentException('Withdrawal idempotency key is too long.');
+        }
+
+        $totalDebit = $amountCents + $feeCents;
+        if ($totalDebit <= 0) {
+            throw new InvalidArgumentException('Withdrawal total must be positive.');
+        }
+
+        $existing = $this->fetchWithdrawalByKey($idempotencyKey);
+        if ($existing !== null) {
+            return $existing;
+        }
+
+        $this->conn->begin_transaction();
+
+        try {
+            $existingLocked = $this->fetchWithdrawalByKeyForUpdate($idempotencyKey);
+            if ($existingLocked !== null) {
+                $this->conn->commit();
+                return $existingLocked;
+            }
+
+            $account = $this->lockAccount($userId);
+            if ($account['available_cents'] < $totalDebit) {
+                throw new RuntimeException('Insufficient wallet balance for withdrawal.');
+            }
+
+            $insert = $this->conn->prepare(
+                'INSERT INTO wallet_withdrawals (user_id, amount_cents, fee_cents, idempotency_key) VALUES (?, ?, ?, ?)'
+            );
+            if ($insert === false) {
+                throw new RuntimeException('Failed to prepare wallet withdrawal insert.');
+            }
+
+            $insert->bind_param('iiis', $userId, $amountCents, $feeCents, $idempotencyKey);
+            if (!$insert->execute()) {
+                $error = $insert->error;
+                $insert->close();
+                throw new RuntimeException('Failed to insert wallet withdrawal: ' . $error);
+            }
+            $insert->close();
+
+            $withdrawalId = (int) $this->conn->insert_id;
+
+            $available = $account['available_cents'] - $totalDebit;
+            $this->updateAccount($userId, $available, $account['pending_cents']);
+
+            $ledgerMeta = [
+                'pending_after' => $account['pending_cents'],
+                'amount_cents' => $amountCents,
+                'fee_cents' => $feeCents,
+                'withdrawal_id' => $withdrawalId,
+            ];
+
+            $this->insertLedger(
+                $userId,
+                'withdrawal_request',
+                $totalDebit,
+                '-',
+                $available,
+                $this->scopedKey($idempotencyKey, $userId, 'withdraw'),
+                'wallet_withdrawal',
+                $withdrawalId,
+                $ledgerMeta
+            );
+
+            $this->conn->commit();
+
+            return $this->fetchWithdrawalById($withdrawalId) ?? [
+                'id' => $withdrawalId,
+                'user_id' => $userId,
+                'amount_cents' => $amountCents,
+                'fee_cents' => $feeCents,
+                'status' => 'pending',
+            ];
+        } catch (Throwable $e) {
+            $this->conn->rollback();
+            throw $e;
+        }
+    }
+
+    /**
      * Place funds from a buyer into escrow for an order and reflect the seller's pending earnings.
      */
     public function holdForOrder(
@@ -601,6 +702,92 @@ final class WalletService
         if (!$stmt->execute()) {
             $stmt->close();
             throw new RuntimeException('Failed to execute wallet hold fetch.');
+        }
+
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        return $row ?: null;
+    }
+
+    /**
+     * Fetch a withdrawal by idempotency key without locking.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function fetchWithdrawalByKey(string $idempotencyKey): ?array
+    {
+        if ($idempotencyKey === '') {
+            return null;
+        }
+
+        $stmt = $this->conn->prepare(
+            'SELECT id, user_id, amount_cents, fee_cents, status, created_at, updated_at FROM wallet_withdrawals WHERE idempotency_key = ? LIMIT 1'
+        );
+        if ($stmt === false) {
+            throw new RuntimeException('Failed to prepare wallet withdrawal lookup.');
+        }
+
+        $stmt->bind_param('s', $idempotencyKey);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Failed to execute wallet withdrawal lookup.');
+        }
+
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        return $row ?: null;
+    }
+
+    /**
+     * Fetch and lock a withdrawal by idempotency key.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function fetchWithdrawalByKeyForUpdate(string $idempotencyKey): ?array
+    {
+        if ($idempotencyKey === '') {
+            return null;
+        }
+
+        $stmt = $this->conn->prepare(
+            'SELECT id, user_id, amount_cents, fee_cents, status, created_at, updated_at FROM wallet_withdrawals WHERE idempotency_key = ? FOR UPDATE'
+        );
+        if ($stmt === false) {
+            throw new RuntimeException('Failed to prepare wallet withdrawal lock.');
+        }
+
+        $stmt->bind_param('s', $idempotencyKey);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Failed to lock wallet withdrawal.');
+        }
+
+        $row = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+
+        return $row ?: null;
+    }
+
+    /**
+     * Fetch a withdrawal by identifier.
+     *
+     * @return array<string, mixed>|null
+     */
+    private function fetchWithdrawalById(int $withdrawalId): ?array
+    {
+        $stmt = $this->conn->prepare(
+            'SELECT id, user_id, amount_cents, fee_cents, status, created_at, updated_at FROM wallet_withdrawals WHERE id = ? LIMIT 1'
+        );
+        if ($stmt === false) {
+            throw new RuntimeException('Failed to prepare wallet withdrawal fetch.');
+        }
+
+        $stmt->bind_param('i', $withdrawalId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Failed to execute wallet withdrawal fetch.');
         }
 
         $row = $stmt->get_result()->fetch_assoc();

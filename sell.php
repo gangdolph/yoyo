@@ -10,13 +10,13 @@ require_once __DIR__ . '/includes/repositories/ListingsRepo.php';
 ensure_seller();
 
 $user_id = $_SESSION['user_id'];
-$is_vip = false;
+$is_member = false;
 if ($stmt = $conn->prepare('SELECT vip_status, vip_expires_at FROM users WHERE id=?')) {
     $stmt->bind_param('i', $user_id);
     $stmt->execute();
     $stmt->bind_result($vip, $vip_expires);
     if ($stmt->fetch()) {
-        $is_vip = $vip && (!$vip_expires || strtotime($vip_expires) > time());
+        $is_member = $vip && (!$vip_expires || strtotime($vip_expires) > time());
     }
     $stmt->close();
 }
@@ -92,7 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'quantity' => 1,
             ];
 
-            $result = $repo->create($user_id, $data, $is_vip);
+            $result = $repo->create($user_id, $data, $is_member);
             if (!$result['success']) {
                 $error = $result['error'] ?? 'Unable to create listing.';
             } else {
@@ -113,8 +113,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <?php include 'includes/sidebar.php'; ?>
   <?php include 'includes/header.php'; ?>
   <h2>Create a Listing</h2>
-  <?php if ($is_vip): ?>
-    <p class="notice">Your listing will be auto-approved as a VIP member.</p>
+  <?php if ($is_member): ?>
+    <p class="notice">Your listing will be auto-approved as a Member.</p>
   <?php endif; ?>
   <?php if ($error): ?>
     <p class="error"><?= htmlspecialchars($error) ?></p>
