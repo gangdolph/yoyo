@@ -17,11 +17,13 @@ if (is_array($incrementRules)) {
 }
 $incrementText = $incrementSummary ? implode(', ', $incrementSummary) : 'See policy for current increments';
 
-$filters = sanitize_buy_filters($_GET);
+$filters = sanitize_buy_filters($_GET, $conn);
 $search = $filters['search'];
 $category = $filters['category'];
 $subcategory = $filters['subcategory'];
 $condition = $filters['condition'];
+$brandId = isset($filters['brand_id']) ? (int)$filters['brand_id'] : 0;
+$modelId = isset($filters['model_id']) ? (int)$filters['model_id'] : 0;
 $sort = $filters['sort'];
 $limit = $filters['limit'];
 $page = $filters['page'];
@@ -35,12 +37,16 @@ $totalPages = $queryResult['total_pages'];
 $filters = $queryResult['filters'];
 $page = $filters['page'];
 $limit = $filters['limit'];
+$brandId = isset($filters['brand_id']) ? (int)$filters['brand_id'] : 0;
+$modelId = isset($filters['model_id']) ? (int)$filters['model_id'] : 0;
 
 $availableTags = load_available_tags($conn, $tagFilters);
 
 $categoryOptions = listing_filter_categories('buy');
 $subcategoryOptions = listing_filter_subcategories('buy', $category);
 $conditionOptions = listing_filter_conditions('buy', $category);
+$brandOptions = listing_brand_options($conn);
+$modelIndex = listing_model_index($conn);
 $sortOptions = buy_sort_options();
 
 $baseQuery = [
@@ -48,6 +54,8 @@ $baseQuery = [
     'category' => $category !== '' ? $category : null,
     'subcategory' => $subcategory !== '' ? $subcategory : null,
     'condition' => $condition !== '' ? $condition : null,
+    'brand_id' => $brandId > 0 ? $brandId : null,
+    'model_id' => $modelId > 0 ? $modelId : null,
     'sort' => $sort !== '' ? $sort : null,
     'limit' => $limit,
     'tags' => !empty($tagFilters) ? $tagFilters : null,
@@ -105,6 +113,28 @@ $baseQuery = array_filter($baseQuery, static function ($value) {
           <select name="condition" id="buy-condition" data-filter-dimension="condition">
             <?php foreach ($conditionOptions as $value => $label): ?>
               <option value="<?= htmlspecialchars($value); ?>" <?= $condition === $value ? 'selected' : ''; ?>><?= htmlspecialchars($label); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="buy-brand">Brand</label>
+          <select name="brand_id" id="buy-brand" data-filter-dimension="brand_id">
+            <option value="">Any brand</option>
+            <?php foreach ($brandOptions as $id => $name): ?>
+              <option value="<?= $id; ?>" <?= $brandId === (int)$id ? 'selected' : ''; ?>><?= htmlspecialchars($name); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="filter-field">
+          <label for="buy-model">Model</label>
+          <select name="model_id" id="buy-model" data-filter-dimension="model_id" <?= empty($modelIndex) ? 'disabled' : ''; ?>>
+            <option value="">Any model</option>
+            <?php foreach ($modelIndex as $model): ?>
+              <?php
+                $brandLabel = $brandOptions[$model['brand_id']] ?? ('Brand ' . $model['brand_id']);
+                $modelLabel = $brandLabel . ' – ' . $model['name'];
+              ?>
+              <option value="<?= $model['id']; ?>" data-brand-id="<?= $model['brand_id']; ?>" <?= $modelId === (int)$model['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($modelLabel); ?></option>
             <?php endforeach; ?>
           </select>
         </div>

@@ -24,7 +24,7 @@ if (!in_array($context, ['buy', 'trade'], true)) {
 
 try {
     if ($context === 'buy') {
-        $filters = sanitize_buy_filters($_GET);
+        $filters = sanitize_buy_filters($_GET, $conn);
         $result = run_buy_listing_query($conn, $filters);
         $active = $result['filters'];
         $listings = $result['items'];
@@ -37,6 +37,8 @@ try {
         $categoryOptions = listing_filter_categories('buy');
         $subcategoryOptions = listing_filter_subcategories('buy', $active['category']);
         $conditionOptions = listing_filter_conditions('buy', $active['category']);
+        $brandOptions = listing_brand_options($conn);
+        $modelIndex = listing_model_index($conn);
         $sortOptions = buy_sort_options();
         $limitOptions = buy_limit_options();
         $availableTags = load_available_tags($conn, $tagFilters);
@@ -46,6 +48,8 @@ try {
             'category' => $active['category'] !== '' ? $active['category'] : null,
             'subcategory' => $active['subcategory'] !== '' ? $active['subcategory'] : null,
             'condition' => $active['condition'] !== '' ? $active['condition'] : null,
+            'brand_id' => $active['brand_id'] > 0 ? $active['brand_id'] : null,
+            'model_id' => $active['model_id'] > 0 ? $active['model_id'] : null,
             'sort' => $active['sort'] !== '' ? $active['sort'] : null,
             'limit' => $limit,
             'tags' => !empty($tagFilters) ? $tagFilters : null,
@@ -117,6 +121,36 @@ try {
             ];
         }
 
+        $brandData = [];
+        $brandData[] = [
+            'value' => '',
+            'label' => 'Any brand',
+            'selected' => $active['brand_id'] <= 0,
+        ];
+        foreach ($brandOptions as $id => $name) {
+            $brandData[] = [
+                'value' => (string)$id,
+                'label' => $name,
+                'selected' => (int)$active['brand_id'] === (int)$id,
+            ];
+        }
+
+        $modelData = [];
+        $modelData[] = [
+            'value' => '',
+            'label' => 'Any model',
+            'selected' => $active['model_id'] <= 0,
+        ];
+        foreach ($modelIndex as $model) {
+            $brandLabel = $brandOptions[$model['brand_id']] ?? ('Brand ' . $model['brand_id']);
+            $modelLabel = $brandLabel . ' – ' . $model['name'];
+            $modelData[] = [
+                'value' => (string)$model['id'],
+                'label' => $modelLabel,
+                'selected' => (int)$active['model_id'] === (int)$model['id'],
+            ];
+        }
+
         $tagData = [];
         foreach ($availableTags as $tag) {
             $tagData[] = [
@@ -156,6 +190,8 @@ try {
                 'category' => $categoryData,
                 'subcategory' => $subcategoryData,
                 'condition' => $conditionData,
+                'brand' => $brandData,
+                'model' => $modelData,
                 'tags' => $tagData,
                 'sort' => $sortData,
                 'limit' => $limitData,
@@ -165,7 +201,7 @@ try {
     }
 
     // Trade context
-    $filters = sanitize_trade_filters($_GET);
+    $filters = sanitize_trade_filters($_GET, $conn);
     $result = run_trade_listing_query($conn, $filters);
     $active = $result['filters'];
     $listings = $result['items'];
@@ -178,6 +214,8 @@ try {
     $subcategoryOptions = listing_filter_subcategories('trade', $active['category']);
     $conditionOptions = listing_filter_conditions('trade', $active['category']);
     $formatOptions = listing_filter_format_options('trade');
+    $brandOptions = listing_brand_options($conn);
+    $modelIndex = listing_model_index($conn);
     $sortOptions = trade_sort_options();
     $limitOptions = trade_limit_options();
 
@@ -187,6 +225,8 @@ try {
         'subcategory' => $active['subcategory'] !== '' ? $active['subcategory'] : null,
         'condition' => $active['condition'] !== '' ? $active['condition'] : null,
         'trade_type' => $active['trade_type'] !== '' ? $active['trade_type'] : null,
+        'brand_id' => $active['brand_id'] > 0 ? $active['brand_id'] : null,
+        'model_id' => $active['model_id'] > 0 ? $active['model_id'] : null,
         'sort' => $active['sort'] !== '' ? $active['sort'] : null,
         'limit' => $limit,
     ];
@@ -253,6 +293,36 @@ try {
         ];
     }
 
+    $brandData = [];
+    $brandData[] = [
+        'value' => '',
+        'label' => 'Any brand',
+        'selected' => $active['brand_id'] <= 0,
+    ];
+    foreach ($brandOptions as $id => $name) {
+        $brandData[] = [
+            'value' => (string)$id,
+            'label' => $name,
+            'selected' => (int)$active['brand_id'] === (int)$id,
+        ];
+    }
+
+    $modelData = [];
+    $modelData[] = [
+        'value' => '',
+        'label' => 'Any model',
+        'selected' => $active['model_id'] <= 0,
+    ];
+    foreach ($modelIndex as $model) {
+        $brandLabel = $brandOptions[$model['brand_id']] ?? ('Brand ' . $model['brand_id']);
+        $modelLabel = $brandLabel . ' – ' . $model['name'];
+        $modelData[] = [
+            'value' => (string)$model['id'],
+            'label' => $modelLabel,
+            'selected' => (int)$active['model_id'] === (int)$model['id'],
+        ];
+    }
+
     $formatData = [];
     foreach ($formatOptions as $value => $label) {
         $count = $optionCounts([
@@ -298,6 +368,8 @@ try {
             'category' => $categoryData,
             'subcategory' => $subcategoryData,
             'condition' => $conditionData,
+            'brand' => $brandData,
+            'model' => $modelData,
             'trade_type' => $formatData,
             'sort' => $sortData,
             'limit' => $limitData,

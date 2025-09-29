@@ -70,204 +70,306 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
         $error = 'Invalid CSRF token.';
     } else {
-        $category = htmlspecialchars(trim($_POST['category'] ?? ''), ENT_QUOTES, 'UTF-8');
-        $servicePayload = isset($_POST['service']) && is_array($_POST['service']) ? $_POST['service'] : [];
-        $activePayload = service_wizard_active_payload($servicePayload, $category);
-
-        $brandRaw = service_wizard_value($activePayload, 'brand_id');
-        $brand_id = ($brandRaw !== null && $brandRaw !== '') ? (int) $brandRaw : null;
-
-        $modelRaw = service_wizard_value($activePayload, 'model_id');
-        $model_id = ($modelRaw !== null && $modelRaw !== '') ? (int) $modelRaw : null;
-
-        $makeValue = service_wizard_value($activePayload, 'make');
-        $make = $makeValue !== null ? htmlspecialchars(trim((string) $makeValue), ENT_QUOTES, 'UTF-8') : null;
-
-        $modelValue = service_wizard_value($activePayload, 'model');
-        $model = $modelValue !== null ? htmlspecialchars(trim((string) $modelValue), ENT_QUOTES, 'UTF-8') : null;
-
-        $serialValue = service_wizard_value($activePayload, 'serial');
-        $serial = $serialValue !== null ? htmlspecialchars(trim((string) $serialValue), ENT_QUOTES, 'UTF-8') : null;
-
-        $issueValue = service_wizard_value($activePayload, 'issue', '');
-        $issue = htmlspecialchars(trim((string) $issueValue), ENT_QUOTES, 'UTF-8');
-
-        $buildRaw = service_wizard_value($activePayload, 'build', null);
-        $build = $buildRaw !== null ? htmlspecialchars(trim((string) $buildRaw), ENT_QUOTES, 'UTF-8') : 'no';
-
-        $deviceTypeValue = service_wizard_value($activePayload, 'device_type');
-        $device_type = $deviceTypeValue !== null ? htmlspecialchars(trim((string) $deviceTypeValue), ENT_QUOTES, 'UTF-8') : null;
-
-        if ($category === '') {
-          $error = 'Category is required.';
-        }
-
-        $serviceDefinition = $serviceTaxonomy[$category] ?? null;
-        if (!$error && !$serviceDefinition) {
-          $error = 'Invalid service category.';
-        }
-
-        $requirements = $serviceDefinition['requirements'] ?? [];
-        $requiresBrand = !empty($requirements['brand_id']);
-        $requiresModel = !empty($requirements['model_id']);
-        $requiresIssue = !empty($requirements['issue']);
-        $requiresDeviceType = !empty($requirements['device_type']);
-        $requiresBuild = !empty($requirements['build']);
-
-        if (!$error && $requiresIssue && $issue === '') {
-          $error = 'Please describe the issue so our technicians can help.';
-        }
-
-        if (!$error && $requiresDeviceType && ($device_type === null || $device_type === '')) {
-          $error = 'Device type is required for this request.';
-        }
-
-        if (!$error && $requiresBrand && !$brand_id) {
-          $error = 'Please choose a brand.';
-        }
-
-        if (!$error && $requiresModel && !$model_id) {
-          $error = 'Please choose a model.';
-        }
-
-        if (!$error && $requiresBuild) {
-          if ($buildRaw === null || !in_array($build, ['yes', 'no'], true)) {
-            $error = 'Please confirm if this is a full custom build.';
+        if ($type === 'trade') {
+          $allowedTradeCategories = ['phone', 'console', 'pc', 'other'];
+          $category = htmlspecialchars(trim($_POST['category'] ?? ''), ENT_QUOTES, 'UTF-8');
+          if (!in_array($category, $allowedTradeCategories, true)) {
+            $error = 'Please select a valid trade category.';
           }
-        }
 
-        if (!$error && $requiresBrand && $brand_id) {
-          if ($stmtB = $conn->prepare('SELECT id FROM service_brands WHERE id=?')) {
-            $stmtB->bind_param('i', $brand_id);
-            $stmtB->execute();
-            $stmtB->store_result();
-            if ($stmtB->num_rows === 0) {
-              $error = 'Invalid brand.';
-            }
-            $stmtB->close();
-          }
-        }
+          $make = htmlspecialchars(trim($_POST['make'] ?? ''), ENT_QUOTES, 'UTF-8');
+          $model = htmlspecialchars(trim($_POST['model'] ?? ''), ENT_QUOTES, 'UTF-8');
+          $device_type = htmlspecialchars(trim($_POST['device_type'] ?? ''), ENT_QUOTES, 'UTF-8');
+          $issue = htmlspecialchars(trim($_POST['issue'] ?? ''), ENT_QUOTES, 'UTF-8');
+          $serialInput = trim($_POST['serial'] ?? '');
+          $serial = $serialInput !== '' ? htmlspecialchars($serialInput, ENT_QUOTES, 'UTF-8') : null;
 
-        if (!$error && $requiresModel && $model_id) {
-          if ($stmtM = $conn->prepare('SELECT id FROM service_models WHERE id=? AND brand_id=?')) {
-            $stmtM->bind_param('ii', $model_id, $brand_id);
-            $stmtM->execute();
-            $stmtM->store_result();
-            if ($stmtM->num_rows === 0) {
-              $error = 'Invalid model.';
-            }
-            $stmtM->close();
+          if (!$error && $category === '') {
+            $error = 'Trade category is required.';
           }
-        }
+          if (!$error && $make === '') {
+            $error = 'Please provide the current device make.';
+          }
+          if (!$error && $model === '') {
+            $error = 'Please provide the current device model or desired item.';
+          }
+          if (!$error && $device_type === '') {
+            $error = 'Please share the desired device details.';
+          }
+          if (!$error && $issue === '') {
+            $error = 'Tell us about the condition or issue so we can review the trade.';
+          }
 
-        if (!$error) {
-          $extraNotes = [];
-          $symptomsInput = service_wizard_value($activePayload, 'symptoms', []);
-          if (!is_array($symptomsInput)) {
-            $symptomsInput = [];
-          }
-          if ($symptomsInput) {
-            $symptoms = array_map(static function ($value) {
-              return preg_replace('/[^a-z0-9 \-]/i', '', (string) $value);
-            }, $symptomsInput);
-            $symptoms = array_filter($symptoms);
-            if ($symptoms) {
-              $extraNotes[] = 'Reported symptoms: ' . implode(', ', $symptoms);
+          $uploadedFile = null;
+          if (isset($_FILES['photo']) && is_array($_FILES['photo'])) {
+            $photoError = $_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE;
+            if ($photoError !== UPLOAD_ERR_NO_FILE && ($_FILES['photo']['name'] ?? '') !== '') {
+              $uploadedFile = $_FILES['photo'];
             }
           }
 
-          $contactPreferenceInput = service_wizard_value($activePayload, 'contact_preference', '');
-          if ($contactPreferenceInput !== null) {
-            $contactPreference = preg_replace('/[^a-z0-9 \-]/i', '', (string) $contactPreferenceInput);
-            if ($contactPreference !== '') {
-              $extraNotes[] = 'Preferred contact: ' . $contactPreference;
+          if (!$error && $uploadedFile) {
+            $upload_path = __DIR__ . '/uploads/';
+            if (!is_dir($upload_path)) {
+              mkdir($upload_path, 0755, true);
             }
-          }
+            $maxSize = 5 * 1024 * 1024; // 5MB
+            $allowed = ['image/jpeg', 'image/png'];
 
-          if ($extraNotes) {
-            $issue = trim($issue . "\n\n" . implode("\n", $extraNotes));
-          }
-        }
-
-        $uploadedFile = null;
-        if (isset($_FILES['photo']) && is_array($_FILES['photo'])) {
-          $photoError = $_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE;
-          if ($photoError !== UPLOAD_ERR_NO_FILE && ($_FILES['photo']['name'] ?? '') !== '') {
-            $uploadedFile = $_FILES['photo'];
-          }
-        }
-
-        if (!$uploadedFile && isset($_FILES['service']) && is_array($_FILES['service'])) {
-          $nestedFile = service_wizard_file($_FILES['service'], $category, 'photo');
-          if ($nestedFile) {
-            $uploadedFile = $nestedFile;
-          }
-        }
-
-        // ✅ Handle optional file upload
-        if (!$error && $uploadedFile) {
-          $upload_path = __DIR__ . '/uploads/';
-          if (!is_dir($upload_path)) {
-            mkdir($upload_path, 0755, true);
-          }
-          $maxSize = 5 * 1024 * 1024; // 5MB
-          $allowed = ['image/jpeg', 'image/png'];
-
-          if (($uploadedFile['size'] ?? 0) > $maxSize) {
-            $error = "Image exceeds 5MB limit.";
-          } else {
-            $finfo = finfo_open(FILEINFO_MIME_TYPE);
-            $mime = false;
-            if ($finfo) {
-              $mime = finfo_file($finfo, $uploadedFile['tmp_name']);
-              finfo_close($finfo);
-            }
-            if (!in_array($mime, $allowed, true)) {
-              $error = "Only JPEG and PNG images allowed.";
+            if (($uploadedFile['size'] ?? 0) > $maxSize) {
+              $error = "Image exceeds 5MB limit.";
             } else {
-              $ext = $mime === 'image/png' ? '.png' : '.jpg';
-              $filename = uniqid('upload_', true) . $ext;
-              $target = $upload_path . $filename;
-              if (!move_uploaded_file($uploadedFile['tmp_name'], $target)) {
-                $error = "Failed to upload image.";
+              $finfo = finfo_open(FILEINFO_MIME_TYPE);
+              $mime = false;
+              if ($finfo) {
+                $mime = finfo_file($finfo, $uploadedFile['tmp_name']);
+                finfo_close($finfo);
+              }
+              if (!in_array($mime, $allowed, true)) {
+                $error = "Only JPEG and PNG images allowed.";
+              } else {
+                $ext = $mime === 'image/png' ? '.png' : '.jpg';
+                $filename = uniqid('upload_', true) . $ext;
+                $target = $upload_path . $filename;
+                if (!move_uploaded_file($uploadedFile['tmp_name'], $target)) {
+                  $error = "Failed to upload image.";
+                }
               }
             }
           }
-        }
 
-        // Proceed if no file errors
-        if (!$error) {
-          $status = $is_member ? 'In Progress' : 'New';
-          $stmt = $conn->prepare("INSERT INTO service_requests
-            (user_id, type, category, brand_id, model_id, make, model, serial, issue, build, device_type, photo, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+          if (!$error) {
+            $status = $is_member ? 'In Progress' : 'New';
+            $brand_id = null;
+            $model_id = null;
+            $build = 'no';
+            $stmt = $conn->prepare("INSERT INTO service_requests
+              (user_id, type, category, brand_id, model_id, make, model, serial, issue, build, device_type, photo, status)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-          if ($stmt) {
-            $stmt->bind_param("issiiisssssss", $user_id, $type, $category, $brand_id, $model_id, $make, $model, $serial, $issue, $build, $device_type, $filename, $status);
-            if ($stmt->execute()) {
-              $success = true;
-
-              // ✅ Send admin notification
-              $adminEmail = 'owner@skuze.tech';
-              $subject = "New Service Request Submitted";
-              $body = "User ID: $user_id\nType: $type\nCategory: $category\nMake/Model: $make $model\nSerial: $serial\nBuild Request: $build\nDevice Type: $device_type\nIssue: $issue";
-              if ($filename) {
-                $body .= "\nPhoto stored at: uploads/$filename";
+            if ($stmt) {
+              $stmt->bind_param("issiiisssssss", $user_id, $type, $category, $brand_id, $model_id, $make, $model, $serial, $issue, $build, $device_type, $filename, $status);
+              if ($stmt->execute()) {
+                $success = true;
+                $adminEmail = 'owner@skuze.tech';
+                $subject = "New Trade Request Submitted";
+                $body = "User ID: $user_id\nType: $type\nCategory: $category\nMake/Model: $make $model\nSerial: " . ($serial ?? 'N/A') . "\nDevice Type: $device_type\nIssue: $issue";
+                if ($filename) {
+                  $body .= "\nPhoto stored at: uploads/$filename";
+                }
+                try {
+                  send_email($adminEmail, $subject, $body);
+                } catch (Exception $e) {
+                  error_log('Email dispatch failed: ' . $e->getMessage());
+                  $error = 'Request saved but email notification failed.';
+                }
+              } else {
+                error_log('Execute failed: ' . $stmt->error);
+                $error = "Error executing query.";
               }
-              try {
-                send_email($adminEmail, $subject, $body);
-              } catch (Exception $e) {
-                error_log('Email dispatch failed: ' . $e->getMessage());
-                $error = 'Request saved but email notification failed.';
-              }
+              $stmt->close();
             } else {
-              error_log('Execute failed: ' . $stmt->error);
-              $error = "Error executing query.";
+              error_log('Prepare failed: ' . $conn->error);
+              $error = "Database error.";
             }
-            $stmt->close();
-          } else {
-            error_log('Prepare failed: ' . $conn->error);
-            $error = "Database error.";
+          }
+        } else {
+          $category = htmlspecialchars(trim($_POST['category'] ?? ''), ENT_QUOTES, 'UTF-8');
+          $servicePayload = isset($_POST['service']) && is_array($_POST['service']) ? $_POST['service'] : [];
+          $activePayload = service_wizard_active_payload($servicePayload, $category);
+
+          $brandRaw = service_wizard_value($activePayload, 'brand_id');
+          $brand_id = ($brandRaw !== null && $brandRaw !== '') ? (int) $brandRaw : null;
+
+          $modelRaw = service_wizard_value($activePayload, 'model_id');
+          $model_id = ($modelRaw !== null && $modelRaw !== '') ? (int) $modelRaw : null;
+
+          $makeValue = service_wizard_value($activePayload, 'make');
+          $make = $makeValue !== null ? htmlspecialchars(trim((string) $makeValue), ENT_QUOTES, 'UTF-8') : null;
+
+          $modelValue = service_wizard_value($activePayload, 'model');
+          $model = $modelValue !== null ? htmlspecialchars(trim((string) $modelValue), ENT_QUOTES, 'UTF-8') : null;
+
+          $serialValue = service_wizard_value($activePayload, 'serial');
+          $serial = $serialValue !== null ? htmlspecialchars(trim((string) $serialValue), ENT_QUOTES, 'UTF-8') : null;
+
+          $issueValue = service_wizard_value($activePayload, 'issue', '');
+          $issue = htmlspecialchars(trim((string) $issueValue), ENT_QUOTES, 'UTF-8');
+
+          $buildRaw = service_wizard_value($activePayload, 'build', null);
+          $build = $buildRaw !== null ? htmlspecialchars(trim((string) $buildRaw), ENT_QUOTES, 'UTF-8') : 'no';
+
+          $deviceTypeValue = service_wizard_value($activePayload, 'device_type');
+          $device_type = $deviceTypeValue !== null ? htmlspecialchars(trim((string) $deviceTypeValue), ENT_QUOTES, 'UTF-8') : null;
+
+          if ($category === '') {
+            $error = 'Category is required.';
+          }
+
+          $serviceDefinition = $serviceTaxonomy[$category] ?? null;
+          if (!$error && !$serviceDefinition) {
+            $error = 'Invalid service category.';
+          }
+
+          $requirements = $serviceDefinition['requirements'] ?? [];
+          $requiresBrand = !empty($requirements['brand_id']);
+          $requiresModel = !empty($requirements['model_id']);
+          $requiresIssue = !empty($requirements['issue']);
+          $requiresDeviceType = !empty($requirements['device_type']);
+          $requiresBuild = !empty($requirements['build']);
+
+          if (!$error && $requiresIssue && $issue === '') {
+            $error = 'Please describe the issue so our technicians can help.';
+          }
+
+          if (!$error && $requiresDeviceType && ($device_type === null || $device_type === '')) {
+            $error = 'Device type is required for this request.';
+          }
+
+          if (!$error && $requiresBrand && !$brand_id) {
+            $error = 'Please choose a brand.';
+          }
+
+          if (!$error && $requiresModel && !$model_id) {
+            $error = 'Please choose a model.';
+          }
+
+          if (!$error && $requiresBuild) {
+            if ($buildRaw === null || !in_array($build, ['yes', 'no'], true)) {
+              $error = 'Please confirm if this is a full custom build.';
+            }
+          }
+
+          if (!$error && $requiresBrand && $brand_id) {
+            if ($stmtB = $conn->prepare('SELECT id FROM service_brands WHERE id=?')) {
+              $stmtB->bind_param('i', $brand_id);
+              $stmtB->execute();
+              $stmtB->store_result();
+              if ($stmtB->num_rows === 0) {
+                $error = 'Invalid brand.';
+              }
+              $stmtB->close();
+            }
+          }
+
+          if (!$error && $requiresModel && $model_id) {
+            if ($stmtM = $conn->prepare('SELECT id FROM service_models WHERE id=? AND brand_id=?')) {
+              $stmtM->bind_param('ii', $model_id, $brand_id);
+              $stmtM->execute();
+              $stmtM->store_result();
+              if ($stmtM->num_rows === 0) {
+                $error = 'Invalid model.';
+              }
+              $stmtM->close();
+            }
+          }
+
+          if (!$error) {
+            $extraNotes = [];
+            $symptomsInput = service_wizard_value($activePayload, 'symptoms', []);
+            if (!is_array($symptomsInput)) {
+              $symptomsInput = [];
+            }
+            if ($symptomsInput) {
+              $symptoms = array_map(static function ($value) {
+                return preg_replace('/[^a-z0-9 \-]/i', '', (string) $value);
+              }, $symptomsInput);
+              $symptoms = array_filter($symptoms);
+              if ($symptoms) {
+                $extraNotes[] = 'Reported symptoms: ' . implode(', ', $symptoms);
+              }
+            }
+
+            $contactPreferenceInput = service_wizard_value($activePayload, 'contact_preference', '');
+            if ($contactPreferenceInput !== null) {
+              $contactPreference = preg_replace('/[^a-z0-9 \-]/i', '', (string) $contactPreferenceInput);
+              if ($contactPreference !== '') {
+                $extraNotes[] = 'Preferred contact: ' . $contactPreference;
+              }
+            }
+
+            if ($extraNotes) {
+              $issue = trim($issue . "\n\n" . implode("\n", $extraNotes));
+            }
+          }
+
+          $uploadedFile = null;
+          if (isset($_FILES['photo']) && is_array($_FILES['photo'])) {
+            $photoError = $_FILES['photo']['error'] ?? UPLOAD_ERR_NO_FILE;
+            if ($photoError !== UPLOAD_ERR_NO_FILE && ($_FILES['photo']['name'] ?? '') !== '') {
+              $uploadedFile = $_FILES['photo'];
+            }
+          }
+
+          if (!$uploadedFile && isset($_FILES['service']) && is_array($_FILES['service'])) {
+            $nestedFile = service_wizard_file($_FILES['service'], $category, 'photo');
+            if ($nestedFile) {
+              $uploadedFile = $nestedFile;
+            }
+          }
+
+          if (!$error && $uploadedFile) {
+            $upload_path = __DIR__ . '/uploads/';
+            if (!is_dir($upload_path)) {
+              mkdir($upload_path, 0755, true);
+            }
+            $maxSize = 5 * 1024 * 1024; // 5MB
+            $allowed = ['image/jpeg', 'image/png'];
+
+            if (($uploadedFile['size'] ?? 0) > $maxSize) {
+              $error = "Image exceeds 5MB limit.";
+            } else {
+              $finfo = finfo_open(FILEINFO_MIME_TYPE);
+              $mime = false;
+              if ($finfo) {
+                $mime = finfo_file($finfo, $uploadedFile['tmp_name']);
+                finfo_close($finfo);
+              }
+              if (!in_array($mime, $allowed, true)) {
+                $error = "Only JPEG and PNG images allowed.";
+              } else {
+                $ext = $mime === 'image/png' ? '.png' : '.jpg';
+                $filename = uniqid('upload_', true) . $ext;
+                $target = $upload_path . $filename;
+                if (!move_uploaded_file($uploadedFile['tmp_name'], $target)) {
+                  $error = "Failed to upload image.";
+                }
+              }
+            }
+          }
+
+          if (!$error) {
+            $status = $is_member ? 'In Progress' : 'New';
+            $stmt = $conn->prepare("INSERT INTO service_requests
+              (user_id, type, category, brand_id, model_id, make, model, serial, issue, build, device_type, photo, status)
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+            if ($stmt) {
+              $stmt->bind_param("issiiisssssss", $user_id, $type, $category, $brand_id, $model_id, $make, $model, $serial, $issue, $build, $device_type, $filename, $status);
+              if ($stmt->execute()) {
+                $success = true;
+
+                $adminEmail = 'owner@skuze.tech';
+                $subject = "New Service Request Submitted";
+                $body = "User ID: $user_id\nType: $type\nCategory: $category\nMake/Model: $make $model\nSerial: $serial\nBuild Request: $build\nDevice Type: $device_type\nIssue: $issue";
+                if ($filename) {
+                  $body .= "\nPhoto stored at: uploads/$filename";
+                }
+                try {
+                  send_email($adminEmail, $subject, $body);
+                } catch (Exception $e) {
+                  error_log('Email dispatch failed: ' . $e->getMessage());
+                  $error = 'Request saved but email notification failed.';
+                }
+              } else {
+                error_log('Execute failed: ' . $stmt->error);
+                $error = "Error executing query.";
+              }
+              $stmt->close();
+            } else {
+              error_log('Prepare failed: ' . $conn->error);
+              $error = "Database error.";
+            }
           }
         }
     }

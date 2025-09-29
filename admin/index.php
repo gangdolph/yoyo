@@ -51,6 +51,7 @@ $requests = $stmt->fetch_all(MYSQLI_ASSOC);
         <li><a class="btn" href="users.php">Manage Users</a></li>
         <li><a class="btn" href="theme.php">Vaporwave Theme Settings</a></li>
         <li><a class="btn" href="toolbox.php">Manage Toolbox</a></li>
+        <li><a class="btn" href="service-taxonomy.php">Manage Brands &amp; Models</a></li>
         <li><a class="btn" href="wallet.php">Wallet Manager</a></li>
         <li><a class="btn" href="support.php">Support Tickets</a></li>
         <li><a class="btn" href="health.php">Square Health</a></li>

@@ -39,6 +39,18 @@
             <img class="thumb-square" src="uploads/<?= htmlspecialchars($l['image']); ?>" alt="">
           <?php endif; ?>
           <h3><?= htmlspecialchars($l['title']); ?></h3>
+          <?php if (!empty($l['brand_name']) || !empty($l['model_name'])): ?>
+            <p class="device-meta">
+              <?php if (!empty($l['brand_name'])): ?>
+                <?= htmlspecialchars($l['brand_name']); ?>
+                <?php if (!empty($l['model_name'])): ?>
+                  &middot; <?= htmlspecialchars($l['model_name']); ?>
+                <?php endif; ?>
+              <?php else: ?>
+                <?= htmlspecialchars($l['model_name']); ?>
+              <?php endif; ?>
+            </p>
+          <?php endif; ?>
         </a>
         <?php
           $badges = [];

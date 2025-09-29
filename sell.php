@@ -4,6 +4,7 @@ require_once __DIR__ . '/includes/authz.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
 require 'includes/tags.php';
+require 'includes/listing-query.php';
 require_once __DIR__ . '/includes/repositories/ChangeRequestsService.php';
 require_once __DIR__ . '/includes/repositories/ListingsRepo.php';
 
@@ -23,6 +24,10 @@ if ($stmt = $conn->prepare('SELECT vip_status, vip_expires_at FROM users WHERE i
 
 $error = '';
 $tags_input = '';
+$brandOptions = listing_brand_options($conn);
+$modelIndex = listing_model_index($conn);
+$selectedBrandId = 0;
+$selectedModelId = 0;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!validate_token($_POST['csrf_token'] ?? '')) {
@@ -34,6 +39,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $allowedConditions = ['new', 'used', 'refurbished'];
         $price = trim($_POST['price'] ?? '');
         $category = trim($_POST['category'] ?? '');
+        $brandInput = trim((string)($_POST['brand_id'] ?? ''));
+        $modelInput = trim((string)($_POST['model_id'] ?? ''));
         $tags_input = trim($_POST['tags'] ?? '');
         $pickup_only = isset($_POST['pickup_only']) ? 1 : 0;
         $imageName = null;
@@ -41,6 +48,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tags = tags_from_input($tags_input);
         $tags_input = tags_to_input_value($tags);
         $tags_storage = tags_to_storage($tags);
+
+        $brand_id = null;
+        if ($brandInput !== '') {
+            $brandCandidate = (int)$brandInput;
+            if ($brandCandidate > 0 && isset($brandOptions[$brandCandidate])) {
+                $brand_id = $brandCandidate;
+            } else {
+                $error = 'Please choose a valid brand.';
+            }
+        }
+
+        $model_id = null;
+        if (!$error && $modelInput !== '') {
+            $modelCandidate = (int)$modelInput;
+            $modelRow = $modelIndex[$modelCandidate] ?? null;
+            if ($modelCandidate > 0 && $modelRow) {
+                $model_id = $modelCandidate;
+                $modelBrand = (int)$modelRow['brand_id'];
+                if ($brand_id !== null && $brand_id !== $modelBrand) {
+                    $error = 'Selected model does not match the chosen brand.';
+                } else {
+                    $brand_id = $modelBrand;
+                }
+            } else {
+                $error = 'Please choose a valid model.';
+            }
+        }
+
+        $selectedBrandId = $brand_id !== null ? $brand_id : 0;
+        $selectedModelId = $model_id !== null ? $model_id : 0;
 
         if ($title === '' || $description === '' || $condition === '' || !in_array($condition, $allowedConditions, true) || $price === '' || !is_numeric($price)) {
             $error = 'Title, description, valid condition, and a valid price are required.';
@@ -86,6 +123,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'condition' => $condition,
                 'price' => $price,
                 'category' => $category !== '' ? $category : null,
+                'brand_id' => $brand_id,
+                'model_id' => $model_id,
                 'tags' => $tags_storage,
                 'image' => $imageName,
                 'pickup_only' => $pickup_only,
@@ -138,6 +177,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <option value="console">Game Console</option>
         <option value="pc">PC</option>
         <option value="other">Other</option>
+      </select>
+    </label><br>
+    <label>Brand:<br>
+      <select name="brand_id">
+        <option value="">Select brand</option>
+        <?php foreach ($brandOptions as $id => $name): ?>
+          <option value="<?= $id; ?>" <?= $selectedBrandId === (int)$id ? 'selected' : ''; ?>><?= htmlspecialchars($name); ?></option>
+        <?php endforeach; ?>
+      </select>
+    </label><br>
+    <label>Model:<br>
+      <select name="model_id" <?= empty($modelIndex) ? 'disabled' : ''; ?>>
+        <option value="">Select model</option>
+        <?php foreach ($modelIndex as $model): ?>
+          <?php
+            $brandLabel = $brandOptions[$model['brand_id']] ?? ('Brand ' . $model['brand_id']);
+            $modelLabel = $brandLabel . ' – ' . $model['name'];
+          ?>
+          <option value="<?= $model['id']; ?>" data-brand-id="<?= $model['brand_id']; ?>" <?= $selectedModelId === (int)$model['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($modelLabel); ?></option>
+        <?php endforeach; ?>
       </select>
     </label><br>
     <label>Tags:<br>

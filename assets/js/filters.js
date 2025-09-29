@@ -108,6 +108,12 @@ const updateFormControls = (form, filters) => {
   updateSelectOptions(form.querySelector('[name="category"]'), filters.category);
   updateSelectOptions(form.querySelector('[name="subcategory"]'), filters.subcategory);
   updateSelectOptions(form.querySelector('[name="condition"]'), filters.condition);
+  if (filters.brand) {
+    updateSelectOptions(form.querySelector('[name="brand_id"]'), filters.brand);
+  }
+  if (filters.model) {
+    updateSelectOptions(form.querySelector('[name="model_id"]'), filters.model);
+  }
   if (filters.trade_type) {
     updateSelectOptions(form.querySelector('[name="trade_type"]'), filters.trade_type);
   }

@@ -11,10 +11,30 @@ $transparencyConfig = require __DIR__ . '/config.php';
 require_once __DIR__ . '/includes/WalletService.php';
 
 // $paymentsApi = $client->getPaymentsApi();
-$listing_id = isset($_GET['listing_id']) ? intval($_GET['listing_id']) : 0;
-if (!$listing_id) {
+$listingParam = $_GET['listing_id'] ?? null;
+$requestedListingIds = [];
+if (is_array($listingParam)) {
+    foreach ($listingParam as $value) {
+        $id = (int) $value;
+        if ($id > 0) {
+            $requestedListingIds[] = $id;
+        }
+    }
+} elseif ($listingParam !== null) {
+    $id = (int) $listingParam;
+    if ($id > 0) {
+        $requestedListingIds[] = $id;
+    }
+}
+$requestedListingIds = array_values(array_unique($requestedListingIds));
+if (empty($requestedListingIds)) {
     header('Location: buy.php');
     exit;
+}
+$listing_id = $requestedListingIds[0];
+$additionalListingIds = array_slice($requestedListingIds, 1);
+if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
 }
 
 // Fetch the listing details
@@ -39,6 +59,16 @@ if (!isset($_SESSION['checkout_notices']) || !is_array($_SESSION['checkout_notic
 }
 if (!isset($_SESSION['reservation_tokens']) || !is_array($_SESSION['reservation_tokens'])) {
     $_SESSION['reservation_tokens'] = [];
+}
+if (!isset($_SESSION['shipping']) || !is_array($_SESSION['shipping'])) {
+    $_SESSION['shipping'] = [];
+}
+
+$cartQuantities = $_SESSION['cart'];
+foreach ($requestedListingIds as $requestedId) {
+    if (isset($cartQuantities[$requestedId])) {
+        $_SESSION['checkout_quantities'][$requestedId] = (int) $cartQuantities[$requestedId];
+    }
 }
 
 $availableQuantity = max(0, (int)($listing['quantity'] ?? 0) - (int)($listing['reserved_qty'] ?? 0));
@@ -92,7 +122,12 @@ $checkoutDisabled = $selectedQuantity <= 0 || $availableQuantity <= 0;
 
 $pickupOnly = !empty($listing['pickup_only']);
 if (!$pickupOnly && !isset($_SESSION['shipping'][$listing_id])) {
-    header('Location: shipping.php?listing_id=' . $listing_id);
+    $redirectIds = $requestedListingIds;
+    if (empty($redirectIds)) {
+        $redirectIds = [$listing_id];
+    }
+    $redirectQuery = http_build_query(['listing_id' => array_values($redirectIds)]);
+    header('Location: shipping.php?' . $redirectQuery);
     exit;
 }
 $shipping = $pickupOnly ? ['address' => '', 'method' => 'pickup', 'notes' => ''] : $_SESSION['shipping'][$listing_id];
@@ -194,6 +229,11 @@ if ($walletEnabled) {
   </div>
   <form method="get" class="coupon-form">
     <input type="hidden" name="listing_id" value="<?= $listing['id']; ?>">
+    <?php if (!empty($additionalListingIds)): ?>
+      <?php foreach ($additionalListingIds as $additionalId): ?>
+        <input type="hidden" name="listing_id[]" value="<?= $additionalId; ?>">
+      <?php endforeach; ?>
+    <?php endif; ?>
     <input type="text" name="coupon" value="<?= htmlspecialchars($couponCode); ?>" placeholder="Coupon code">
     <button type="submit">Apply</button>
   </form>

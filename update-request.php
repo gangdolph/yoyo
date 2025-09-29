@@ -18,6 +18,7 @@ $make = htmlspecialchars(trim($_POST['make'] ?? ''), ENT_QUOTES, 'UTF-8');
 $model = htmlspecialchars(trim($_POST['model'] ?? ''), ENT_QUOTES, 'UTF-8');
 $device_type = htmlspecialchars(trim($_POST['device_type'] ?? ''), ENT_QUOTES, 'UTF-8');
 $issue = htmlspecialchars(trim($_POST['issue'] ?? ''), ENT_QUOTES, 'UTF-8');
+$serial = htmlspecialchars(trim($_POST['serial'] ?? ''), ENT_QUOTES, 'UTF-8');
 $filename = null;
 
 if (!$id || $make === '' || $model === '' || $device_type === '' || $issue === '') {
@@ -43,9 +44,9 @@ if (!empty($_FILES['photo']['name'])) {
   }
 }
 
-$stmt = $conn->prepare("UPDATE service_requests SET make=?, model=?, device_type=?, issue=?, photo=IFNULL(?, photo) WHERE id=? AND user_id=? AND type='trade' AND status IN ('New','Pending')");
+$stmt = $conn->prepare("UPDATE service_requests SET make=?, model=?, device_type=?, issue=?, serial=NULLIF(?, ''), photo=IFNULL(?, photo) WHERE id=? AND user_id=? AND type='trade' AND status IN ('New','Pending')");
 if ($stmt) {
-  $stmt->bind_param("sssssii", $make, $model, $device_type, $issue, $filename, $id, $user_id);
+  $stmt->bind_param("ssssssii", $make, $model, $device_type, $issue, $serial, $filename, $id, $user_id);
   $stmt->execute();
   $stmt->close();
 }
