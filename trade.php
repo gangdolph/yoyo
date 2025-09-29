@@ -43,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // Fetch listing details when filtering
 if ($listing_filter) {
-    if ($stmt = $conn->prepare('SELECT have_item, want_item, trade_type, description, image FROM trade_listings WHERE id = ? AND owner_id = ?')) {
+    if ($stmt = $conn->prepare('SELECT tl.have_item, tl.want_item, tl.trade_type, tl.description, tl.image, sb.name AS brand_name, sm.name AS model_name FROM trade_listings tl LEFT JOIN service_brands sb ON sb.id = tl.brand_id LEFT JOIN service_models sm ON sm.id = tl.model_id WHERE tl.id = ? AND tl.owner_id = ?')) {
         $stmt->bind_param('ii', $listing_filter, $user_id);
         $stmt->execute();
         $listing_info = $stmt->get_result()->fetch_assoc();
@@ -93,6 +93,9 @@ if ($listing_filter) {
         <p>Have: <strong><?= htmlspecialchars($listing_info['have_item']) ?></strong></p>
         <p>Want: <strong><?= htmlspecialchars($listing_info['want_item']) ?></strong></p>
         <p>Type: <strong><?= htmlspecialchars($listing_info['trade_type']) ?></strong></p>
+        <?php if (!empty($listing_info['brand_name']) || !empty($listing_info['model_name'])): ?>
+          <p>Device: <strong><?= htmlspecialchars($listing_info['brand_name'] ?? '—') ?><?php if (!empty($listing_info['model_name'])): ?> &middot; <?= htmlspecialchars($listing_info['model_name']) ?><?php endif; ?></strong></p>
+        <?php endif; ?>
         <p><?= nl2br(htmlspecialchars($listing_info['description'])) ?></p>
       <?php if (!empty($listing_info['image'])): ?><p><img src="uploads/<?= htmlspecialchars($listing_info['image']) ?>" alt="Listing image" style="max-width:200px"></p><?php endif; ?>
     </div>

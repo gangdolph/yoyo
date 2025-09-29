@@ -5,6 +5,74 @@ declare(strict_types=1);
 require_once __DIR__ . '/listing-filters.php';
 require_once __DIR__ . '/tags.php';
 
+function listing_brand_options(mysqli $conn): array
+{
+    static $cache = null;
+
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $cache = [];
+    if ($result = $conn->query('SELECT id, name FROM service_brands ORDER BY name')) {
+        while ($row = $result->fetch_assoc()) {
+            $id = isset($row['id']) ? (int) $row['id'] : 0;
+            if ($id > 0) {
+                $cache[$id] = (string) $row['name'];
+            }
+        }
+        $result->close();
+    }
+
+    return $cache;
+}
+
+function listing_model_index(mysqli $conn): array
+{
+    static $cache = null;
+
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $cache = [];
+    if ($result = $conn->query('SELECT id, brand_id, name FROM service_models ORDER BY name')) {
+        while ($row = $result->fetch_assoc()) {
+            $id = isset($row['id']) ? (int) $row['id'] : 0;
+            if ($id > 0) {
+                $cache[$id] = [
+                    'id' => $id,
+                    'brand_id' => isset($row['brand_id']) ? (int) $row['brand_id'] : 0,
+                    'name' => (string) $row['name'],
+                ];
+            }
+        }
+        $result->close();
+    }
+
+    return $cache;
+}
+
+function listing_model_groups(mysqli $conn): array
+{
+    static $groups = null;
+
+    if ($groups !== null) {
+        return $groups;
+    }
+
+    $groups = [];
+    foreach (listing_model_index($conn) as $model) {
+        $brandId = (int) $model['brand_id'];
+        if (!isset($groups[$brandId])) {
+            $groups[$brandId] = [];
+        }
+        $groups[$brandId][] = $model;
+    }
+
+    return $groups;
+}
+
 function buy_sort_options(): array
 {
     return [
@@ -19,7 +87,7 @@ function buy_limit_options(): array
     return [25, 50, 100];
 }
 
-function sanitize_buy_filters(array $input): array
+function sanitize_buy_filters(array $input, ?mysqli $conn = null): array
 {
     $search = trim((string)($input['search'] ?? ''));
     $category = trim((string)($input['category'] ?? ''));
@@ -38,6 +106,38 @@ function sanitize_buy_filters(array $input): array
     $conditionOptions = listing_filter_conditions('buy', $category);
     if (!array_key_exists($condition, $conditionOptions)) {
         $condition = '';
+    }
+
+    $brandId = (int)($input['brand_id'] ?? 0);
+    $modelId = (int)($input['model_id'] ?? 0);
+
+    if ($conn instanceof mysqli) {
+        $brandOptions = listing_brand_options($conn);
+        if ($brandId > 0 && !isset($brandOptions[$brandId])) {
+            $brandId = 0;
+        }
+
+        $modelIndex = listing_model_index($conn);
+        if ($modelId > 0) {
+            $model = $modelIndex[$modelId] ?? null;
+            if ($model === null) {
+                $modelId = 0;
+            } else {
+                $modelBrand = (int) $model['brand_id'];
+                if ($brandId > 0 && $brandId !== $modelBrand) {
+                    $modelId = 0;
+                } elseif ($brandId === 0) {
+                    $brandId = $modelBrand;
+                }
+            }
+        }
+    } else {
+        if ($brandId < 0) {
+            $brandId = 0;
+        }
+        if ($modelId < 0) {
+            $modelId = 0;
+        }
     }
 
     $sort = (string)($input['sort'] ?? '');
@@ -73,6 +173,8 @@ function sanitize_buy_filters(array $input): array
         'category' => $category,
         'subcategory' => $subcategory,
         'condition' => $condition,
+        'brand_id' => $brandId,
+        'model_id' => $modelId,
         'sort' => $sort,
         'limit' => $limit,
         'page' => $page,
@@ -86,6 +188,8 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
     $category = $filters['category'];
     $subcategory = $filters['subcategory'];
     $condition = $filters['condition'];
+    $brandId = isset($filters['brand_id']) ? (int)$filters['brand_id'] : 0;
+    $modelId = isset($filters['model_id']) ? (int)$filters['model_id'] : 0;
     $sort = $filters['sort'];
     $limit = $filters['limit'];
     $page = max(1, $filters['page']);
@@ -130,6 +234,18 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
         }
     }
 
+    if ($brandId > 0) {
+        $where .= ' AND l.brand_id = ?';
+        $params[] = $brandId;
+        $types .= 'i';
+    }
+
+    if ($modelId > 0) {
+        $where .= ' AND l.model_id = ?';
+        $params[] = $modelId;
+        $types .= 'i';
+    }
+
     if (!empty($tagFilters)) {
         foreach ($tagFilters as $tag) {
             $where .= " AND l.tags LIKE ?";
@@ -162,7 +278,14 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
         $orderBy = 'created_at DESC';
     }
 
-    $sql = "SELECT l.id, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.`condition`, l.product_sku, l.is_official_listing, l.quantity, l.reserved_qty, p.is_skuze_official, p.is_skuze_product FROM listings l LEFT JOIN products p ON l.product_sku = p.sku $where ORDER BY $orderBy LIMIT ? OFFSET ?";
+    $sql = "SELECT l.id, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.`condition`, "
+        . 'l.product_sku, l.brand_id, l.model_id, sb.name AS brand_name, sm.name AS model_name, '
+        . 'l.is_official_listing, l.quantity, l.reserved_qty, p.is_skuze_official, p.is_skuze_product '
+        . 'FROM listings l '
+        . 'LEFT JOIN service_brands sb ON sb.id = l.brand_id '
+        . 'LEFT JOIN service_models sm ON sm.id = l.model_id '
+        . 'LEFT JOIN products p ON l.product_sku = p.sku '
+        . "$where ORDER BY $orderBy LIMIT ? OFFSET ?";
     $paramsLimit = $params;
     $typesLimit = $types . 'ii';
     $paramsLimit[] = $limit;
@@ -170,12 +293,23 @@ function run_buy_listing_query(mysqli $conn, array $filters): array
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($typesLimit, ...$paramsLimit);
     $stmt->execute();
-    $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $result = $stmt->get_result();
+    $listings = [];
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $row['brand_id'] = isset($row['brand_id']) ? (int) $row['brand_id'] : null;
+            $row['model_id'] = isset($row['model_id']) ? (int) $row['model_id'] : null;
+            $listings[] = $row;
+        }
+        $result->close();
+    }
     $stmt->close();
 
     $normalizedFilters = $filters;
     $normalizedFilters['page'] = $page;
     $normalizedFilters['limit'] = $limit;
+    $normalizedFilters['brand_id'] = $brandId;
+    $normalizedFilters['model_id'] = $modelId;
 
     return [
         'items' => $listings,
@@ -228,7 +362,7 @@ function trade_limit_options(): array
     return [25, 50, 100];
 }
 
-function sanitize_trade_filters(array $input): array
+function sanitize_trade_filters(array $input, ?mysqli $conn = null): array
 {
     $search = trim((string)($input['search'] ?? ''));
     $category = trim((string)($input['category'] ?? ''));
@@ -255,6 +389,38 @@ function sanitize_trade_filters(array $input): array
         $tradeType = '';
     }
 
+    $brandId = (int)($input['brand_id'] ?? 0);
+    $modelId = (int)($input['model_id'] ?? 0);
+
+    if ($conn instanceof mysqli) {
+        $brandOptions = listing_brand_options($conn);
+        if ($brandId > 0 && !isset($brandOptions[$brandId])) {
+            $brandId = 0;
+        }
+
+        $modelIndex = listing_model_index($conn);
+        if ($modelId > 0) {
+            $model = $modelIndex[$modelId] ?? null;
+            if ($model === null) {
+                $modelId = 0;
+            } else {
+                $modelBrand = (int) $model['brand_id'];
+                if ($brandId > 0 && $brandId !== $modelBrand) {
+                    $modelId = 0;
+                } elseif ($brandId === 0) {
+                    $brandId = $modelBrand;
+                }
+            }
+        }
+    } else {
+        if ($brandId < 0) {
+            $brandId = 0;
+        }
+        if ($modelId < 0) {
+            $modelId = 0;
+        }
+    }
+
     $sort = (string)($input['sort'] ?? 'latest');
     $allowedSort = array_keys(trade_sort_options());
     if (!in_array($sort, $allowedSort, true)) {
@@ -275,6 +441,8 @@ function sanitize_trade_filters(array $input): array
         'subcategory' => $subcategory,
         'condition' => $condition,
         'trade_type' => $tradeType,
+        'brand_id' => $brandId,
+        'model_id' => $modelId,
         'sort' => $sort,
         'limit' => $limit,
         'page' => $page,
@@ -288,6 +456,8 @@ function run_trade_listing_query(mysqli $conn, array $filters): array
     $subcategory = $filters['subcategory'];
     $condition = $filters['condition'];
     $tradeType = $filters['trade_type'];
+    $brandId = isset($filters['brand_id']) ? (int)$filters['brand_id'] : 0;
+    $modelId = isset($filters['model_id']) ? (int)$filters['model_id'] : 0;
     $sort = $filters['sort'];
     $limit = $filters['limit'];
     $page = max(1, $filters['page']);
@@ -306,6 +476,18 @@ function run_trade_listing_query(mysqli $conn, array $filters): array
         $where .= ' AND tl.trade_type = ?';
         $params[] = $tradeType;
         $types .= 's';
+    }
+
+    if ($brandId > 0) {
+        $where .= ' AND tl.brand_id = ?';
+        $params[] = $brandId;
+        $types .= 'i';
+    }
+
+    if ($modelId > 0) {
+        $where .= ' AND tl.model_id = ?';
+        $params[] = $modelId;
+        $types .= 'i';
     }
 
     if ($search !== '') {
@@ -377,9 +559,14 @@ function run_trade_listing_query(mysqli $conn, array $filters): array
         $orderBy = 'offers DESC, tl.created_at DESC';
     }
 
-    $sql = "SELECT tl.id, tl.have_item, tl.want_item, tl.trade_type, tl.description, tl.image, tl.status, tl.owner_id, u.username,
-            (SELECT COUNT(*) FROM trade_offers o WHERE o.listing_id = tl.id AND o.status IN ('pending','accepted')) AS offers
-            FROM trade_listings tl JOIN users u ON tl.owner_id = u.id $where ORDER BY $orderBy LIMIT ? OFFSET ?";
+    $sql = "SELECT tl.id, tl.have_item, tl.want_item, tl.trade_type, tl.description, tl.image, tl.status, tl.owner_id, tl.brand_id, tl.model_id, "
+        . 'sb.name AS brand_name, sm.name AS model_name, u.username, '
+        . "(SELECT COUNT(*) FROM trade_offers o WHERE o.listing_id = tl.id AND o.status IN ('pending','accepted')) AS offers "
+        . 'FROM trade_listings tl '
+        . 'JOIN users u ON tl.owner_id = u.id '
+        . 'LEFT JOIN service_brands sb ON sb.id = tl.brand_id '
+        . 'LEFT JOIN service_models sm ON sm.id = tl.model_id '
+        . "$where ORDER BY $orderBy LIMIT ? OFFSET ?";
     $paramsLimit = $params;
     $typesLimit = $types . 'ii';
     $paramsLimit[] = $limit;
@@ -387,12 +574,23 @@ function run_trade_listing_query(mysqli $conn, array $filters): array
     $stmt = $conn->prepare($sql);
     $stmt->bind_param($typesLimit, ...$paramsLimit);
     $stmt->execute();
-    $listings = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+    $result = $stmt->get_result();
+    $listings = [];
+    if ($result instanceof mysqli_result) {
+        while ($row = $result->fetch_assoc()) {
+            $row['brand_id'] = isset($row['brand_id']) ? (int) $row['brand_id'] : null;
+            $row['model_id'] = isset($row['model_id']) ? (int) $row['model_id'] : null;
+            $listings[] = $row;
+        }
+        $result->close();
+    }
     $stmt->close();
 
     $normalizedFilters = $filters;
     $normalizedFilters['page'] = $page;
     $normalizedFilters['limit'] = $limit;
+    $normalizedFilters['brand_id'] = $brandId;
+    $normalizedFilters['model_id'] = $modelId;
 
     return [
         'items' => $listings,

@@ -1,12 +1,19 @@
 <?php
 require_once __DIR__ . '/includes/require-auth.php';
+require 'includes/db.php';
 require 'includes/csrf.php';
+require 'includes/listing-query.php';
 
 $category = $_GET['category'] ?? '';
 if (!$category) {
   header('Location: sell.php');
   exit;
 }
+
+$brandOptions = listing_brand_options($conn);
+$modelIndex = listing_model_index($conn);
+$selectedBrandId = isset($_POST['brand_id']) ? (int)$_POST['brand_id'] : 0;
+$selectedModelId = isset($_POST['model_id']) ? (int)$_POST['model_id'] : 0;
 
 function label($text, $name, $type = 'text', $required = true) {
   echo "<label>$text</label>";
@@ -26,6 +33,26 @@ function label($text, $name, $type = 'text', $required = true) {
     <input type="hidden" name="csrf_token" value="<?= generate_token(); ?>">
     <input type="hidden" name="type" value="sell">
     <input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>">
+
+    <label>Brand</label>
+    <select name="brand_id">
+      <option value="">Select brand</option>
+      <?php foreach ($brandOptions as $id => $name): ?>
+        <option value="<?= $id; ?>" <?= $selectedBrandId === (int)$id ? 'selected' : ''; ?>><?= htmlspecialchars($name); ?></option>
+      <?php endforeach; ?>
+    </select>
+
+    <label>Model</label>
+    <select name="model_id" <?= empty($modelIndex) ? 'disabled' : ''; ?>>
+      <option value="">Select model</option>
+      <?php foreach ($modelIndex as $model): ?>
+        <?php
+          $brandLabel = $brandOptions[$model['brand_id']] ?? ('Brand ' . $model['brand_id']);
+          $modelLabel = $brandLabel . ' – ' . $model['name'];
+        ?>
+        <option value="<?= $model['id']; ?>" data-brand-id="<?= $model['brand_id']; ?>" <?= $selectedModelId === (int)$model['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($modelLabel); ?></option>
+      <?php endforeach; ?>
+    </select>
 
     <?php if ($category === 'phone' || $category === 'console' || $category === 'pc'): ?>
       <?php label('Make', 'make'); ?>

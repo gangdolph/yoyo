@@ -101,6 +101,10 @@ $currentScope = $managerScope ?? STORE_SCOPE_MINE;
               ? number_format($originalCeilingNumeric, 2, '.', '')
               : '';
             $currentPriceDisplay = number_format((float) $item['price'], 2);
+            $currentBrandId = isset($item['brand_id']) ? (int) $item['brand_id'] : 0;
+            $currentModelId = isset($item['model_id']) ? (int) $item['model_id'] : 0;
+            $currentBrandName = $item['brand_name'] ?? ($currentBrandId > 0 ? ($serviceBrandOptions[$currentBrandId] ?? null) : null);
+            $currentModelName = $item['model_name'] ?? ($currentModelId > 0 && isset($serviceModelIndex[$currentModelId]) ? $serviceModelIndex[$currentModelId]['name'] : null);
           ?>
           <tr data-listing-id="<?= $listingId; ?>">
             <th scope="row">
@@ -112,6 +116,18 @@ $currentScope = $managerScope ?? STORE_SCOPE_MINE;
                 <?= htmlspecialchars($item['category'] ?: 'Uncategorised', ENT_QUOTES, 'UTF-8'); ?>
                 <?php if ($item['pickup_only']): ?> · Pickup only<?php endif; ?>
               </small><br>
+              <?php if ($currentBrandName || $currentModelName): ?>
+                <small>
+                  <?php if ($currentBrandName): ?>
+                    <?= htmlspecialchars($currentBrandName, ENT_QUOTES, 'UTF-8'); ?>
+                    <?php if ($currentModelName): ?>
+                      &middot; <?= htmlspecialchars($currentModelName, ENT_QUOTES, 'UTF-8'); ?>
+                    <?php endif; ?>
+                  <?php else: ?>
+                    <?= htmlspecialchars($currentModelName, ENT_QUOTES, 'UTF-8'); ?>
+                  <?php endif; ?>
+                </small><br>
+              <?php endif; ?>
               <small>Price: $<?= htmlspecialchars($currentPriceDisplay, ENT_QUOTES, 'UTF-8'); ?></small><br>
               <?php if (!empty($item['sale_price'])): ?>
                 <small>Sale price: $<?= htmlspecialchars(number_format((float) $item['sale_price'], 2), ENT_QUOTES, 'UTF-8'); ?></small><br>
@@ -191,6 +207,13 @@ $currentScope = $managerScope ?? STORE_SCOPE_MINE;
                 <div class="manager-details-grid">
                   <label class="sr-only" for="listing-title-<?= $listingId; ?>">Title</label>
                   <input id="listing-title-<?= $listingId; ?>" type="text" name="title" value="<?= htmlspecialchars($item['title'], ENT_QUOTES, 'UTF-8'); ?>" placeholder="Title">
+                  <label class="sr-only" for="listing-brand-<?= $listingId; ?>">Brand</label>
+                  <select id="listing-brand-<?= $listingId; ?>" name="brand_id">
+                    <option value="">Select brand</option>
+                    <?php foreach ($serviceBrandOptions as $brandId => $brandName): ?>
+                      <option value="<?= $brandId; ?>" <?= $currentBrandId === (int)$brandId ? 'selected' : ''; ?>><?= htmlspecialchars($brandName, ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
+                  </select>
                   <label class="sr-only" for="listing-price-<?= $listingId; ?>">Price</label>
                   <input
                     id="listing-price-<?= $listingId; ?>"
@@ -208,6 +231,17 @@ $currentScope = $managerScope ?? STORE_SCOPE_MINE;
                     <small class="field-hint">You may lower the price, but it cannot exceed $<?= htmlspecialchars($originalCeilingDisplay, ENT_QUOTES, 'UTF-8'); ?>.</small>
                     <small class="field-hint field-hint--error" data-price-ceiling-error hidden>Price cannot exceed $<?= htmlspecialchars($originalCeilingDisplay, ENT_QUOTES, 'UTF-8'); ?>.</small>
                   <?php endif; ?>
+                  <label class="sr-only" for="listing-model-<?= $listingId; ?>">Model</label>
+                  <select id="listing-model-<?= $listingId; ?>" name="model_id" <?= empty($serviceModelIndex) ? 'disabled' : ''; ?>>
+                    <option value="">Select model</option>
+                    <?php foreach ($serviceModelIndex as $model): ?>
+                      <?php
+                        $brandLabel = $serviceBrandOptions[$model['brand_id']] ?? ('Brand ' . $model['brand_id']);
+                        $modelLabel = $brandLabel . ' – ' . $model['name'];
+                      ?>
+                      <option value="<?= $model['id']; ?>" data-brand-id="<?= $model['brand_id']; ?>" <?= $currentModelId === (int)$model['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($modelLabel, ENT_QUOTES, 'UTF-8'); ?></option>
+                    <?php endforeach; ?>
+                  </select>
                   <label class="sr-only" for="listing-quantity-<?= $listingId; ?>">Quantity</label>
                   <input id="listing-quantity-<?= $listingId; ?>" type="number" name="quantity" min="0" value="<?= $item['quantity'] !== null ? (int) $item['quantity'] : ''; ?>" placeholder="Quantity">
                 </div>

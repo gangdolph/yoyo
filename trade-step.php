@@ -27,19 +27,27 @@ function label($text, $name, $type = 'text', $required = true) {
     <input type="hidden" name="type" value="trade">
     <input type="hidden" name="category" value="<?= htmlspecialchars($category) ?>">
 
-    <?php if ($category === 'phone' || $category === 'console' || $category === 'pc'): ?>
-      <?php label("Current Device Make", 'make'); ?>
-      <?php label("Current Device Model", 'model'); ?>
-      <?php label('IMEI / Serial Number', 'serial', 'text', false); ?>
-      <?php label('Desired Device', 'device_type'); ?>
-      <?php label('Condition / Details', 'issue'); ?>
-    <?php endif; ?>
+    <?php
+      $labels = [
+        'make' => 'Current Device Make',
+        'model' => 'Current Device Model',
+        'device_type' => 'Desired Device',
+        'issue' => 'Condition / Details',
+        'serial' => 'IMEI / Serial Number',
+      ];
 
-    <?php if ($category === 'other'): ?>
-      <?php label('Device You Have', 'device_type'); ?>
-      <?php label('Desired Device', 'model'); ?>
-      <?php label('Condition / Details', 'issue'); ?>
-    <?php endif; ?>
+      if ($category === 'other') {
+        $labels['make'] = 'Device You Have';
+        $labels['model'] = 'Desired Device';
+        $labels['device_type'] = 'Preferred Replacement Details';
+      }
+    ?>
+
+    <?php label($labels['make'], 'make'); ?>
+    <?php label($labels['model'], 'model'); ?>
+    <?php label($labels['serial'], 'serial', 'text', false); ?>
+    <?php label($labels['device_type'], 'device_type'); ?>
+    <?php label($labels['issue'], 'issue'); ?>
 
     <div class="drop-area" id="drop-area">
       <p>Drag &amp; drop a photo or use the button</p>

@@ -3,10 +3,29 @@ require_once __DIR__ . '/includes/require-auth.php';
 require 'includes/db.php';
 require 'includes/csrf.php';
 
-$listing_id = isset($_GET['listing_id']) ? intval($_GET['listing_id']) : 0;
-if (!$listing_id) {
+$listingParam = $_GET['listing_id'] ?? null;
+$requestedListingIds = [];
+if (is_array($listingParam)) {
+    foreach ($listingParam as $value) {
+        $id = (int) $value;
+        if ($id > 0) {
+            $requestedListingIds[] = $id;
+        }
+    }
+} elseif ($listingParam !== null) {
+    $id = (int) $listingParam;
+    if ($id > 0) {
+        $requestedListingIds[] = $id;
+    }
+}
+$requestedListingIds = array_values(array_unique($requestedListingIds));
+if (empty($requestedListingIds)) {
     header('Location: buy.php');
     exit;
+}
+$listing_id = $requestedListingIds[0];
+if (!isset($_SESSION['cart']) || !is_array($_SESSION['cart'])) {
+    $_SESSION['cart'] = [];
 }
 
 // Fetch listing to confirm exists
@@ -28,6 +47,16 @@ if (!isset($_SESSION['checkout_quantities']) || !is_array($_SESSION['checkout_qu
 }
 if (!isset($_SESSION['checkout_notices']) || !is_array($_SESSION['checkout_notices'])) {
     $_SESSION['checkout_notices'] = [];
+}
+if (!isset($_SESSION['shipping']) || !is_array($_SESSION['shipping'])) {
+    $_SESSION['shipping'] = [];
+}
+
+$cartQuantities = $_SESSION['cart'];
+foreach ($requestedListingIds as $requestedId) {
+    if (isset($cartQuantities[$requestedId])) {
+        $_SESSION['checkout_quantities'][$requestedId] = (int) $cartQuantities[$requestedId];
+    }
 }
 
 $requestedQuantity = isset($_GET['quantity']) ? (int) $_GET['quantity'] : 0;
@@ -58,7 +87,8 @@ if (!empty($listing['pickup_only']) && $availableQuantity > 0) {
         'method' => 'pickup',
         'notes' => ''
     ];
-    header('Location: checkout.php?listing_id=' . $listing_id);
+    $redirectQuery = http_build_query(['listing_id' => array_values($requestedListingIds)]);
+    header('Location: checkout.php?' . $redirectQuery);
     exit;
 }
 
@@ -80,7 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 'method' => $method,
                 'notes' => $notes,
             ];
-            header('Location: checkout.php?listing_id=' . $listing_id);
+            $redirectQuery = http_build_query(['listing_id' => array_values($requestedListingIds)]);
+            header('Location: checkout.php?' . $redirectQuery);
             exit;
         }
     }

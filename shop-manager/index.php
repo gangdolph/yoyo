@@ -18,6 +18,7 @@ require_once __DIR__ . '/../includes/repositories/ChangeRequestsService.php';
 require_once __DIR__ . '/../includes/repositories/ListingsRepo.php';
 require_once __DIR__ . '/../includes/repositories/SquareCatalogSync.php';
 require_once __DIR__ . '/../includes/SyncService.php';
+require_once __DIR__ . '/../includes/listing-query.php';
 
 $config = require __DIR__ . '/../config.php';
 
@@ -101,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $title = trim((string) ($_POST['title'] ?? ''));
                 $priceInput = trim((string) ($_POST['price'] ?? ''));
                 $quantityInput = trim((string) ($_POST['quantity'] ?? ''));
+                $brandInput = trim((string) ($_POST['brand_id'] ?? ''));
+                $modelInput = trim((string) ($_POST['model_id'] ?? ''));
 
                 if ($listingId <= 0) {
                     shop_manager_flash($redirectTab, 'error', 'Invalid listing selected.');
@@ -121,6 +124,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'title' => $title,
                     'price' => $priceInput,
                     'quantity' => $quantityInput,
+                    'brand_id' => $brandInput,
+                    'model_id' => $modelInput,
                 ];
 
                 try {
@@ -242,6 +247,8 @@ $listingsFilters = [
 ];
 $listingsData = $listingsRepository->paginateForOwner($viewerId, $listingsFilters, $squareSyncEnabled);
 $listingsStatuses = $listingsRepository->allowedStatuses();
+$serviceBrandOptions = listing_brand_options($db);
+$serviceModelIndex = listing_model_index($db);
 
 $productsList = store_fetch_products($db, $viewerId, $managerScope);
 $storeInventory = store_fetch_inventory($db, $viewerId, $managerScope);

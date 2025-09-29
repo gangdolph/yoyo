@@ -12,7 +12,16 @@ if (!$listing_id) {
     exit;
 }
 
-$stmt = $conn->prepare('SELECT l.id, l.product_sku, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, l.pickup_only, l.is_official_listing, l.quantity, l.reserved_qty, l.owner_id, p.is_skuze_official, p.is_skuze_product FROM listings l LEFT JOIN products p ON l.product_sku = p.sku WHERE l.id = ? LIMIT 1');
+$stmt = $conn->prepare(
+    'SELECT l.id, l.product_sku, l.title, l.description, l.price, l.sale_price, l.category, l.tags, l.image, '
+    . 'l.brand_id, l.model_id, sb.name AS brand_name, sm.name AS model_name, l.pickup_only, l.is_official_listing, '
+    . 'l.quantity, l.reserved_qty, l.owner_id, p.is_skuze_official, p.is_skuze_product '
+    . 'FROM listings l '
+    . 'LEFT JOIN service_brands sb ON sb.id = l.brand_id '
+    . 'LEFT JOIN service_models sm ON sm.id = l.model_id '
+    . 'LEFT JOIN products p ON l.product_sku = p.sku '
+    . 'WHERE l.id = ? LIMIT 1'
+);
 $stmt->bind_param('i', $listing_id);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -101,6 +110,18 @@ $offerCsrfToken = generate_token();
           }
         ?>
       </h2>
+      <?php if (!empty($listing['brand_name']) || !empty($listing['model_name'])): ?>
+        <p class="device-meta">
+          <?php if (!empty($listing['brand_name'])): ?>
+            <?= htmlspecialchars($listing['brand_name']); ?>
+            <?php if (!empty($listing['model_name'])): ?>
+              &middot; <?= htmlspecialchars($listing['model_name']); ?>
+            <?php endif; ?>
+          <?php else: ?>
+            <?= htmlspecialchars($listing['model_name']); ?>
+          <?php endif; ?>
+        </p>
+      <?php endif; ?>
       <p class="description">
         <?= nl2br(htmlspecialchars($listing['description'])); ?>
       </p>

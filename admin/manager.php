@@ -14,6 +14,7 @@ require_once __DIR__ . '/../includes/repositories/ChangeRequestsService.php';
 require_once __DIR__ . '/../includes/repositories/ListingsRepo.php';
 require_once __DIR__ . '/../includes/repositories/InventoryService.php';
 require_once __DIR__ . '/../includes/repositories/OrdersService.php';
+require_once __DIR__ . '/../includes/listing-query.php';
 
 $config = require __DIR__ . '/../config.php';
 
@@ -206,6 +207,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $title = trim((string) ($_POST['title'] ?? ''));
                     $priceInput = trim((string) ($_POST['price'] ?? ''));
                     $quantityInput = trim((string) ($_POST['quantity'] ?? ''));
+                    $brandInput = trim((string) ($_POST['brand_id'] ?? ''));
+                    $modelInput = trim((string) ($_POST['model_id'] ?? ''));
 
                     if ($listingId <= 0) {
                         throw new RuntimeException('Invalid listing specified.');
@@ -223,6 +226,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'title' => $title,
                         'price' => $priceInput,
                         'quantity' => $quantityInput,
+                        'brand_id' => $brandInput,
+                        'model_id' => $modelInput,
                     ];
 
                     $result = $listingsRepo->updateDetails(
@@ -358,10 +363,14 @@ if ($result = $conn->query(
 
 $listings = [];
 if ($result = $conn->query(
-    "SELECT l.id, l.title, l.price, l.quantity, l.status, l.is_official_listing, "
+    "SELECT l.id, l.title, l.price, l.quantity, l.status, l.is_official_listing, l.brand_id, l.model_id, "
+    . "sb.name AS brand_name, sm.name AS model_name, "
     . "u.username AS owner_username, "
     . "(SELECT COUNT(*) FROM listing_change_requests r WHERE r.listing_id = l.id AND r.status = 'pending') AS pending_requests "
-    . "FROM listings l JOIN users u ON l.owner_id = u.id "
+    . "FROM listings l "
+    . "JOIN users u ON l.owner_id = u.id "
+    . "LEFT JOIN service_brands sb ON sb.id = l.brand_id "
+    . "LEFT JOIN service_models sm ON sm.id = l.model_id "
     . "WHERE l.status IN ('draft','pending','approved','live') "
     . "ORDER BY l.updated_at DESC LIMIT 100"
 )) {
@@ -370,6 +379,9 @@ if ($result = $conn->query(
     }
     $result->close();
 }
+
+$serviceBrandOptions = listing_brand_options($conn);
+$serviceModelIndex = listing_model_index($conn);
 
 $pendingChanges = [];
 if ($result = $conn->query(
@@ -604,6 +616,24 @@ if ($result = $conn->query('SELECT COUNT(*) AS total, SUM(CASE WHEN is_skuze_off
                     <?php if ((int) $listing['pending_requests'] > 0): ?>
                       <div class="badge badge-warning">Pending approval</div>
                     <?php endif; ?>
+                    <?php
+                      $listingBrandId = isset($listing['brand_id']) ? (int) $listing['brand_id'] : 0;
+                      $listingModelId = isset($listing['model_id']) ? (int) $listing['model_id'] : 0;
+                      $listingBrandName = $listing['brand_name'] ?? ($listingBrandId > 0 ? ($serviceBrandOptions[$listingBrandId] ?? null) : null);
+                      $listingModelName = $listing['model_name'] ?? ($listingModelId > 0 && isset($serviceModelIndex[$listingModelId]) ? $serviceModelIndex[$listingModelId]['name'] : null);
+                    ?>
+                    <?php if ($listingBrandName || $listingModelName): ?>
+                      <small>
+                        <?php if ($listingBrandName): ?>
+                          <?= htmlspecialchars($listingBrandName, ENT_QUOTES, 'UTF-8'); ?>
+                          <?php if ($listingModelName): ?>
+                            &middot; <?= htmlspecialchars($listingModelName, ENT_QUOTES, 'UTF-8'); ?>
+                          <?php endif; ?>
+                        <?php else: ?>
+                          <?= htmlspecialchars($listingModelName, ENT_QUOTES, 'UTF-8'); ?>
+                        <?php endif; ?>
+                      </small>
+                    <?php endif; ?>
                   </td>
                   <td><?= htmlspecialchars(ucfirst((string) $listing['status']), ENT_QUOTES, 'UTF-8'); ?></td>
                   <td><?= $listing['quantity'] !== null ? (int) $listing['quantity'] : '—'; ?></td>
@@ -618,11 +648,31 @@ if ($result = $conn->query('SELECT COUNT(*) AS total, SUM(CASE WHEN is_skuze_off
                         <label>Title
                           <input type="text" name="title" value="<?= htmlspecialchars($listing['title'], ENT_QUOTES, 'UTF-8'); ?>">
                         </label>
+                        <label>Brand
+                          <select name="brand_id">
+                            <option value="">Select brand</option>
+                            <?php foreach ($serviceBrandOptions as $brandId => $brandName): ?>
+                              <option value="<?= $brandId; ?>" <?= $listingBrandId === (int)$brandId ? 'selected' : ''; ?>><?= htmlspecialchars($brandName, ENT_QUOTES, 'UTF-8'); ?></option>
+                            <?php endforeach; ?>
+                          </select>
+                        </label>
                         <label>Price
                           <input type="text" name="price" value="<?= htmlspecialchars(number_format((float) $listing['price'], 2, '.', ''), ENT_QUOTES, 'UTF-8'); ?>">
                         </label>
                         <label>Quantity
                           <input type="number" name="quantity" value="<?= $listing['quantity'] !== null ? (int) $listing['quantity'] : 0; ?>" min="0">
+                        </label>
+                        <label>Model
+                          <select name="model_id" <?= empty($serviceModelIndex) ? 'disabled' : ''; ?>>
+                            <option value="">Select model</option>
+                            <?php foreach ($serviceModelIndex as $model): ?>
+                              <?php
+                                $brandLabel = $serviceBrandOptions[$model['brand_id']] ?? ('Brand ' . $model['brand_id']);
+                                $modelLabel = $brandLabel . ' – ' . $model['name'];
+                              ?>
+                              <option value="<?= $model['id']; ?>" data-brand-id="<?= $model['brand_id']; ?>" <?= $listingModelId === (int)$model['id'] ? 'selected' : ''; ?>><?= htmlspecialchars($modelLabel, ENT_QUOTES, 'UTF-8'); ?></option>
+                            <?php endforeach; ?>
+                          </select>
                         </label>
                       </div>
                       <button type="submit" class="btn">Save</button>

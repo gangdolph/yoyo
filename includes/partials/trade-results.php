@@ -46,7 +46,21 @@
       <tbody>
         <?php foreach ($listings as $l): ?>
           <tr>
-            <td><?= htmlspecialchars($l['have_item']); ?></td>
+            <td>
+              <?= htmlspecialchars($l['have_item']); ?>
+              <?php if (!empty($l['brand_name']) || !empty($l['model_name'])): ?>
+                <br><small>
+                  <?php if (!empty($l['brand_name'])): ?>
+                    <?= htmlspecialchars($l['brand_name']); ?>
+                    <?php if (!empty($l['model_name'])): ?>
+                      &middot; <?= htmlspecialchars($l['model_name']); ?>
+                    <?php endif; ?>
+                  <?php else: ?>
+                    <?= htmlspecialchars($l['model_name']); ?>
+                  <?php endif; ?>
+                </small>
+              <?php endif; ?>
+            </td>
             <td><?= htmlspecialchars($l['want_item']); ?></td>
             <td><?= htmlspecialchars($l['trade_type']); ?></td>
             <td><?= htmlspecialchars($l['description']); ?></td>

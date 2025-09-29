@@ -216,6 +216,20 @@ if (!empty($_SESSION['cart'])) {
 $tax = 0.0; // placeholder
 $shipping = 0.0; // placeholder
 $grand_total = $total + $tax + $shipping;
+
+$targetListingId = 0;
+$checkoutListingIds = [];
+if (!empty($cart_items)) {
+    $firstItem = $cart_items[0];
+    if (isset($firstItem['id'])) {
+        $targetListingId = (int) $firstItem['id'];
+    }
+    foreach ($cart_items as $item) {
+        if (isset($item['id'])) {
+            $checkoutListingIds[] = (int) $item['id'];
+        }
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -278,6 +292,14 @@ $grand_total = $total + $tax + $shipping;
     <button type="submit">Update Cart</button>
 </form>
 <form action="checkout.php" method="get">
+    <?php if ($targetListingId > 0): ?>
+        <input type="hidden" name="listing_id" value="<?= $targetListingId; ?>">
+    <?php endif; ?>
+    <?php if (!empty($checkoutListingIds)): ?>
+        <?php foreach ($checkoutListingIds as $id): ?>
+            <input type="hidden" name="listing_id[]" value="<?= $id; ?>">
+        <?php endforeach; ?>
+    <?php endif; ?>
     <button type="submit">Proceed to Checkout</button>
 </form>
 <?php endif; ?>

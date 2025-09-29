@@ -15,6 +15,10 @@ final class ListingsRepo
 
     private mysqli $conn;
     private ChangeRequestsService $changeRequests;
+    /** @var array<int, bool> */
+    private array $brandCache = [];
+    /** @var array<int, array{id: int, brand_id: int, name: string}> */
+    private array $modelCache = [];
 
     /**
      * Define allowed transitions between listing statuses.
@@ -59,6 +63,12 @@ final class ListingsRepo
         $productSku = $data['product_sku'] ?? null;
         $quantity = isset($data['quantity']) ? max(1, (int) $data['quantity']) : 1;
         $originalPriceInput = $data['original_price'] ?? null;
+        $brandInput = $data['brand_id'] ?? null;
+        $modelInput = $data['model_id'] ?? null;
+
+        $brandId = $this->normalizeNullableId($brandInput);
+        $modelId = $this->normalizeNullableId($modelInput);
+        [$brandId, $modelId] = $this->normalizeBrandModel($brandId, $modelId);
 
         $normalisedPrice = number_format((float) $price, 2, '.', '');
         $price = $normalisedPrice;
@@ -79,8 +89,8 @@ final class ListingsRepo
         $this->conn->begin_transaction();
         try {
             $stmt = $this->conn->prepare(
-                'INSERT INTO listings (owner_id, product_sku, title, description, `condition`, price, original_price, quantity, reserved_qty, category, tags, image, status, pickup_only) '
-                . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)'
+                'INSERT INTO listings (owner_id, product_sku, brand_id, model_id, title, description, `condition`, price, original_price, quantity, reserved_qty, category, tags, image, status, pickup_only) '
+                . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)'
             );
 
             if ($stmt === false) {
@@ -88,9 +98,11 @@ final class ListingsRepo
             }
 
             $stmt->bind_param(
-                'issssssissssi',
+                'isiisssssissssi',
                 $ownerId,
                 $productSku,
+                $brandId,
+                $modelId,
                 $title,
                 $description,
                 $condition,
@@ -373,6 +385,22 @@ final class ListingsRepo
                 }
             }
 
+            $currentBrandId = isset($listing['brand_id']) ? (int) $listing['brand_id'] : null;
+            $currentModelId = isset($listing['model_id']) ? (int) $listing['model_id'] : null;
+            $brandProvided = array_key_exists('brand_id', $data);
+            $modelProvided = array_key_exists('model_id', $data);
+            if ($brandProvided || $modelProvided) {
+                $brandCandidate = $brandProvided ? $this->normalizeNullableId($data['brand_id']) : $currentBrandId;
+                $modelCandidate = $modelProvided ? $this->normalizeNullableId($data['model_id']) : $currentModelId;
+                [$nextBrandId, $nextModelId] = $this->normalizeBrandModel($brandCandidate, $modelCandidate);
+                if ($nextBrandId !== $currentBrandId) {
+                    $changes['brand_id'] = $nextBrandId;
+                }
+                if ($nextModelId !== $currentModelId) {
+                    $changes['model_id'] = $nextModelId;
+                }
+            }
+
             if ($changes === []) {
                 $this->conn->rollback();
                 return ['success' => true, 'changed' => false];
@@ -412,6 +440,26 @@ final class ListingsRepo
                 $set[] = 'quantity = ?';
                 $types .= 'i';
                 $params[] = $changes['quantity'];
+            }
+
+            if (array_key_exists('brand_id', $changes)) {
+                if ($changes['brand_id'] === null) {
+                    $set[] = 'brand_id = NULL';
+                } else {
+                    $set[] = 'brand_id = ?';
+                    $types .= 'i';
+                    $params[] = $changes['brand_id'];
+                }
+            }
+
+            if (array_key_exists('model_id', $changes)) {
+                if ($changes['model_id'] === null) {
+                    $set[] = 'model_id = NULL';
+                } else {
+                    $set[] = 'model_id = ?';
+                    $types .= 'i';
+                    $params[] = $changes['model_id'];
+                }
             }
 
             $set[] = 'updated_at = NOW()';
@@ -626,7 +674,7 @@ final class ListingsRepo
         $offset = ($page - 1) * $perPage;
         $items = [];
 
-        $select = 'SELECT l.id, l.title, l.price, l.original_price, l.sale_price, l.category, l.tags, l.image, l.status, l.pickup_only, l.created_at, '
+        $select = 'SELECT l.id, l.title, l.price, l.original_price, l.sale_price, l.category, l.tags, l.image, l.brand_id, l.model_id, sb.name AS brand_name, sm.name AS model_name, l.status, l.pickup_only, l.created_at, '
             . 'l.updated_at, l.quantity, l.reserved_qty, l.is_official_listing, '
             . '(SELECT COUNT(*) FROM listing_change_requests r WHERE r.listing_id = l.id AND r.status = "pending") '
             . 'AS pending_change_count, '
@@ -638,6 +686,9 @@ final class ListingsRepo
         }
 
         $select .= ' FROM listings l';
+
+        $select .= ' LEFT JOIN service_brands sb ON sb.id = l.brand_id';
+        $select .= ' LEFT JOIN service_models sm ON sm.id = l.model_id';
 
         if ($withSyncState) {
             $select .= ' LEFT JOIN square_catalog_map scm ON scm.local_type = "listing" AND scm.local_id = l.id';
@@ -663,6 +714,10 @@ final class ListingsRepo
                             'category' => $row['category'],
                             'tags' => tags_from_storage($row['tags'] ?? null),
                             'status' => (string) $row['status'],
+                            'brand_id' => isset($row['brand_id']) ? (int) $row['brand_id'] : null,
+                            'model_id' => isset($row['model_id']) ? (int) $row['model_id'] : null,
+                            'brand_name' => $row['brand_name'] ?? null,
+                            'model_name' => $row['model_name'] ?? null,
                             'pickup_only' => (bool) $row['pickup_only'],
                             'created_at' => $row['created_at'],
                             'updated_at' => $row['updated_at'],
@@ -709,7 +764,7 @@ final class ListingsRepo
             return null;
         }
 
-        $sql = 'SELECT id, owner_id, status, quantity, reserved_qty, product_sku FROM listings WHERE id = ?';
+        $sql = 'SELECT id, owner_id, status, quantity, reserved_qty, product_sku, brand_id, model_id FROM listings WHERE id = ?';
         if ($forUpdate) {
             $sql .= ' FOR UPDATE';
         }
@@ -739,7 +794,7 @@ final class ListingsRepo
      */
     private function fetchListingDetails(int $listingId, bool $forUpdate = false): ?array
     {
-        $sql = 'SELECT id, owner_id, status, title, price, original_price, sale_price, quantity, reserved_qty FROM listings WHERE id = ?';
+        $sql = 'SELECT id, owner_id, status, title, price, original_price, sale_price, quantity, reserved_qty, brand_id, model_id FROM listings WHERE id = ?';
         if ($forUpdate) {
             $sql .= ' FOR UPDATE';
         }
@@ -781,5 +836,128 @@ final class ListingsRepo
     {
         $status = strtolower(trim((string) $status));
         return in_array($status, self::STATUSES, true) ? $status : '';
+    }
+
+    private function normalizeNullableId($value): ?int
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        if (is_int($value)) {
+            return $value > 0 ? $value : null;
+        }
+
+        if (is_string($value)) {
+            $trimmed = trim($value);
+            if ($trimmed === '') {
+                return null;
+            }
+            if (!ctype_digit($trimmed)) {
+                if (!is_numeric($trimmed)) {
+                    return null;
+                }
+                $trimmed = (string) (int) $trimmed;
+            }
+            $intVal = (int) $trimmed;
+
+            return $intVal > 0 ? $intVal : null;
+        }
+
+        if (is_numeric($value)) {
+            $intVal = (int) $value;
+            return $intVal > 0 ? $intVal : null;
+        }
+
+        return null;
+    }
+
+    /**
+     * @return array{0: ?int, 1: ?int}
+     */
+    private function normalizeBrandModel(?int $brandId, ?int $modelId): array
+    {
+        if ($brandId !== null) {
+            $this->assertBrandExists($brandId);
+        }
+
+        if ($modelId !== null) {
+            $model = $this->loadModel($modelId);
+            if ($model === null) {
+                throw new RuntimeException('Selected model is invalid.');
+            }
+            $modelBrand = (int) $model['brand_id'];
+            if ($brandId !== null && $brandId !== $modelBrand) {
+                throw new RuntimeException('Selected model does not match the chosen brand.');
+            }
+            $brandId = $modelBrand;
+        }
+
+        return [$brandId, $modelId];
+    }
+
+    private function assertBrandExists(int $brandId): void
+    {
+        if (isset($this->brandCache[$brandId])) {
+            return;
+        }
+
+        $stmt = $this->conn->prepare('SELECT id FROM service_brands WHERE id = ?');
+        if ($stmt === false) {
+            throw new RuntimeException('Unable to validate brand.');
+        }
+
+        $stmt->bind_param('i', $brandId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to validate brand.');
+        }
+
+        $stmt->bind_result($foundId);
+        $hasRow = $stmt->fetch();
+        $stmt->close();
+
+        if (!$hasRow) {
+            throw new RuntimeException('Selected brand is invalid.');
+        }
+
+        $this->brandCache[$brandId] = true;
+    }
+
+    private function loadModel(int $modelId): ?array
+    {
+        if (isset($this->modelCache[$modelId])) {
+            return $this->modelCache[$modelId];
+        }
+
+        $stmt = $this->conn->prepare('SELECT id, brand_id, name FROM service_models WHERE id = ?');
+        if ($stmt === false) {
+            throw new RuntimeException('Unable to validate model.');
+        }
+
+        $stmt->bind_param('i', $modelId);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Unable to validate model.');
+        }
+
+        $result = $stmt->get_result();
+        $row = $result ? $result->fetch_assoc() : null;
+        $stmt->close();
+
+        if (!$row) {
+            return null;
+        }
+
+        $model = [
+            'id' => (int) $row['id'],
+            'brand_id' => (int) $row['brand_id'],
+            'name' => (string) $row['name'],
+        ];
+
+        $this->modelCache[$modelId] = $model;
+        $this->brandCache[$model['brand_id']] = true;
+
+        return $model;
     }
 }
