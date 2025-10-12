@@ -6,6 +6,8 @@
  */
 declare(strict_types=1);
 
+require_once __DIR__ . '/PayoutProvider.php';
+
 final class WalletService
 {
     private mysqli $conn;
@@ -504,6 +506,38 @@ final class WalletService
     }
 
     /**
+     * Dispatch a withdrawal through an external payout provider.
+     *
+     * @param array<string, mixed> $payload
+     * @return array{status:string, reference?:string, message?:string}
+     */
+    public function payoutWithProvider(PayoutProvider $provider, int $withdrawalId, array $payload = []): array
+    {
+        $payload['withdrawal_id'] = $withdrawalId;
+        $result = $provider->payout($payload);
+        $status = $result['status'] ?? 'processing';
+        $reference = $result['reference'] ?? null;
+
+        if ($this->tableExists('withdrawal_requests')) {
+            $stmt = $this->conn->prepare('UPDATE withdrawal_requests SET status = ?, updated_at = NOW() WHERE id = ?');
+            if ($stmt !== false) {
+                $stmt->bind_param('si', $status, $withdrawalId);
+                $stmt->execute();
+                $stmt->close();
+            }
+        } elseif ($this->tableExists('wallet_withdrawals')) {
+            $stmt = $this->conn->prepare('UPDATE wallet_withdrawals SET status = ?, reference = ?, updated_at = NOW() WHERE id = ?');
+            if ($stmt !== false) {
+                $stmt->bind_param('ssi', $status, $reference, $withdrawalId);
+                $stmt->execute();
+                $stmt->close();
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Record an audit entry for privileged actions.
      */
     public function logAudit(int $actorUserId, string $action, array $details = []): void
@@ -708,6 +742,26 @@ final class WalletService
         $stmt->close();
 
         return $row ?: null;
+    }
+
+    private function tableExists(string $table): bool
+    {
+        static $cache = [];
+        if (array_key_exists($table, $cache)) {
+            return $cache[$table];
+        }
+
+        $escaped = $this->conn->real_escape_string($table);
+        $query = sprintf("SHOW TABLES LIKE '%s'", $escaped);
+        $result = $this->conn->query($query);
+        $exists = $result !== false && $result->num_rows > 0;
+        if ($result instanceof mysqli_result) {
+            $result->free();
+        }
+
+        $cache[$table] = $exists;
+
+        return $exists;
     }
 
     /**
