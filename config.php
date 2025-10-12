@@ -42,8 +42,8 @@ return [
   'square_webhook_signature_key' => '',
 
   // === Square feature toggles ===
-  'USE_SQUARE_ORDERS'     => false,
-  'SQUARE_SYNC_ENABLED'   => false,
+  'USE_SQUARE_ORDERS'     => true,
+  'SQUARE_SYNC_ENABLED'   => true,
   'SQUARE_SYNC_DIRECTION' => 'pull', // 'pull'|'push'|'two_way'
 
   // === Manager workspace rollout ===
