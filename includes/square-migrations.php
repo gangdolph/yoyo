@@ -438,18 +438,31 @@ function square_migration_database_name(mysqli $conn): ?string
 
 function square_table_exists(mysqli $conn, string $table): bool
 {
-    $stmt = $conn->prepare('SHOW TABLES LIKE ?');
-    if ($stmt === false) {
+    $pattern = $conn->real_escape_string(addcslashes($table, '_%'));
+    $sql = sprintf("SHOW TABLES LIKE '%s'", $pattern);
+
+    $result = $conn->query($sql);
+    if ($result === false) {
         return false;
     }
 
-    $stmt->bind_param('s', $table);
-    $stmt->execute();
-    $stmt->store_result();
-    $exists = $stmt->num_rows > 0;
-    $stmt->close();
+    if ($result instanceof mysqli_result) {
+        $exists = $result->num_rows > 0;
+        $result->free();
 
-    return $exists;
+        return $exists;
+    }
+
+    if (is_object($result) && property_exists($result, 'num_rows')) {
+        $exists = (int) $result->num_rows > 0;
+        if (method_exists($result, 'free')) {
+            $result->free();
+        }
+
+        return $exists;
+    }
+
+    return (bool) $result;
 }
 
 function square_column_exists(mysqli $conn, string $table, string $column): bool
@@ -470,18 +483,32 @@ function square_column_exists(mysqli $conn, string $table, string $column): bool
 
 function square_index_exists(mysqli $conn, string $table, string $index): bool
 {
-    $stmt = $conn->prepare('SHOW INDEX FROM `' . $conn->real_escape_string($table) . '` WHERE Key_name = ?');
-    if ($stmt === false) {
+    $tableName = str_replace('`', '``', $table);
+    $indexName = $conn->real_escape_string($index);
+    $sql = sprintf("SHOW INDEX FROM `%s` WHERE Key_name = '%s'", $tableName, $indexName);
+
+    $result = $conn->query($sql);
+    if ($result === false) {
         return false;
     }
 
-    $stmt->bind_param('s', $index);
-    $stmt->execute();
-    $stmt->store_result();
-    $exists = $stmt->num_rows > 0;
-    $stmt->close();
+    if ($result instanceof mysqli_result) {
+        $exists = $result->num_rows > 0;
+        $result->free();
 
-    return $exists;
+        return $exists;
+    }
+
+    if (is_object($result) && property_exists($result, 'num_rows')) {
+        $exists = (int) $result->num_rows > 0;
+        if (method_exists($result, 'free')) {
+            $result->free();
+        }
+
+        return $exists;
+    }
+
+    return (bool) $result;
 }
 
 function square_foreign_key_exists(mysqli $conn, string $table, string $constraint): bool

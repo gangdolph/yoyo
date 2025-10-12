@@ -204,8 +204,11 @@ $offerCsrfToken = generate_token();
             <ul class="listing-offers__list">
               <?php foreach ($offersContext['offers'] as $offer): ?>
                 <?php
-                  $statusClass = 'offer-status--' . preg_replace('/[^a-z0-9_-]/i', '-', strtolower($offer['status']));
-                  $isOpen = $offer['status'] === 'open';
+                  $statusSlug = strtolower((string) $offer['status']);
+                  $statusSlug = preg_replace('/[^a-z0-9_-]/', '-', $statusSlug);
+                  $statusSlug = str_replace('_', '-', $statusSlug);
+                  $statusClass = 'offer-status--' . $statusSlug;
+                  $isOpen = in_array($offer['status'], ['pending_seller', 'pending_buyer'], true);
                 ?>
                 <li
                   class="listing-offers__item"
@@ -216,13 +219,16 @@ $offerCsrfToken = generate_token();
                   <div class="listing-offers__meta">
                     <span class="listing-offers__initiator"><?= htmlspecialchars($offer['initiator_display']); ?></span>
                     <span class="listing-offers__details">
-                      offered $<?= htmlspecialchars($offer['offer_price_display']); ?>
+                      offered $<?= htmlspecialchars($offer['offered_price_display']); ?>
                       for <?= htmlspecialchars((string) $offer['quantity']); ?>
                       <?php if ($offer['quantity'] === 1): ?>item<?php else: ?>items<?php endif; ?>
                       (total $<?= htmlspecialchars($offer['total_display']); ?>)
                     </span>
                     <?php if (!empty($offer['is_counter'])): ?>
                       <span class="offer-pill">Counter</span>
+                    <?php endif; ?>
+                    <?php if (!empty($offer['message'])): ?>
+                      <span class="listing-offers__message-text">&ldquo;<?= htmlspecialchars($offer['message']); ?>&rdquo;</span>
                     <?php endif; ?>
                   </div>
                   <div class="listing-offers__status">
