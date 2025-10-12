@@ -1,6 +1,10 @@
 <?php
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/theme_store.php';
 
 ensure_admin('../dashboard.php');

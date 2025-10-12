@@ -11,7 +11,9 @@ if (!defined('YOYO_SKIP_DB_BOOTSTRAP')) {
 
 require_once __DIR__ . '/orders.php';
 require_once __DIR__ . '/csrf.php';
-require_once __DIR__ . '/repositories/InventoryService.php';
+if (!class_exists('InventoryService')) {
+    require_once __DIR__ . '/repositories/InventoryService.php';
+}
 require_once __DIR__ . '/repositories/OrdersService.php';
 
 const STORE_SCOPE_MINE = 'mine';

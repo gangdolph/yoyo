@@ -5,14 +5,20 @@
  */
 declare(strict_types=1);
 
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/orders.php';
 require_once __DIR__ . '/../includes/store.php';
 require_once __DIR__ . '/../includes/repositories/ChangeRequestsService.php';
 require_once __DIR__ . '/../includes/repositories/ListingsRepo.php';
-require_once __DIR__ . '/../includes/repositories/InventoryService.php';
+if (!class_exists('InventoryService')) {
+    require_once __DIR__ . '/../includes/repositories/InventoryService.php';
+}
 require_once __DIR__ . '/../includes/repositories/OrdersService.php';
 require_once __DIR__ . '/../includes/listing-query.php';
 

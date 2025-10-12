@@ -20,7 +20,9 @@ require __DIR__ . '/_debug_bootstrap.php';
 require_once __DIR__ . '/includes/require-auth.php';
 $maybeDb = require __DIR__ . '/includes/db.php';  // may return mysqli OR set $conn/$mysqli
 $config  = require __DIR__ . '/config.php';
-require_once __DIR__ . '/includes/repositories/InventoryService.php';
+if (!class_exists('InventoryService')) {
+    require_once __DIR__ . '/includes/repositories/InventoryService.php';
+}
 require_once __DIR__ . '/includes/repositories/OrdersService.php';
 require_once __DIR__ . '/includes/SquareHttpClient.php';
 require_once __DIR__ . '/includes/OrderService.php';

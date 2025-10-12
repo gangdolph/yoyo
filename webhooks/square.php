@@ -10,7 +10,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../includes/square-log.php';
 require_once __DIR__ . '/../includes/square-migrations.php';
-require_once __DIR__ . '/../includes/repositories/InventoryService.php';
+if (!class_exists('InventoryService')) {
+    require_once __DIR__ . '/../includes/repositories/InventoryService.php';
+}
 
 $config = require __DIR__ . '/../config.php';
 /** @var mysqli $conn */

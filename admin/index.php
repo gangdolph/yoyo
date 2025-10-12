@@ -4,10 +4,12 @@
  * Change: Extended navigation so the experimental manager workspace only appears when the rollout flag is enabled.
  * Change: Linked the wallet manager so finance tooling is one click away.
  */
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
-require '../includes/db.php';
-require '../includes/user.php';
 $config = require __DIR__ . '/../config.php';
 
 ensure_admin('../dashboard.php');

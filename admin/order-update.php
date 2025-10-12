@@ -3,9 +3,12 @@
  * Discovery note: Admin update endpoint expected the legacy pending/shipped workflow.
  * Change: Keeps flash messaging but now aligns with the staged lifecycle introduced in Shop Manager V1.
  */
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
-require '../includes/db.php';
 require '../includes/orders.php';
 require '../includes/csrf.php';
 require '../includes/notifications.php';

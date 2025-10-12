@@ -7,7 +7,9 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/ShopLogger.php';
-require_once __DIR__ . '/InventoryService.php';
+if (!class_exists('InventoryService')) {
+    require_once __DIR__ . '/InventoryService.php';
+}
 require_once __DIR__ . '/../orders.php';
 require_once __DIR__ . '/../WalletService.php';
 
