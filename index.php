@@ -1,5 +1,9 @@
 <?php
-require __DIR__ . '/_debug_bootstrap.php';
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/includes/require-auth.php';
 ?>
 <?php require 'includes/layout.php'; ?>

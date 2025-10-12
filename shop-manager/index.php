@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 /*
  * Discovery note: Seller manager supported tags and status edits but lacked controlled updates for pricing or quantity.
  * Change: Added moderated detail edits with change request escalation, surfaced pending review indicators, and now expose
@@ -7,10 +7,12 @@
  *         with products, reports, and fulfillment tooling.
  */
 
-declare(strict_types=1);
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
 
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/shop_manager.php';
 require_once __DIR__ . '/../includes/tags.php';
@@ -20,7 +22,9 @@ require_once __DIR__ . '/../includes/repositories/SquareCatalogSync.php';
 require_once __DIR__ . '/../includes/SyncService.php';
 require_once __DIR__ . '/../includes/listing-query.php';
 require_once __DIR__ . '/../includes/features.php';
-require_once __DIR__ . '/../includes/InventoryService.php';
+if (!class_exists('InventoryService')) {
+    require_once __DIR__ . '/../includes/InventoryService.php';
+}
 require_once __DIR__ . '/../includes/TaxonomyService.php';
 require_once __DIR__ . '/../includes/WalletService.php';
 

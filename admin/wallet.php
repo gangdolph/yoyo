@@ -2,9 +2,16 @@
 /*
  * Admin wallet console: view balances, run adjustments, and export ledger history for compliance.
  */
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
-require_once __DIR__ . '/../includes/db.php';
+
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    $conn = require __DIR__ . '/../includes/db.php';
+}
 
 if (!isset($config) || !is_array($config)) {
     $config = require __DIR__ . '/../config.php';

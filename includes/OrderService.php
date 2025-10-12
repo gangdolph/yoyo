@@ -8,7 +8,9 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/square-log.php';
 require_once __DIR__ . '/SquareHttpClient.php';
-require_once __DIR__ . '/InventoryService.php';
+if (!class_exists('InventoryService')) {
+    require_once __DIR__ . '/InventoryService.php';
+}
 require_once __DIR__ . '/ShippingService.php';
 require_once __DIR__ . '/features.php';
 

@@ -3,14 +3,20 @@
  * Square Connection Diagnostics: surface configuration details and live connectivity checks
  * so admins can verify that Square credentials are valid and webhooks are flowing.
  */
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
 require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/SquareHttpClient.php';
 require_once __DIR__ . '/../includes/square-migrations.php';
 
-/** @var mysqli $conn */
-$conn = require __DIR__ . '/../includes/db.php';
+/** @var mysqli|null $conn */
+if (!isset($conn) || !($conn instanceof mysqli)) {
+    $conn = require __DIR__ . '/../includes/db.php';
+}
 
 if (!isset($config) || !is_array($config)) {
     $config = require __DIR__ . '/../config.php';

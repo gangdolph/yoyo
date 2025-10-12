@@ -3,9 +3,12 @@
  * Discovery note: Admin area lacked a diagnostics view despite handling support, listings, and trades.
  * Change: Added a Square Health stub that surfaces sync/webhook timestamps and recent errors for admins.
  */
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
-require '../includes/db.php';
 require_once __DIR__ . '/../includes/square-migrations.php';
 
 ensure_admin('../dashboard.php');

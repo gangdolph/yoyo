@@ -11,7 +11,9 @@ declare(strict_types=1);
 require_once __DIR__ . '/square-log.php';
 require_once __DIR__ . '/SquareHttpClient.php';
 require_once __DIR__ . '/square-migrations.php';
-require_once __DIR__ . '/repositories/InventoryService.php';
+if (!class_exists('InventoryService')) {
+    require_once __DIR__ . '/repositories/InventoryService.php';
+}
 
 final class SyncService
 {

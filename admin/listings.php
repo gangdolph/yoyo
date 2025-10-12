@@ -1,9 +1,11 @@
 <?php
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
-require '../includes/db.php';
-require '../includes/user.php';
-require '../includes/csrf.php';
+require_once __DIR__ . '/../includes/csrf.php';
 require_once __DIR__ . '/../includes/repositories/ChangeRequestsService.php';
 require_once __DIR__ . '/../includes/repositories/ListingsRepo.php';
 

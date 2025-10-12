@@ -3,8 +3,12 @@
  * Discovery note: Admin orders view offered fixed shipped/delivered actions inconsistent with the new fulfillment flow.
  * Change: Updated quick actions to follow the staged lifecycle and reflect pending change requests.
  */
+if (!defined('APP_BOOTSTRAPPED')) {
+    define('APP_BOOTSTRAPPED', true);
+    require_once __DIR__ . '/../includes/bootstrap.php';
+}
+
 require_once __DIR__ . '/../includes/require-auth.php';
-require_once __DIR__ . '/../includes/authz.php';
 require '../includes/orders.php';
 require '../includes/csrf.php';
 
