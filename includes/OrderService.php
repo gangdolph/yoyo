@@ -103,24 +103,62 @@ final class OrderService
             return;
         }
 
-        $this->clearOrderItems($paymentId);
+        $reservations = [];
 
-        foreach ($items as $item) {
-            if (!isset($item['product_sku'], $item['quantity'])) {
-                throw new InvalidArgumentException('Order items must include product_sku and quantity.');
+        try {
+            $this->clearOrderItems($paymentId);
+
+            foreach ($items as $item) {
+                if (!isset($item['product_sku'], $item['quantity'])) {
+                    throw new InvalidArgumentException('Order items must include product_sku and quantity.');
+                }
+
+                $sku = (string) $item['product_sku'];
+                $quantity = (int) $item['quantity'];
+                $reference = [
+                    'type' => 'payment',
+                    'id' => $paymentId,
+                    'buyer_id' => $buyerId,
+                    'sku' => $sku,
+                ];
+
+                $this->inventory->reserve($sku, $quantity, $reference);
+                $reservations[] = [
+                    'sku' => $sku,
+                    'quantity' => $quantity,
+                    'reference' => $reference,
+                ];
+
+                $this->upsertOrderItem($paymentId, $item);
+            }
+        } catch (Throwable $exception) {
+            foreach (array_reverse($reservations) as $reservation) {
+                try {
+                    $this->inventory->release(
+                        $reservation['sku'],
+                        $reservation['quantity'],
+                        $reservation['reference']
+                    );
+                } catch (Throwable $releaseError) {
+                    square_log('square.order_reservation_release_failed', [
+                        'payment_id' => $paymentId,
+                        'sku' => $reservation['sku'],
+                        'quantity' => $reservation['quantity'],
+                        'error' => $releaseError->getMessage(),
+                    ]);
+                }
             }
 
-            $sku = (string) $item['product_sku'];
-            $quantity = (int) $item['quantity'];
-            $reference = [
-                'type' => 'payment',
-                'id' => $paymentId,
-                'buyer_id' => $buyerId,
-                'sku' => $sku,
-            ];
+            try {
+                $this->clearOrderItems($paymentId);
+            } catch (Throwable $cleanupError) {
+                square_log('square.order_item_cleanup_failed', [
+                    'payment_id' => $paymentId,
+                    'error' => $cleanupError->getMessage(),
+                ]);
+            }
 
-            $this->inventory->reserve($sku, $quantity, $reference);
-            $this->upsertOrderItem($paymentId, $item);
+            throw $exception;
         }
     }
 
