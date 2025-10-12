@@ -2033,6 +2033,12 @@ tbody tr:nth-child(even) {
   font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.65);
 }
+.listing-offers__message-text {
+  display: block;
+  margin-top: var(--space-xxs);
+  font-style: italic;
+  color: rgba(255, 255, 255, 0.7);
+}
 .listing-offers__timestamp {
   font-style: normal;
 }
@@ -2042,10 +2048,10 @@ tbody tr:nth-child(even) {
   justify-content: center;
   min-width: 64px;
 }
-.offer-status--open {
+.offer-status--pending-seller {
   background: #3498db;
 }
-.offer-status--countered {
+.offer-status--pending-buyer {
   background: #9b59b6;
 }
 .offer-status--accepted {

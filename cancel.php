@@ -26,6 +26,7 @@ require_once __DIR__ . '/includes/require-auth.php';
     'location_mismatch' => 'Payment location did not match.',
     'card_declined'     => 'Your card was declined.',
     'payment_failed'    => 'Payment failed.',
+    'wallet_insufficient' => 'Your wallet balance is too low to cover this order. Please add funds or use a card.',
   ];
   $msg = $map[$reason] ?? 'Your payment was canceled. No charges were made.';
   ?>

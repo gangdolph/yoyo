@@ -59,13 +59,22 @@ final class OrdersService
         array $options = []
     ): array {
         $quantity = max(1, (int) ($options['quantity'] ?? 1));
-        $sku = isset($options['sku']) ? (string) $options['sku'] : null;
+        $sku = isset($options['sku']) ? trim((string) $options['sku']) : '';
         $isOfficialOrder = !empty($options['is_official_order']) ? 1 : 0;
         $shippingProfileId = isset($options['shipping_profile_id']) ? (int) $options['shipping_profile_id'] : null;
         $notes = isset($shipping['notes']) ? (string) $shipping['notes'] : '';
         $address = isset($shipping['address']) ? (string) $shipping['address'] : '';
         $deliveryMethod = isset($shipping['delivery_method']) ? (string) $shipping['delivery_method'] : '';
         $snapshot = $shipping['snapshot'] ?? null;
+
+        if ($sku === '') {
+            shop_log('order.fulfillment_missing_sku', [
+                'payment_id' => $paymentId,
+                'listing_id' => $listingId,
+                'buyer_id' => $buyerId,
+            ]);
+            throw new InvalidArgumentException('Order fulfillment requires a product SKU.');
+        }
 
         $existingOrderId = null;
         $check = $this->conn->prepare('SELECT id FROM order_fulfillments WHERE payment_id = ? LIMIT 1');

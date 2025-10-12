@@ -1,6 +1,6 @@
 const STATUS_LABELS = {
-  open: 'Open',
-  countered: 'Countered',
+  pending_seller: 'Waiting on Seller',
+  pending_buyer: 'Waiting on Buyer',
   accepted: 'Accepted',
   declined: 'Declined',
   expired: 'Expired',
@@ -19,7 +19,8 @@ const updateOfferRow = (row, status) => {
     statusBadge.textContent = applyStatusLabel(status);
     const normalised = String(status || '')
       .toLowerCase()
-      .replace(/[^a-z0-9_-]/g, '-');
+      .replace(/_/g, '-')
+      .replace(/[^a-z0-9-]/g, '-');
     statusBadge.className = `offer-status badge offer-status--${normalised}`;
   }
   const actions = row.querySelector('[data-offer-actions]');

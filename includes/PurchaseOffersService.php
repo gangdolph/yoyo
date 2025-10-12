@@ -9,6 +9,12 @@ require_once __DIR__ . '/repositories/ShopLogger.php';
 final class PurchaseOffersService
 {
     private const LISTING_ACTIVE_STATUSES = ['approved', 'live'];
+    private const STATUS_PENDING_SELLER = 'pending_seller';
+    private const STATUS_PENDING_BUYER = 'pending_buyer';
+    private const STATUS_ACCEPTED = 'accepted';
+    private const STATUS_DECLINED = 'declined';
+    private const STATUS_CANCELLED = 'cancelled';
+    private const STATUS_EXPIRED = 'expired';
 
     private mysqli $conn;
     private ?bool $hasListingOriginalPriceColumn = null;
@@ -63,11 +69,13 @@ final class PurchaseOffersService
         }
 
         $sql = 'SELECT '
-            . 'po.id, po.listing_id, po.counter_of, po.initiator_id, po.quantity, po.offer_price, '
-            . 'po.status, po.created_at, po.expires_at, '
-            . 'u.display_name, u.username '
+            . 'po.id, po.listing_id, po.buyer_id, po.seller_id, po.quantity, po.offered_price, '
+            . 'po.status, po.message, po.created_at, po.updated_at, po.expires_at, '
+            . 'buyer.display_name AS buyer_display_name, buyer.username AS buyer_username, '
+            . 'seller.display_name AS seller_display_name, seller.username AS seller_username '
             . 'FROM purchase_offers po '
-            . 'JOIN users u ON u.id = po.initiator_id '
+            . 'JOIN users buyer ON buyer.id = po.buyer_id '
+            . 'JOIN users seller ON seller.id = po.seller_id '
             . 'WHERE po.listing_id = ? '
             . 'ORDER BY po.created_at DESC '
             . 'LIMIT 50';
@@ -93,59 +101,74 @@ final class PurchaseOffersService
         $offers = [];
         foreach ($rows as $row) {
             $offerId = (int) $row['id'];
-            $initiatorId = (int) $row['initiator_id'];
+            $buyerId = (int) $row['buyer_id'];
+            $offerSellerId = (int) $row['seller_id'];
             $status = (string) $row['status'];
             $quantity = (int) $row['quantity'];
-            $price = (float) $row['offer_price'];
+            $price = (float) $row['offered_price'];
             $total = round($price * $quantity, 2);
 
-            $buyerId = null;
-            try {
-                $buyerId = $this->resolveBuyerId($offerId, $sellerId);
-            } catch (Throwable $ignored) {
-                $buyerId = null;
-            }
-
-            $isSeller = $actorId === $sellerId;
-            $isInitiator = $actorId === $initiatorId;
-            $isBuyer = $buyerId !== null && $actorId === $buyerId;
+            $isSeller = $actorId === $offerSellerId;
+            $isBuyer = $actorId === $buyerId;
 
             if ($actorId <= 0) {
                 continue;
             }
 
-            if (!$isSeller && !$isInitiator && !$isBuyer) {
+            if (!$isSeller && !$isBuyer) {
                 continue;
             }
 
-            if ($context['actor_role'] !== 'seller') {
-                $context['actor_role'] = $isBuyer || $isInitiator ? 'buyer' : 'viewer';
+            if ($isSeller) {
+                $context['actor_role'] = 'seller';
+            } elseif ($context['actor_role'] !== 'seller') {
+                $context['actor_role'] = $isBuyer ? 'buyer' : 'viewer';
             }
 
-            $statusLabel = ucfirst($status);
+            $statusLabel = $this->statusLabel($status);
             $createdAtRaw = (string) ($row['created_at'] ?? '');
             $createdAtTime = $createdAtRaw !== '' ? strtotime($createdAtRaw) : false;
             $createdAtDisplay = $createdAtTime ? date('M j, Y g:i a', $createdAtTime) : '—';
+            $message = trim((string) ($row['message'] ?? ''));
+
+            $awaitingRole = $this->awaitingRoleForStatus($status);
+            $isOpen = $awaitingRole !== null;
+            $canActorAcceptOrDecline = (
+                ($status === self::STATUS_PENDING_SELLER && $isSeller)
+                || ($status === self::STATUS_PENDING_BUYER && $isBuyer)
+            );
+            $canActorCancel = (
+                ($status === self::STATUS_PENDING_SELLER && $isBuyer)
+                || ($status === self::STATUS_PENDING_BUYER && $isSeller)
+            );
+
+            $buyerDisplay = $this->participantDisplay($row, 'buyer', $buyerId, $actorId);
+            $sellerDisplay = $this->participantDisplay($row, 'seller', $offerSellerId, $actorId);
+            $lastActorDisplay = $status === self::STATUS_PENDING_BUYER
+                ? $sellerDisplay
+                : $buyerDisplay;
+
             $offer = [
                 'id' => $offerId,
                 'quantity' => $quantity,
-                'offer_price' => number_format($price, 2, '.', ''),
-                'offer_price_display' => number_format($price, 2),
+                'offered_price' => number_format($price, 2, '.', ''),
+                'offered_price_display' => number_format($price, 2),
                 'total_display' => number_format($total, 2),
                 'status' => $status,
                 'status_label' => $statusLabel,
                 'created_at_iso' => $createdAtRaw,
                 'created_at_display' => $createdAtDisplay,
-                'counter_of' => $row['counter_of'] !== null ? (int) $row['counter_of'] : null,
-                'initiator_id' => $initiatorId,
-                'initiator_display' => $isInitiator
-                    ? 'You'
-                    : ($row['display_name'] ?: ($row['username'] ?: ('User #' . $initiatorId))),
-                'can_accept' => $status === 'open' && !$isInitiator && ($isSeller || $isBuyer),
-                'can_decline' => $status === 'open' && !$isInitiator && ($isSeller || $isBuyer),
-                'can_cancel' => $status === 'open' && $isInitiator,
-                'is_counter' => $row['counter_of'] !== null,
+                'message' => $message,
                 'buyer_id' => $buyerId,
+                'buyer_display' => $buyerDisplay,
+                'seller_id' => $offerSellerId,
+                'seller_display' => $sellerDisplay,
+                'initiator_display' => $lastActorDisplay,
+                'can_accept' => $isOpen && $canActorAcceptOrDecline,
+                'can_decline' => $isOpen && $canActorAcceptOrDecline,
+                'can_cancel' => $isOpen && $canActorCancel,
+                'is_counter' => $status === self::STATUS_PENDING_BUYER,
+                'awaiting_role' => $awaitingRole,
             ];
 
             $offers[] = $offer;
@@ -200,14 +223,17 @@ final class PurchaseOffersService
             }
 
             $stmt = $this->conn->prepare(
-                'INSERT INTO purchase_offers (listing_id, initiator_id, quantity, offer_price) VALUES (?,?,?,?)'
+                'INSERT INTO purchase_offers (listing_id, buyer_id, seller_id, quantity, offered_price, message, status) '
+                . 'VALUES (?,?,?,?,?,?,?)'
             );
             if ($stmt === false) {
                 throw new RuntimeException('Failed to record the offer.');
             }
 
             $priceString = $this->formatPrice($price);
-            $stmt->bind_param('iiis', $listingId, $actorId, $quantity, $priceString);
+            $message = '';
+            $status = self::STATUS_PENDING_SELLER;
+            $stmt->bind_param('iiiisss', $listingId, $actorId, $sellerId, $quantity, $priceString, $message, $status);
             if (!$stmt->execute()) {
                 $stmt->close();
                 throw new RuntimeException('Failed to record the offer.');
@@ -223,12 +249,13 @@ final class PurchaseOffersService
                 'listing_id' => $listingId,
                 'actor_id' => $actorId,
                 'quantity' => $quantity,
-                'offer_price' => $priceString,
+                'offered_price' => $priceString,
+                'status' => $status,
             ]);
 
             return [
                 'offer_id' => $offerId,
-                'status' => 'open',
+                'status' => $status,
             ];
         } catch (Throwable $e) {
             $this->conn->rollback();
@@ -248,7 +275,7 @@ final class PurchaseOffersService
     /**
      * Counter an existing open offer.
      *
-     * @return array{offer_id: int, status: string, countered_offer: int}
+     * @return array{offer_id: int, status: string}
      */
     public function counterOffer(int $actorId, int $offerId, int $quantity, string $offerPriceInput): array
     {
@@ -267,19 +294,27 @@ final class PurchaseOffersService
                 throw new RuntimeException('Offer not found.');
             }
 
-            if ($offer['offer_status'] !== 'open') {
+            $status = (string) $offer['offer_status'];
+            if (!in_array($status, [self::STATUS_PENDING_SELLER, self::STATUS_PENDING_BUYER], true)) {
                 throw new RuntimeException('Only open offers can be countered.');
             }
 
             $sellerId = (int) $offer['seller_id'];
-            $buyerId = $this->resolveBuyerId($offerId, $sellerId);
+            $buyerId = (int) $offer['buyer_id'];
 
-            if ($actorId !== $sellerId && ($buyerId === null || $actorId !== $buyerId)) {
+            if ($actorId !== $sellerId && $actorId !== $buyerId) {
                 throw new RuntimeException('You are not part of this negotiation.');
             }
 
-            if ($actorId === (int) $offer['initiator_id']) {
-                throw new RuntimeException('You cannot counter your own offer.');
+            $isSeller = $actorId === $sellerId;
+            $isBuyer = $actorId === $buyerId;
+
+            if ($status === self::STATUS_PENDING_SELLER && !$isSeller) {
+                throw new RuntimeException('Only the seller can counter right now.');
+            }
+
+            if ($status === self::STATUS_PENDING_BUYER && !$isBuyer) {
+                throw new RuntimeException('Only the buyer can counter right now.');
             }
 
             $this->assertListingAcceptsOffers($offer, 'listing_status');
@@ -304,51 +339,40 @@ final class PurchaseOffersService
                 throw new RuntimeException('Offer price cannot exceed the original listing price.');
             }
 
-            $update = $this->conn->prepare('UPDATE purchase_offers SET status = ? WHERE id = ?');
-            if ($update === false) {
-                throw new RuntimeException('Failed to update the original offer.');
-            }
-
-            $statusCountered = 'countered';
-            $update->bind_param('si', $statusCountered, $offerId);
-            if (!$update->execute()) {
-                $update->close();
-                throw new RuntimeException('Failed to update the original offer.');
-            }
-            $update->close();
-
             $stmt = $this->conn->prepare(
-                'INSERT INTO purchase_offers (listing_id, initiator_id, counter_of, quantity, offer_price) VALUES (?,?,?,?,?)'
+                'UPDATE purchase_offers SET quantity = ?, offered_price = ?, message = ?, status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?'
             );
             if ($stmt === false) {
                 throw new RuntimeException('Failed to record the counteroffer.');
             }
 
             $priceString = $this->formatPrice($price);
-            $stmt->bind_param('iiiis', $offer['listing_id'], $actorId, $offerId, $quantity, $priceString);
+            $nextStatus = $status === self::STATUS_PENDING_SELLER
+                ? self::STATUS_PENDING_BUYER
+                : self::STATUS_PENDING_SELLER;
+            $message = (string) ($offer['message'] ?? '');
+            $stmt->bind_param('isssi', $quantity, $priceString, $message, $nextStatus, $offerId);
             if (!$stmt->execute()) {
                 $stmt->close();
                 throw new RuntimeException('Failed to record the counteroffer.');
             }
 
-            $newOfferId = (int) $stmt->insert_id;
             $stmt->close();
 
             $this->conn->commit();
 
             shop_log('purchase_offer.countered', [
-                'offer_id' => $newOfferId,
-                'countered_offer' => $offerId,
+                'offer_id' => $offerId,
                 'listing_id' => $offer['listing_id'],
                 'actor_id' => $actorId,
                 'quantity' => $quantity,
-                'offer_price' => $priceString,
+                'offered_price' => $priceString,
+                'status' => $nextStatus,
             ]);
 
             return [
-                'offer_id' => $newOfferId,
-                'status' => 'open',
-                'countered_offer' => $offerId,
+                'offer_id' => $offerId,
+                'status' => $nextStatus,
             ];
         } catch (Throwable $e) {
             $this->conn->rollback();
@@ -370,7 +394,7 @@ final class PurchaseOffersService
      */
     public function acceptOffer(int $actorId, int $offerId): array
     {
-        return $this->closeOffer($actorId, $offerId, 'accepted');
+        return $this->closeOffer($actorId, $offerId, self::STATUS_ACCEPTED);
     }
 
     /**
@@ -378,7 +402,7 @@ final class PurchaseOffersService
      */
     public function declineOffer(int $actorId, int $offerId): array
     {
-        return $this->closeOffer($actorId, $offerId, 'declined');
+        return $this->closeOffer($actorId, $offerId, self::STATUS_DECLINED);
     }
 
     /**
@@ -398,21 +422,30 @@ final class PurchaseOffersService
                 throw new RuntimeException('Offer not found.');
             }
 
-            if ($offer['offer_status'] !== 'open') {
+            $status = (string) $offer['offer_status'];
+            if (!in_array($status, [self::STATUS_PENDING_SELLER, self::STATUS_PENDING_BUYER], true)) {
                 throw new RuntimeException('Only open offers can be cancelled.');
             }
 
-            if ($actorId !== (int) $offer['initiator_id']) {
-                throw new RuntimeException('You can only cancel offers you created.');
+            $sellerId = (int) $offer['seller_id'];
+            $buyerId = (int) $offer['buyer_id'];
+            $isSeller = $actorId === $sellerId;
+            $isBuyer = $actorId === $buyerId;
+
+            if (
+                ($status === self::STATUS_PENDING_SELLER && !$isBuyer)
+                || ($status === self::STATUS_PENDING_BUYER && !$isSeller)
+            ) {
+                throw new RuntimeException('You can only cancel your outstanding offer.');
             }
 
-            $status = 'cancelled';
-            $stmt = $this->conn->prepare('UPDATE purchase_offers SET status = ? WHERE id = ?');
+            $cancelledStatus = self::STATUS_CANCELLED;
+            $stmt = $this->conn->prepare('UPDATE purchase_offers SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
             if ($stmt === false) {
                 throw new RuntimeException('Failed to cancel the offer.');
             }
 
-            $stmt->bind_param('si', $status, $offerId);
+            $stmt->bind_param('si', $cancelledStatus, $offerId);
             if (!$stmt->execute()) {
                 $stmt->close();
                 throw new RuntimeException('Failed to cancel the offer.');
@@ -425,11 +458,12 @@ final class PurchaseOffersService
                 'offer_id' => $offerId,
                 'listing_id' => $offer['listing_id'],
                 'actor_id' => $actorId,
+                'status' => $cancelledStatus,
             ]);
 
             return [
                 'offer_id' => $offerId,
-                'status' => $status,
+                'status' => $cancelledStatus,
             ];
         } catch (Throwable $e) {
             $this->conn->rollback();
@@ -457,7 +491,7 @@ final class PurchaseOffersService
             throw new RuntimeException('Authentication required.');
         }
 
-        if (!in_array($status, ['accepted', 'declined'], true)) {
+        if (!in_array($status, [self::STATUS_ACCEPTED, self::STATUS_DECLINED], true)) {
             throw new InvalidArgumentException('Unsupported status change.');
         }
 
@@ -469,22 +503,25 @@ final class PurchaseOffersService
                 throw new RuntimeException('Offer not found.');
             }
 
-            if ($offer['offer_status'] !== 'open') {
+            $currentStatus = (string) $offer['offer_status'];
+            if (!in_array($currentStatus, [self::STATUS_PENDING_SELLER, self::STATUS_PENDING_BUYER], true)) {
                 throw new RuntimeException('This offer is no longer open.');
             }
 
             $sellerId = (int) $offer['seller_id'];
-            $buyerId = $this->resolveBuyerId($offerId, $sellerId);
+            $buyerId = (int) $offer['buyer_id'];
 
-            if ($actorId === (int) $offer['initiator_id']) {
-                throw new RuntimeException('You cannot ' . $status . ' your own offer.');
-            }
+            $isSeller = $actorId === $sellerId;
+            $isBuyer = $actorId === $buyerId;
 
-            if ($actorId !== $sellerId && ($buyerId === null || $actorId !== $buyerId)) {
+            if (
+                ($currentStatus === self::STATUS_PENDING_SELLER && !$isSeller)
+                || ($currentStatus === self::STATUS_PENDING_BUYER && !$isBuyer)
+            ) {
                 throw new RuntimeException('You are not part of this negotiation.');
             }
 
-            $stmt = $this->conn->prepare('UPDATE purchase_offers SET status = ? WHERE id = ?');
+            $stmt = $this->conn->prepare('UPDATE purchase_offers SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?');
             if ($stmt === false) {
                 throw new RuntimeException('Failed to update the offer.');
             }
@@ -502,6 +539,7 @@ final class PurchaseOffersService
                 'offer_id' => $offerId,
                 'listing_id' => $offer['listing_id'],
                 'actor_id' => $actorId,
+                'status' => $status,
             ]);
 
             return [
@@ -570,9 +608,9 @@ final class PurchaseOffersService
             : 'l.price AS listing_original_price';
 
         $sql = 'SELECT '
-            . 'po.id, po.listing_id, po.initiator_id, po.counter_of, po.quantity AS offer_quantity, '
-            . 'po.offer_price, po.status AS offer_status, po.expires_at, po.created_at, '
-            . 'l.owner_id AS seller_id, l.status AS listing_status, '
+            . 'po.id, po.listing_id, po.buyer_id, po.seller_id, po.quantity AS offer_quantity, '
+            . 'po.offered_price, po.status AS offer_status, po.message, po.expires_at, po.created_at, '
+            . 'l.owner_id AS listing_owner_id, l.status AS listing_status, '
             . 'l.quantity AS listing_quantity, l.reserved_qty AS listing_reserved_qty, '
             . $originalPriceSelect . ', l.price AS listing_price '
             . 'FROM purchase_offers po '
@@ -640,6 +678,67 @@ final class PurchaseOffersService
         return $exists;
     }
 
+    private function statusLabel(string $status): string
+    {
+        $labels = [
+            self::STATUS_PENDING_SELLER => 'Waiting on Seller',
+            self::STATUS_PENDING_BUYER => 'Waiting on Buyer',
+            self::STATUS_ACCEPTED => 'Accepted',
+            self::STATUS_DECLINED => 'Declined',
+            self::STATUS_CANCELLED => 'Cancelled',
+            self::STATUS_EXPIRED => 'Expired',
+        ];
+
+        if (isset($labels[$status])) {
+            return $labels[$status];
+        }
+
+        $status = str_replace('_', ' ', $status);
+
+        return ucfirst($status);
+    }
+
+    private function awaitingRoleForStatus(string $status): ?string
+    {
+        return match ($status) {
+            self::STATUS_PENDING_SELLER => 'seller',
+            self::STATUS_PENDING_BUYER => 'buyer',
+            default => null,
+        };
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function participantDisplay(array $row, string $role, int $participantId, int $actorId): string
+    {
+        if ($participantId <= 0) {
+            return 'Unknown';
+        }
+
+        if ($participantId === $actorId) {
+            return 'You';
+        }
+
+        if ($role === 'buyer') {
+            $display = (string) ($row['buyer_display_name'] ?? '');
+            $username = (string) ($row['buyer_username'] ?? '');
+        } else {
+            $display = (string) ($row['seller_display_name'] ?? '');
+            $username = (string) ($row['seller_username'] ?? '');
+        }
+
+        if ($display !== '') {
+            return $display;
+        }
+
+        if ($username !== '') {
+            return $username;
+        }
+
+        return 'User #' . $participantId;
+    }
+
     /**
      * Ensure the listing is in an offerable state.
      */
@@ -705,57 +804,5 @@ final class PurchaseOffersService
     private function formatPrice(float $price): string
     {
         return number_format($price, 2, '.', '');
-    }
-
-    /**
-     * Determine the buyer involved in this offer chain.
-     */
-    private function resolveBuyerId(int $offerId, int $sellerId): ?int
-    {
-        $visited = [];
-        $currentId = $offerId;
-        $sql = 'SELECT initiator_id, counter_of FROM purchase_offers WHERE id = ? LIMIT 1';
-        $stmt = $this->conn->prepare($sql);
-        if ($stmt === false) {
-            throw new RuntimeException('Failed to load offer context.');
-        }
-
-        try {
-            while ($currentId !== null && !in_array($currentId, $visited, true)) {
-                $visited[] = $currentId;
-
-                $stmt->bind_param('i', $currentId);
-                if (!$stmt->execute()) {
-                    throw new RuntimeException('Failed to load offer context.');
-                }
-
-                $result = $stmt->get_result();
-                $row = $result->fetch_assoc();
-                $result->free();
-
-                if (!$row) {
-                    return null;
-                }
-
-                $initiatorId = (int) $row['initiator_id'];
-                if ($initiatorId !== $sellerId) {
-                    return $initiatorId;
-                }
-
-                $next = $row['counter_of'] ?? null;
-                if ($next === null) {
-                    return null;
-                }
-
-                $currentId = (int) $next;
-                if ($currentId <= 0) {
-                    $currentId = null;
-                }
-            }
-        } finally {
-            $stmt->close();
-        }
-
-        return null;
     }
 }

@@ -96,7 +96,7 @@ try {
   $useWallet = $walletAllowed && $paymentMethod === 'wallet';
 
   // Helper: redirect to cancel with short reason + log
-  $fail = function (string $reason, string $logDetail = '') use (&$reservationQty, $inventoryService, $listing_id, $buyerId, $reservationToken) {
+  $fail = function (string $reason, string $logDetail = '', ?string $redirect = null) use (&$reservationQty, $inventoryService, $listing_id, $buyerId, $reservationToken) {
     if ($reservationQty > 0) {
       try {
         $inventoryService->releaseListing($listing_id, $reservationQty, $buyerId);
@@ -109,7 +109,8 @@ try {
       $reservationQty = 0;
     }
     if ($logDetail !== '') error_log('[checkout_process] ' . $reason . ' :: ' . $logDetail);
-    header('Location: /cancel.php?reason=' . urlencode($reason));
+    $location = $redirect !== null ? $redirect : '/cancel.php?reason=' . urlencode($reason);
+    header('Location: ' . $location);
     exit;
   };
 
@@ -155,6 +156,7 @@ try {
     $listingReserved = $listingReservedRow !== null ? (int) $listingReservedRow : 0;
     $listingStatus = (string) $listingStatus;
     $sellerId = (int) $sellerId;
+    $sku = is_string($sku) ? trim($sku) : '';
 
     $available = max(0, $listingQuantity - $listingReserved);
     $orderQuantity = max(1, $postedQuantity);
@@ -171,6 +173,11 @@ try {
       if ($tokenQuantity > 0) {
         $orderQuantity = $tokenQuantity;
       }
+    }
+
+    if ($sku === '') {
+      error_log('[checkout_process] listing missing product_sku listing_id=' . $listing_id);
+      $fail('missing_product_sku', 'listing_id=' . $listing_id . ' has no product SKU assigned.');
     }
 
     if ($stock !== null && $stock <= 0) {
@@ -251,8 +258,41 @@ try {
   if ($useWallet) {
     try {
       $walletBalance = $walletService->getBalance($buyerId);
-      if ((int) $walletBalance['available_cents'] < $amount) {
-        $useWallet = false;
+      $availableCents = (int) $walletBalance['available_cents'];
+      if ($availableCents < $amount) {
+        $_SESSION['checkout_wallet_error'] = [
+          'listing_id' => $listing_id,
+          'available_cents' => $availableCents,
+          'required_cents' => $amount,
+          'reason' => 'insufficient',
+          'timestamp' => time(),
+        ];
+
+        try {
+          if ($buyerId > 0) {
+            $walletService->logAudit($buyerId, 'checkout_wallet_insufficient', [
+              'listing_id' => $listing_id,
+              'required_cents' => $amount,
+              'available_cents' => $availableCents,
+            ]);
+          }
+        } catch (Throwable $auditError) {
+          error_log('[checkout_process] wallet audit log failed: ' . $auditError->getMessage());
+        }
+
+        $redirectQuery = [
+          'listing_id' => $listing_id,
+          'wallet_error' => 'insufficient',
+        ];
+        if ($coupon_code !== '') {
+          $redirectQuery['coupon'] = $coupon_code;
+        }
+
+        $fail(
+          'wallet_insufficient',
+          'listing_id=' . $listing_id . ' required_cents=' . $amount . ' available_cents=' . $availableCents,
+          '/checkout.php?' . http_build_query($redirectQuery)
+        );
       }
     } catch (Throwable $walletCheckError) {
       error_log('[checkout_process] wallet preflight failed: ' . $walletCheckError->getMessage());

@@ -63,6 +63,25 @@ if (!isset($_SESSION['reservation_tokens']) || !is_array($_SESSION['reservation_
 if (!isset($_SESSION['shipping']) || !is_array($_SESSION['shipping'])) {
     $_SESSION['shipping'] = [];
 }
+$walletErrorMessage = '';
+if (isset($_SESSION['checkout_wallet_error']) && is_array($_SESSION['checkout_wallet_error'])) {
+    $walletFlash = $_SESSION['checkout_wallet_error'];
+    unset($_SESSION['checkout_wallet_error']);
+    if ((int)($walletFlash['listing_id'] ?? 0) === $listing_id) {
+        $availableCents = isset($walletFlash['available_cents']) ? (int)$walletFlash['available_cents'] : 0;
+        $requiredCents = isset($walletFlash['required_cents']) ? (int)$walletFlash['required_cents'] : 0;
+        $walletErrorMessage = 'Your wallet balance is too low to cover this order. Please choose a card or add funds.';
+        if ($availableCents > 0 || $requiredCents > 0) {
+            $walletErrorMessage .= ' Available: $' . number_format($availableCents / 100, 2);
+            if ($requiredCents > 0) {
+                $walletErrorMessage .= ' · Required: $' . number_format($requiredCents / 100, 2);
+            }
+        }
+    }
+}
+if ($walletErrorMessage === '' && isset($_GET['wallet_error']) && $_GET['wallet_error'] === 'insufficient') {
+    $walletErrorMessage = 'Your wallet balance is too low to cover this order. Please choose a card or add funds.';
+}
 
 $cartQuantities = $_SESSION['cart'];
 foreach ($requestedListingIds as $requestedId) {
@@ -275,6 +294,11 @@ if ($walletEnabled) {
     </aside>
   <?php endif; ?>
   <form id="payment-form" method="post" action="checkout_process.php" class="checkout-payment">
+    <?php if ($walletErrorMessage !== ''): ?>
+      <div class="alert alert-danger wallet-error" role="alert">
+        <?= htmlspecialchars($walletErrorMessage); ?>
+      </div>
+    <?php endif; ?>
     <?php if ($walletEnabled): ?>
       <fieldset class="wallet-options">
         <legend>Payment Method</legend>
