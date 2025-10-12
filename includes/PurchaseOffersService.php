@@ -11,6 +11,7 @@ final class PurchaseOffersService
     private const LISTING_ACTIVE_STATUSES = ['approved', 'live'];
 
     private mysqli $conn;
+    private ?bool $hasListingOriginalPriceColumn = null;
 
     public function __construct(mysqli $conn)
     {
@@ -528,7 +529,11 @@ final class PurchaseOffersService
      */
     private function fetchListing(int $listingId, bool $forUpdate = false): ?array
     {
-        $sql = 'SELECT id, owner_id, status, quantity, reserved_qty, original_price, price FROM listings WHERE id = ?';
+        $originalPriceSelect = $this->hasListingOriginalPriceColumn()
+            ? 'original_price'
+            : 'price AS original_price';
+
+        $sql = 'SELECT id, owner_id, status, quantity, reserved_qty, ' . $originalPriceSelect . ', price FROM listings WHERE id = ?';
         if ($forUpdate) {
             $sql .= ' FOR UPDATE';
         }
@@ -558,12 +563,16 @@ final class PurchaseOffersService
      */
     private function fetchOfferWithListing(int $offerId, bool $forUpdate = false): ?array
     {
+        $originalPriceSelect = $this->hasListingOriginalPriceColumn()
+            ? 'l.original_price AS listing_original_price'
+            : 'l.price AS listing_original_price';
+
         $sql = 'SELECT '
             . 'po.id, po.listing_id, po.initiator_id, po.counter_of, po.quantity AS offer_quantity, '
             . 'po.offer_price, po.status AS offer_status, po.expires_at, po.created_at, '
             . 'l.owner_id AS seller_id, l.status AS listing_status, '
             . 'l.quantity AS listing_quantity, l.reserved_qty AS listing_reserved_qty, '
-            . 'l.original_price AS listing_original_price, l.price AS listing_price '
+            . $originalPriceSelect . ', l.price AS listing_price '
             . 'FROM purchase_offers po '
             . 'JOIN listings l ON l.id = po.listing_id '
             . 'WHERE po.id = ?';
@@ -588,6 +597,15 @@ final class PurchaseOffersService
         $stmt->close();
 
         return $row ?: null;
+    }
+
+    private function hasListingOriginalPriceColumn(): bool
+    {
+        if ($this->hasListingOriginalPriceColumn === null) {
+            $this->hasListingOriginalPriceColumn = column_exists('listings', 'original_price');
+        }
+
+        return $this->hasListingOriginalPriceColumn;
     }
 
     /**
