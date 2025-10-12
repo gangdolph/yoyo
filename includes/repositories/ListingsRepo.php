@@ -19,6 +19,7 @@ final class ListingsRepo
     private array $brandCache = [];
     /** @var array<int, array{id: int, brand_id: int, name: string}> */
     private array $modelCache = [];
+    private ?bool $hasOriginalPriceColumn = null;
 
     /**
      * Define allowed transitions between listing statuses.
@@ -86,35 +87,56 @@ final class ListingsRepo
         $status = $autoApprove ? 'approved' : 'pending';
         $requiresReview = !$autoApprove;
 
+        $hasOriginalPriceColumn = $this->hasOriginalPriceColumn();
+
         $this->conn->begin_transaction();
         try {
-            $stmt = $this->conn->prepare(
-                'INSERT INTO listings (owner_id, product_sku, brand_id, model_id, title, description, `condition`, price, original_price, quantity, reserved_qty, category, tags, image, status, pickup_only) '
-                . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?, ?, ?, ?, ?)'
-            );
+            $sql = 'INSERT INTO listings (owner_id, product_sku, brand_id, model_id, title, description, `condition`, price';
+            $values = 'VALUES (?, ?, ?, ?, ?, ?, ?, ?';
+
+            $bindings = [
+                ['type' => 'i', 'value' => $ownerId],
+                ['type' => 's', 'value' => $productSku],
+                ['type' => 'i', 'value' => $brandId],
+                ['type' => 'i', 'value' => $modelId],
+                ['type' => 's', 'value' => $title],
+                ['type' => 's', 'value' => $description],
+                ['type' => 's', 'value' => $condition],
+                ['type' => 's', 'value' => $price],
+            ];
+
+            if ($hasOriginalPriceColumn) {
+                $sql .= ', original_price';
+                $values .= ', ?';
+                $bindings[] = ['type' => 's', 'value' => $originalPrice];
+            }
+
+            $sql .= ', quantity, reserved_qty, category, tags, image, status, pickup_only) ';
+            $values .= ', ?, 0, ?, ?, ?, ?, ?)';
+
+            $bindings[] = ['type' => 'i', 'value' => $quantity];
+            $bindings[] = ['type' => 's', 'value' => $category];
+            $bindings[] = ['type' => 's', 'value' => $tagsStorage];
+            $bindings[] = ['type' => 's', 'value' => $image];
+            $bindings[] = ['type' => 's', 'value' => $status];
+            $bindings[] = ['type' => 'i', 'value' => $pickupOnly];
+
+            $sql .= $values;
+
+            $stmt = $this->conn->prepare($sql);
 
             if ($stmt === false) {
                 throw new RuntimeException('Unable to prepare listing creation.');
             }
 
-            $stmt->bind_param(
-                'isiisssssissssi',
-                $ownerId,
-                $productSku,
-                $brandId,
-                $modelId,
-                $title,
-                $description,
-                $condition,
-                $price,
-                $originalPrice,
-                $quantity,
-                $category,
-                $tagsStorage,
-                $image,
-                $status,
-                $pickupOnly
-            );
+            $types = '';
+            $params = [];
+            foreach ($bindings as $index => $binding) {
+                $types .= $binding['type'];
+                $params[$index] = &$bindings[$index]['value'];
+            }
+
+            $stmt->bind_param($types, ...$params);
 
             if (!$stmt->execute()) {
                 $stmt->close();
@@ -674,7 +696,11 @@ final class ListingsRepo
         $offset = ($page - 1) * $perPage;
         $items = [];
 
-        $select = 'SELECT l.id, l.title, l.price, l.original_price, l.sale_price, l.category, l.tags, l.image, l.brand_id, l.model_id, sb.name AS brand_name, sm.name AS model_name, l.status, l.pickup_only, l.created_at, '
+        $originalPriceSelect = $this->hasOriginalPriceColumn()
+            ? 'l.original_price'
+            : 'l.price AS original_price';
+
+        $select = 'SELECT l.id, l.title, l.price, ' . $originalPriceSelect . ', l.sale_price, l.category, l.tags, l.image, l.brand_id, l.model_id, sb.name AS brand_name, sm.name AS model_name, l.status, l.pickup_only, l.created_at, '
             . 'l.updated_at, l.quantity, l.reserved_qty, l.is_official_listing, '
             . '(SELECT COUNT(*) FROM listing_change_requests r WHERE r.listing_id = l.id AND r.status = "pending") '
             . 'AS pending_change_count, '
@@ -794,7 +820,11 @@ final class ListingsRepo
      */
     private function fetchListingDetails(int $listingId, bool $forUpdate = false): ?array
     {
-        $sql = 'SELECT id, owner_id, status, title, price, original_price, sale_price, quantity, reserved_qty, brand_id, model_id FROM listings WHERE id = ?';
+        $originalPriceSelect = $this->hasOriginalPriceColumn()
+            ? 'original_price'
+            : 'price AS original_price';
+
+        $sql = 'SELECT id, owner_id, status, title, price, ' . $originalPriceSelect . ', sale_price, quantity, reserved_qty, brand_id, model_id FROM listings WHERE id = ?';
         if ($forUpdate) {
             $sql .= ' FOR UPDATE';
         }
@@ -815,6 +845,15 @@ final class ListingsRepo
         $stmt->close();
 
         return $row ?: null;
+    }
+
+    private function hasOriginalPriceColumn(): bool
+    {
+        if ($this->hasOriginalPriceColumn === null) {
+            $this->hasOriginalPriceColumn = column_exists('listings', 'original_price');
+        }
+
+        return $this->hasOriginalPriceColumn;
     }
 
     /**

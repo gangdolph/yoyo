@@ -9,6 +9,51 @@ declare(strict_types=1);
  * - Returns mysqli instance
  */
 
+if (!function_exists('column_exists')) {
+  /**
+   * Determine if a column exists on the given table using the global mysqli connection.
+   */
+  function column_exists(string $table, string $column): bool
+  {
+    global $conn;
+
+    static $cache = [];
+
+    if (!($conn instanceof mysqli)) {
+      throw new RuntimeException('Global mysqli connection is not initialised.');
+    }
+
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $table)) {
+      throw new InvalidArgumentException('Invalid table name supplied to column_exists.');
+    }
+
+    if (!preg_match('/^[A-Za-z0-9_]+$/', $column)) {
+      throw new InvalidArgumentException('Invalid column name supplied to column_exists.');
+    }
+
+    $cacheKey = strtolower($table) . '.' . strtolower($column);
+    if (array_key_exists($cacheKey, $cache)) {
+      return (bool) $cache[$cacheKey];
+    }
+
+    $sql = sprintf('SHOW COLUMNS FROM `%s` LIKE ?', $table);
+    $stmt = $conn->prepare($sql);
+    if ($stmt === false) {
+      throw new RuntimeException('Unable to prepare column existence check.');
+    }
+
+    $stmt->bind_param('s', $column);
+    $stmt->execute();
+    $stmt->store_result();
+    $exists = $stmt->num_rows > 0;
+    $stmt->close();
+
+    $cache[$cacheKey] = $exists;
+
+    return $exists;
+  }
+}
+
 $config = require __DIR__ . '/../config.php';
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
