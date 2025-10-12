@@ -19,6 +19,10 @@ require_once __DIR__ . '/../includes/repositories/ListingsRepo.php';
 require_once __DIR__ . '/../includes/repositories/SquareCatalogSync.php';
 require_once __DIR__ . '/../includes/SyncService.php';
 require_once __DIR__ . '/../includes/listing-query.php';
+require_once __DIR__ . '/../includes/features.php';
+require_once __DIR__ . '/../includes/InventoryService.php';
+require_once __DIR__ . '/../includes/TaxonomyService.php';
+require_once __DIR__ . '/../includes/WalletService.php';
 
 $config = require __DIR__ . '/../config.php';
 
@@ -32,10 +36,32 @@ if (isset($conn) && $conn instanceof mysqli) {
     $db = require __DIR__ . '/../includes/db.php';
 }
 
+function shop_manager_table_exists(mysqli $db, string $table): bool
+{
+    static $cache = [];
+    if (array_key_exists($table, $cache)) {
+        return $cache[$table];
+    }
+
+    $escaped = $db->real_escape_string($table);
+    $result = $db->query(sprintf("SHOW TABLES LIKE '%s'", $escaped));
+    $exists = $result !== false && $result->num_rows > 0;
+    if ($result instanceof mysqli_result) {
+        $result->free();
+    }
+
+    $cache[$table] = $exists;
+
+    return $exists;
+}
+
 $changeRequests = new ChangeRequestsService($db);
 $listingsRepository = new ListingsRepo($db, $changeRequests);
 $squareSync = new SquareCatalogSync($db, $config);
 $squareSyncEnabled = $squareSync->isEnabled();
+$inventoryService = new InventoryService($db);
+$taxonomyService = new TaxonomyService($db);
+$walletService = new WalletService($db);
 $isAdmin = authz_has_role('admin');
 $isOfficialRole = authz_has_role('skuze_official');
 $isOfficial = store_user_is_official($db, $viewerId);
@@ -212,6 +238,146 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     shop_manager_flash($redirectTab, 'error', 'Square sync failed: ' . $e->getMessage());
                 }
                 break;
+            case 'taxonomy_create_brand':
+                $redirectTab = 'taxonomy';
+                if (!feature_taxonomy_enabled()) {
+                    shop_manager_flash($redirectTab, 'error', 'Device taxonomy is disabled.');
+                    break;
+                }
+                if (!$isAdmin && !$isOfficialRole) {
+                    shop_manager_flash($redirectTab, 'error', 'Only staff can manage brands.');
+                    break;
+                }
+                $brandName = trim((string) ($_POST['brand_name'] ?? ''));
+                $brandSlug = trim((string) ($_POST['brand_slug'] ?? ''));
+                if ($brandName === '' || $brandSlug === '') {
+                    shop_manager_flash($redirectTab, 'error', 'Brand name and slug are required.');
+                    break;
+                }
+                try {
+                    $taxonomyService->createBrand($brandName, $brandSlug);
+                    shop_manager_flash($redirectTab, 'success', 'Brand created.');
+                } catch (Throwable $e) {
+                    shop_manager_flash($redirectTab, 'error', 'Unable to create brand: ' . $e->getMessage());
+                }
+                break;
+            case 'taxonomy_update_brand':
+                $redirectTab = 'taxonomy';
+                if (!feature_taxonomy_enabled()) {
+                    shop_manager_flash($redirectTab, 'error', 'Device taxonomy is disabled.');
+                    break;
+                }
+                if (!$isAdmin && !$isOfficialRole) {
+                    shop_manager_flash($redirectTab, 'error', 'Only staff can manage brands.');
+                    break;
+                }
+                $brandId = (int) ($_POST['brand_id'] ?? 0);
+                $brandName = trim((string) ($_POST['brand_name'] ?? ''));
+                $brandSlug = trim((string) ($_POST['brand_slug'] ?? ''));
+                if ($brandId <= 0 || $brandName === '' || $brandSlug === '') {
+                    shop_manager_flash($redirectTab, 'error', 'Brand update requires a valid selection, name, and slug.');
+                    break;
+                }
+                try {
+                    $taxonomyService->updateBrand($brandId, $brandName, $brandSlug);
+                    shop_manager_flash($redirectTab, 'success', 'Brand updated.');
+                } catch (Throwable $e) {
+                    shop_manager_flash($redirectTab, 'error', 'Unable to update brand: ' . $e->getMessage());
+                }
+                break;
+            case 'taxonomy_delete_brand':
+                $redirectTab = 'taxonomy';
+                if (!feature_taxonomy_enabled()) {
+                    shop_manager_flash($redirectTab, 'error', 'Device taxonomy is disabled.');
+                    break;
+                }
+                if (!$isAdmin && !$isOfficialRole) {
+                    shop_manager_flash($redirectTab, 'error', 'Only staff can manage brands.');
+                    break;
+                }
+                $brandId = (int) ($_POST['brand_id'] ?? 0);
+                if ($brandId <= 0) {
+                    shop_manager_flash($redirectTab, 'error', 'Brand selection is required for deletion.');
+                    break;
+                }
+                try {
+                    $taxonomyService->deleteBrand($brandId);
+                    shop_manager_flash($redirectTab, 'success', 'Brand removed.');
+                } catch (Throwable $e) {
+                    shop_manager_flash($redirectTab, 'error', 'Unable to delete brand: ' . $e->getMessage());
+                }
+                break;
+            case 'taxonomy_create_model':
+                $redirectTab = 'taxonomy';
+                if (!feature_taxonomy_enabled()) {
+                    shop_manager_flash($redirectTab, 'error', 'Device taxonomy is disabled.');
+                    break;
+                }
+                if (!$isAdmin && !$isOfficialRole) {
+                    shop_manager_flash($redirectTab, 'error', 'Only staff can manage models.');
+                    break;
+                }
+                $brandId = (int) ($_POST['brand_id'] ?? 0);
+                $modelName = trim((string) ($_POST['model_name'] ?? ''));
+                $modelSlug = trim((string) ($_POST['model_slug'] ?? ''));
+                if ($brandId <= 0 || $modelName === '' || $modelSlug === '') {
+                    shop_manager_flash($redirectTab, 'error', 'Model creation requires brand, name, and slug.');
+                    break;
+                }
+                try {
+                    $taxonomyService->createModel($brandId, $modelName, $modelSlug, []);
+                    shop_manager_flash($redirectTab, 'success', 'Model created.');
+                } catch (Throwable $e) {
+                    shop_manager_flash($redirectTab, 'error', 'Unable to create model: ' . $e->getMessage());
+                }
+                break;
+            case 'taxonomy_update_model':
+                $redirectTab = 'taxonomy';
+                if (!feature_taxonomy_enabled()) {
+                    shop_manager_flash($redirectTab, 'error', 'Device taxonomy is disabled.');
+                    break;
+                }
+                if (!$isAdmin && !$isOfficialRole) {
+                    shop_manager_flash($redirectTab, 'error', 'Only staff can manage models.');
+                    break;
+                }
+                $modelId = (int) ($_POST['model_id'] ?? 0);
+                $brandId = (int) ($_POST['brand_id'] ?? 0);
+                $modelName = trim((string) ($_POST['model_name'] ?? ''));
+                $modelSlug = trim((string) ($_POST['model_slug'] ?? ''));
+                if ($modelId <= 0 || $brandId <= 0 || $modelName === '' || $modelSlug === '') {
+                    shop_manager_flash($redirectTab, 'error', 'Model update requires a valid selection, brand, name, and slug.');
+                    break;
+                }
+                try {
+                    $taxonomyService->updateModel($modelId, $brandId, $modelName, $modelSlug, []);
+                    shop_manager_flash($redirectTab, 'success', 'Model updated.');
+                } catch (Throwable $e) {
+                    shop_manager_flash($redirectTab, 'error', 'Unable to update model: ' . $e->getMessage());
+                }
+                break;
+            case 'taxonomy_delete_model':
+                $redirectTab = 'taxonomy';
+                if (!feature_taxonomy_enabled()) {
+                    shop_manager_flash($redirectTab, 'error', 'Device taxonomy is disabled.');
+                    break;
+                }
+                if (!$isAdmin && !$isOfficialRole) {
+                    shop_manager_flash($redirectTab, 'error', 'Only staff can manage models.');
+                    break;
+                }
+                $modelId = (int) ($_POST['model_id'] ?? 0);
+                if ($modelId <= 0) {
+                    shop_manager_flash($redirectTab, 'error', 'Model selection is required for deletion.');
+                    break;
+                }
+                try {
+                    $taxonomyService->deleteModel($modelId);
+                    shop_manager_flash($redirectTab, 'success', 'Model removed.');
+                } catch (Throwable $e) {
+                    shop_manager_flash($redirectTab, 'error', 'Unable to delete model: ' . $e->getMessage());
+                }
+                break;
             default:
                 shop_manager_flash($redirectTab, 'error', 'Unsupported manager action.');
         }
@@ -295,6 +461,56 @@ $reportsSummary = [
     'scope_label' => $scopeLabel,
 ];
 
+$walletQueue = [];
+$walletPendingCount = 0;
+if (feature_wallets_enabled()) {
+    if (shop_manager_table_exists($db, 'withdrawal_requests')) {
+        $result = $db->query('SELECT wr.*, u.username FROM withdrawal_requests wr LEFT JOIN users u ON u.id = wr.user_id ORDER BY wr.created_at DESC LIMIT 20');
+        if ($result instanceof mysqli_result) {
+            while ($row = $result->fetch_assoc()) {
+                $walletQueue[] = $row;
+            }
+            $result->free();
+        }
+    } elseif (shop_manager_table_exists($db, 'wallet_withdrawals')) {
+        $result = $db->query('SELECT ww.*, u.username FROM wallet_withdrawals ww LEFT JOIN users u ON u.id = ww.user_id ORDER BY ww.created_at DESC LIMIT 20');
+        if ($result instanceof mysqli_result) {
+            while ($row = $result->fetch_assoc()) {
+                $walletQueue[] = $row;
+            }
+            $result->free();
+        }
+    }
+
+    $walletPendingCount = count(array_filter(
+        $walletQueue,
+        static function (array $row): bool {
+            $status = strtolower((string) ($row['status'] ?? ''));
+            return in_array($status, ['requested', 'pending', 'approved', 'processing'], true);
+        }
+    ));
+}
+
+$reportsSummary['pending_withdrawals'] = $walletPendingCount;
+
+$taxonomyBrands = [];
+$taxonomyModels = [];
+$selectedTaxonomyBrand = isset($_GET['brand_id']) ? (int) $_GET['brand_id'] : null;
+if (feature_taxonomy_enabled()) {
+    $taxonomyBrands = $taxonomyService->listBrands();
+    if ($selectedTaxonomyBrand === null && !empty($taxonomyBrands)) {
+        $selectedTaxonomyBrand = (int) $taxonomyBrands[0]['id'];
+    }
+
+    if ($selectedTaxonomyBrand !== null) {
+        try {
+            $taxonomyModels = $taxonomyService->listModelsForBrand($selectedTaxonomyBrand);
+        } catch (Throwable $e) {
+            $taxonomyModels = [];
+        }
+    }
+}
+
 $csrfToken = generate_token();
 $flash = shop_manager_consume_flash($activeTab);
 ?>
@@ -373,6 +589,11 @@ $flash = shop_manager_consume_flash($activeTab);
       $squareSyncDirection = $syncDirection;
       $products = $productsList;
       $reports = $reportsSummary;
+      $walletRequests = $walletQueue;
+      $selectedBrandId = $selectedTaxonomyBrand;
+      $taxonomyBrandList = $taxonomyBrands;
+      $taxonomyModelList = $taxonomyModels;
+      include __DIR__ . '/dashboard.php';
       include __DIR__ . '/products.php';
       include __DIR__ . '/listings.php';
       include __DIR__ . '/inventory.php';
@@ -381,6 +602,8 @@ $flash = shop_manager_consume_flash($activeTab);
       include __DIR__ . '/sync.php';
       include __DIR__ . '/reports.php';
       include __DIR__ . '/settings.php';
+      include __DIR__ . '/wallets.php';
+      include __DIR__ . '/taxonomy.php';
     ?>
   </div>
   <?php include __DIR__ . '/../includes/footer.php'; ?>

@@ -37,4 +37,16 @@ return [
 
   // Manager workspace rollout
   'SHOP_MANAGER_V1_ENABLED' => false,
+
+  // Core commerce feature toggles (default to enabled, disable for phased rollouts)
+  'FEATURE_TAXONOMY' => true,
+  'FEATURE_ORDER_CENTRALIZATION' => true,
+  'FEATURE_WALLETS' => true,
+
+  // Wallet defaults
+  'WITHDRAW_FEE_PERCENT_NON_MEMBER' => 1.5,
+  'WITHDRAW_MIN_CENTS' => 100,
+  'MEMBER_ROLE_NAME' => 'member',
+  'WALLET_WITHDRAW_MIN_CENTS' => 100,
+  'WALLET_HOLD_HOURS' => 24,
 ];

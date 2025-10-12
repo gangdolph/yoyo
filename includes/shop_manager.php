@@ -12,6 +12,10 @@ require_once __DIR__ . '/store.php';
 
 const SHOP_MANAGER_DEFAULT_TAB = 'listings';
 const SHOP_MANAGER_TABS = [
+    'dashboard' => [
+        'label' => 'Dashboard',
+        'description' => 'Key metrics for orders, stock, and withdrawals.',
+    ],
     'products' => [
         'label' => 'Products',
         'description' => 'Review catalogue entries and confirm merchandising details.',
@@ -43,6 +47,14 @@ const SHOP_MANAGER_TABS = [
     'settings' => [
         'label' => 'Settings',
         'description' => 'Configure default preferences for your shop.',
+    ],
+    'wallets' => [
+        'label' => 'Wallets',
+        'description' => 'Process withdrawal requests and review wallet activity.',
+    ],
+    'taxonomy' => [
+        'label' => 'Taxonomy',
+        'description' => 'Manage device brands and models used across the marketplace.',
     ],
 ];
 
