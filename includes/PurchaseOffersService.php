@@ -12,6 +12,8 @@ final class PurchaseOffersService
 
     private mysqli $conn;
     private ?bool $hasListingOriginalPriceColumn = null;
+    /** @var array<string, bool> */
+    private array $columnExistenceCache = [];
 
     public function __construct(mysqli $conn)
     {
@@ -602,10 +604,40 @@ final class PurchaseOffersService
     private function hasListingOriginalPriceColumn(): bool
     {
         if ($this->hasListingOriginalPriceColumn === null) {
-            $this->hasListingOriginalPriceColumn = column_exists('listings', 'original_price');
+            $this->hasListingOriginalPriceColumn = $this->columnExists('listings', 'original_price');
         }
 
         return $this->hasListingOriginalPriceColumn;
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        $cacheKey = strtolower($table) . '.' . strtolower($column);
+        if (array_key_exists($cacheKey, $this->columnExistenceCache)) {
+            return $this->columnExistenceCache[$cacheKey];
+        }
+
+        $sql = 'SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS '
+            . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1';
+
+        $stmt = $this->conn->prepare($sql);
+        if ($stmt === false) {
+            throw new RuntimeException('Unable to prepare column existence check.');
+        }
+
+        $stmt->bind_param('ss', $table, $column);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Failed to execute column existence check.');
+        }
+
+        $stmt->store_result();
+        $exists = $stmt->num_rows > 0;
+        $stmt->close();
+
+        $this->columnExistenceCache[$cacheKey] = $exists;
+
+        return $exists;
     }
 
     /**
