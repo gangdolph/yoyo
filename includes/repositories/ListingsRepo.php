@@ -20,6 +20,8 @@ final class ListingsRepo
     /** @var array<int, array{id: int, brand_id: int, name: string}> */
     private array $modelCache = [];
     private ?bool $hasOriginalPriceColumn = null;
+    /** @var array<string, bool> */
+    private array $columnExistenceCache = [];
 
     /**
      * Define allowed transitions between listing statuses.
@@ -850,10 +852,40 @@ final class ListingsRepo
     private function hasOriginalPriceColumn(): bool
     {
         if ($this->hasOriginalPriceColumn === null) {
-            $this->hasOriginalPriceColumn = column_exists('listings', 'original_price');
+            $this->hasOriginalPriceColumn = $this->columnExists('listings', 'original_price');
         }
 
         return $this->hasOriginalPriceColumn;
+    }
+
+    private function columnExists(string $table, string $column): bool
+    {
+        $cacheKey = strtolower($table) . '.' . strtolower($column);
+        if (array_key_exists($cacheKey, $this->columnExistenceCache)) {
+            return $this->columnExistenceCache[$cacheKey];
+        }
+
+        $sql = 'SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS '
+            . 'WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = ? AND COLUMN_NAME = ? LIMIT 1';
+
+        $stmt = $this->conn->prepare($sql);
+        if ($stmt === false) {
+            throw new RuntimeException('Unable to prepare column existence check.');
+        }
+
+        $stmt->bind_param('ss', $table, $column);
+        if (!$stmt->execute()) {
+            $stmt->close();
+            throw new RuntimeException('Failed to execute column existence check.');
+        }
+
+        $stmt->store_result();
+        $exists = $stmt->num_rows > 0;
+        $stmt->close();
+
+        $this->columnExistenceCache[$cacheKey] = $exists;
+
+        return $exists;
     }
 
     /**
